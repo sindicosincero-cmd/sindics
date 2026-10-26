@@ -221,7 +221,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "2.0.2";
+  window.SINDICS_V = "2.0.3";
 })();
 /* ======================= CONFIGURAÇÃO ======================= */
 const AGENT_ID = "agent_6201m5wqfm4xet39s7vtbkh5axex";
@@ -231,6 +231,8 @@ const SENHA_SHA256 = "";
 const WAKE_RE = /\b(s[ií]ndi(cs|ks|x|ques|quis|cos?)|sin\s?dics|syndics?)\b/i;
 const SLEEP_RE = /(pode descansar|pode desligar|encerrar (a )?conversa|desligar sindics|at[eé] mais,? sindics|obrigado,? sindics)/i;
 const IDLE_MS = 30000;
+/* Legenda das respostas do SINDICS na tela. false = só voz (as falas continuam no Registro). */
+const SHOW_CAPTION = false;
 const TOOL_LABEL = { indicadores_economicos:"Consultando Banco Central", noticias_brasil:"Buscando notícias", knowledge_base:"Consultando documentos do condomínio", knowledge_base_rag:"Consultando documentos do condomínio", mostrar_na_tela:"Montando painel" };
 
 const $ = id => document.getElementById(id);
@@ -429,10 +431,10 @@ async function wake(){
     switch(m.type){
       case "conversation_initiation_metadata": {
         const f = m.conversation_initiation_metadata_event?.agent_output_audio_format || "pcm_16000"; const r = /pcm_(\d+)/.exec(f); outRate = r ? +r[1] : 16000;
-        setMode("listening"); hintEl.classList.remove("err"); hintEl.textContent = "Conectado · pode falar e interromper quando quiser · diga “pode descansar” para encerrar"; resetIdle(); break;
+        setMode("listening"); captionEl.textContent = ""; hintEl.classList.remove("err"); hintEl.textContent = "Conectado · pode falar e interromper quando quiser · diga “pode descansar” para encerrar"; resetIdle(); break;
       }
       case "audio": { const a = m.audio_event?.audio_base_64; if (a){ playChunk(a); resetIdle(); } break; }
-      case "agent_response": { const t = m.agent_response_event?.agent_response; if (t){ typeCaption(t); addLog("a", t); } if (sleepAfterReply) sleepAfterSpeech(); break; }
+      case "agent_response": { const t = m.agent_response_event?.agent_response; if (t){ if (SHOW_CAPTION) typeCaption(t); addLog("a", t); } if (sleepAfterReply) sleepAfterSpeech(); break; }
       case "user_transcript": { const t = m.user_transcription_event?.user_transcript; if (t && t.trim()){ youEl.textContent = t; addLog("u", t); setMode("thinking"); resetIdle(); if (SLEEP_RE.test(t)) sleepAfterReply = true; } break; }
       case "client_tool_call": {
         const c = m.client_tool_call || {};
