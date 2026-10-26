@@ -31,6 +31,7 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;overflow:hidden}
 #gl{position:fixed;inset:0;width:100%;height:100%;display:block}
@@ -220,7 +221,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "2.0.1";
+  window.SINDICS_V = "2.0.2";
 })();
 /* ======================= CONFIGURAÇÃO ======================= */
 const AGENT_ID = "agent_6201m5wqfm4xet39s7vtbkh5axex";
