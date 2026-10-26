@@ -163,6 +163,17 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
 .cond small{font-family:var(--mono);font-size:10.5px;color:var(--muted);overflow-wrap:anywhere}
 .cond .falta{color:var(--amber)}
 .cond button{align-self:flex-start;margin-top:6px;padding:6px 10px;font-size:10px}
+.cform input[type=file]{padding:7px;font-size:13px;color:var(--muted)}
+.cform input[type=file]::file-selector-button{font-family:var(--display);letter-spacing:.12em;text-transform:uppercase;font-size:10.5px;background:transparent;color:var(--cyan);border:1px solid var(--cyan);padding:6px 10px;margin-right:10px;cursor:pointer}
+.dica{margin:2px 0 0;font-size:12px;line-height:1.45;color:var(--muted)}
+.prog{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.prog-barra{height:6px;background:rgba(63,208,255,.12);overflow:hidden}
+.prog-barra i{display:block;height:100%;width:0;background:var(--cyan);box-shadow:0 0 10px var(--cyan);transition:width .3s}
+.prog span{font-family:var(--mono);font-size:11px;color:var(--cyan)}
+.docst{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.docst span{font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:3px 7px;border:1px solid var(--line-strong);color:var(--muted)}
+.docst .pronto{color:var(--ok);border-color:var(--ok)} .docst .erro{color:var(--danger);border-color:var(--danger)} .docst .processando,.docst .enviado{color:var(--violet);border-color:var(--violet)}
+.cond .docmsg{color:#ffc3c9}
 #tapOverlay{background:rgba(4,7,13,.4);backdrop-filter:none;cursor:pointer;justify-content:flex-end;padding-bottom:calc(22vh + env(safe-area-inset-bottom,0px))}
 #tapOverlay strong{animation:breathe 2.4s ease-in-out infinite}
 @keyframes breathe{50%{opacity:.45}}
@@ -267,6 +278,12 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
         <div><label for="cCidade">Cidade *</label><input id="cCidade" autocomplete="address-level2" required></div>
         <div><label for="cUf">UF *</label><input id="cUf" maxlength="2" autocomplete="address-level1" required></div>
       </div>
+      <label for="cConv">Convenção de Condomínio (PDF) <span id="cConvObr">*</span></label>
+      <input id="cConv" type="file" accept="application/pdf,.pdf">
+      <label for="cReg">Regulamento Interno (PDF) <span id="cRegObr">*</span></label>
+      <input id="cReg" type="file" accept="application/pdf,.pdf">
+      <p class="dica" id="cDocDica">O SINDICS lê os dois documentos e passa a conhecer as regras do condomínio. PDFs escaneados também funcionam, só demoram um pouco mais.</p>
+      <div class="prog" id="cProg" hidden><div class="prog-barra"><i id="cProgBar"></i></div><span id="cProgTxt"></span></div>
       <p class="cmsg" id="cMsg" role="status"></p>
       <div class="c2b">
         <button id="cSalvar" class="primary" type="submit">Salvar condomínio</button>
@@ -325,7 +342,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "3.2.0";
+  window.SINDICS_V = "3.3.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -861,14 +878,88 @@ let condEditId = null; // id do condomínio em edição
 const cMsg = (t, err) => { $("cMsg").textContent = t || ""; $("cMsg").style.color = err ? "var(--danger)" : "var(--ok)"; };
 
 function limparFormCond(){
-  ["cCnpj","cNome","cCep","cUnid","cEnd","cCidade","cUf"].forEach(id => { $(id).value = ""; $(id).removeAttribute("aria-invalid"); });
+  ["cCnpj","cNome","cCep","cUnid","cEnd","cCidade","cUf","cConv","cReg"].forEach(id => { $(id).value = ""; $(id).removeAttribute("aria-invalid"); });
   condEditId = null; $("cCancelar").hidden = true; $("cSalvar").textContent = "Salvar condomínio";
+  $("cConvObr").hidden = $("cRegObr").hidden = false;
+  $("cDocDica").textContent = "O SINDICS lê os dois documentos e passa a conhecer as regras do condomínio. PDFs escaneados também funcionam, só demoram um pouco mais.";
+  $("cProg").hidden = true;
   $("condFormTitulo").textContent = condAlvo ? `Cadastrar condomínio para ${condAlvo.nome}` : "Cadastrar condomínio"; cMsg("");
+}
+
+/* ---------- Leitura dos PDFs (texto + OCR quando escaneado) ---------- */
+const FN_DOC = SUPABASE_URL + "/functions/v1/processar-documento";
+const TIPO_NOME = { convencao: "Convenção", regulamento: "Regulamento Interno" };
+const STATUS_TXT = { pendente: "aguardando PDF", enviado: "enviado", processando: "lendo…", pronto: "lido ✓", erro: "não lido" };
+const scriptsCarregados = {};
+function carregarScript(src){
+  if (!scriptsCarregados[src]) scriptsCarregados[src] = new Promise((ok, falha) => {
+    const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => falha(new Error("Não consegui carregar o leitor de PDF. Verifique a internet.")); document.head.append(s);
+  });
+  return scriptsCarregados[src];
+}
+function progresso(pct, txt){ $("cProg").hidden = false; $("cProgBar").style.width = Math.max(2, Math.min(100, pct)) + "%"; $("cProgTxt").textContent = txt; }
+
+async function extrairTextoPDF(file, rotulo){
+  await carregarScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const total = pdf.numPages, textos = [], semTexto = [];
+  for (let i = 1; i <= total; i++){
+    progresso((i / total) * 35, `${rotulo}: lendo página ${i} de ${total}…`);
+    const page = await pdf.getPage(i);
+    const tc = await page.getTextContent();
+    const t = tc.items.map(it => it.str + (it.hasEOL ? "\n" : " ")).join("").replace(/[ \t]+/g, " ").trim();
+    textos[i - 1] = t;
+    if (t.replace(/\s/g, "").length < 80) semTexto.push(i);
+  }
+  let ocr = false;
+  if (semTexto.length){
+    ocr = true;
+    progresso(38, `${rotulo}: ${semTexto.length} página(s) escaneada(s). Preparando reconhecimento de texto…`);
+    await carregarScript("https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js");
+    const worker = await Tesseract.createWorker("por");
+    try{
+      for (let k = 0; k < semTexto.length; k++){
+        const i = semTexto[k];
+        progresso(40 + (k / semTexto.length) * 55, `${rotulo}: reconhecendo texto da página ${i} (${k + 1} de ${semTexto.length})…`);
+        const page = await pdf.getPage(i);
+        const vp = page.getViewport({ scale: 2 });
+        const cv = document.createElement("canvas"); cv.width = vp.width; cv.height = vp.height;
+        await page.render({ canvasContext: cv.getContext("2d"), viewport: vp }).promise;
+        const { data } = await worker.recognize(cv);
+        textos[i - 1] = (data.text || "").trim();
+        cv.width = cv.height = 0;
+      }
+    } finally { await worker.terminate(); }
+  }
+  const texto = textos.map((t, i) => `[Página ${i + 1}]\n${t}`).join("\n\n");
+  return { texto, paginas: total, ocr };
+}
+
+async function processarDocumento(condId, donoId, tipo, file){
+  const rotulo = TIPO_NOME[tipo];
+  if (file.size > 30 * 1024 * 1024) throw new Error(`${rotulo}: o arquivo passa de 30 MB.`);
+  if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") throw new Error(`${rotulo}: envie um arquivo PDF.`);
+  const { data: { session } } = await sb.auth.getSession(); if (!session) throw new Error("Sessão expirada. Entre novamente.");
+  // guarda o original no cofre (só o próprio síndico)
+  if (donoId === session.user.id){
+    progresso(1, `${rotulo}: guardando o PDF no cofre…`);
+    const up = await sb.storage.from("documentos-condominio").upload(`${donoId}/${condId}/${tipo}.pdf`, file, { upsert: true, contentType: "application/pdf" });
+    if (up.error) console.warn("upload", up.error.message);
+  }
+  const { texto, paginas, ocr } = await extrairTextoPDF(file, rotulo);
+  progresso(96, `${rotulo}: ensinando o SINDICS…`);
+  const r = await fetch(FN_DOC, { method: "POST", headers: { "Authorization": "Bearer " + session.access_token, "apikey": SUPABASE_ANON, "Content-Type": "application/json" },
+    body: JSON.stringify({ condominio_id: condId, tipo, texto, paginas, ocr }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(`${rotulo}: ${j.erro || "erro " + r.status}`);
+  progresso(100, `${rotulo}: pronto! ${paginas} páginas lidas${ocr ? " (com reconhecimento de imagem)" : ""}.`);
+  return j;
 }
 async function listarCondominios(){
   const { data: { user } } = await sb.auth.getUser(); if (!user) return [];
   const dono = condAlvo ? condAlvo.id : user.id;
-  const { data, error } = await sb.from("condominios").select("id, nome, cnpj, endereco, cidade, uf, cep, unidades").eq("sindico_id", dono).order("nome");
+  const { data, error } = await sb.from("condominios").select("id, nome, cnpj, endereco, cidade, uf, cep, unidades, convencao_status, regulamento_status, convencao_msg, regulamento_msg").eq("sindico_id", dono).order("nome");
   const box = $("condLista"); box.innerHTML = "";
   if (error){ box.textContent = "Erro ao carregar: " + error.message; return []; }
   if (!data.length){ const p = document.createElement("p"); p.className = "rs-t"; p.textContent = "Nenhum condomínio cadastrado ainda."; box.append(p); }
@@ -883,8 +974,16 @@ async function listarCondominios(){
       condEditId = c.id; $("cCnpj").value = c.cnpj ? mascaraCnpj(c.cnpj) : ""; $("cNome").value = c.nome; $("cCep").value = c.cep ? c.cep.replace(/^(\d{5})(\d{3})$/, "$1-$2") : "";
       $("cUnid").value = c.unidades || ""; $("cEnd").value = c.endereco || ""; $("cCidade").value = (c.cidade || "").replace(/\/[A-Z]{2}$/, ""); $("cUf").value = c.uf || (c.cidade || "").split("/")[1] || "";
       $("condFormTitulo").textContent = "Editar " + c.nome; $("cSalvar").textContent = "Salvar alterações"; $("cCancelar").hidden = false; cMsg(""); $("cCnpj").focus();
+      $("cConvObr").hidden = c.convencao_status !== "pronto" ? false : true; $("cRegObr").hidden = c.regulamento_status !== "pronto" ? false : true;
+      $("cDocDica").textContent = "Anexe um PDF só se quiser enviar ou substituir aquele documento. Os que já foram lidos continuam valendo.";
     };
-    d.append(n, l1, l2, l3, b); box.append(d);
+    const st = document.createElement("div"); st.className = "docst";
+    [["convencao", c.convencao_status], ["regulamento", c.regulamento_status]].forEach(([t, s]) => {
+      const sp = document.createElement("span"); sp.className = s; sp.textContent = `${TIPO_NOME[t]}: ${STATUS_TXT[s] || s}`; st.append(sp);
+    });
+    const msgs = [["convencao", c.convencao_status, c.convencao_msg], ["regulamento", c.regulamento_status, c.regulamento_msg]]
+      .filter(([, s, m]) => s === "erro" && m).map(([t, , m]) => { const sm = document.createElement("small"); sm.className = "docmsg"; sm.textContent = `${TIPO_NOME[t]}: ${m}`; return sm; });
+    d.append(n, l1, l2, l3, st, ...msgs, b); box.append(d);
   });
   return data;
 }
@@ -922,26 +1021,50 @@ $("condForm").addEventListener("submit", async e => {
   const marca = (id, ok) => { if (ok) $(id).removeAttribute("aria-invalid"); else { $(id).setAttribute("aria-invalid", "true"); erros.push(id); } };
   marca("cCnpj", cnpjValido(v.cnpj)); marca("cNome", v.nome.length >= 3); marca("cUnid", v.unidades >= 1);
   marca("cEnd", v.endereco.length >= 5); marca("cCidade", v.cidade.length >= 2); marca("cUf", /^[A-Z]{2}$/.test(v.uf));
+  const fConv = $("cConv").files[0] || null, fReg = $("cReg").files[0] || null;
+  if (!condEditId){ marca("cConv", !!fConv); marca("cReg", !!fReg); }
+  else { if (!$("cConvObr").hidden) marca("cConv", !!fConv); if (!$("cRegObr").hidden) marca("cReg", !!fReg); }
   if (erros.length){
-    cMsg(erros[0] === "cCnpj" ? "CNPJ inválido. Confira os números." : "Preencha os campos obrigatórios marcados em vermelho.", true);
-    $(erros[0]).focus(); return;
+    const m = erros[0] === "cCnpj" ? "CNPJ inválido. Confira os números."
+            : (erros[0] === "cConv" || erros[0] === "cReg") ? "Anexe a Convenção e o Regulamento Interno em PDF."
+            : "Preencha os campos obrigatórios marcados em vermelho.";
+    cMsg(m, true); $(erros[0]).focus(); return;
   }
   const registro = { cnpj: v.cnpj, nome: v.nome, cep: v.cep, unidades: v.unidades, endereco: v.endereco, cidade: `${v.cidade}/${v.uf}`, uf: v.uf };
   $("cSalvar").disabled = true; cMsg("Salvando…");
-  let res;
+  const { data: { user } } = await sb.auth.getUser();
+  const donoId = condAlvo ? condAlvo.id : user.id;
+  let res, condId = condEditId;
   if (condEditId) res = await sb.from("condominios").update(registro).eq("id", condEditId);
   else {
     if (condAlvo) registro.sindico_id = condAlvo.id;
-    res = await sb.from("condominios").insert(registro);
+    res = await sb.from("condominios").insert(registro).select("id").single();
+    if (!res.error) condId = res.data.id;
   }
-  $("cSalvar").disabled = false;
   if (res.error){
+    $("cSalvar").disabled = false;
     const m = res.error.message || "";
     cMsg(/condominios_cnpj_unico|duplicate/i.test(m) ? "Este CNPJ já está cadastrado no SINDICS. Se o condomínio é seu, fale com o administrador." : m, true);
     return;
   }
-  cMsg(condEditId ? "Alterações salvas." : "Condomínio cadastrado!");
-  limparFormCond(); await listarCondominios();
+  // Lê os PDFs, um de cada vez
+  const falhas = [];
+  for (const [tipo, f] of [["convencao", fConv], ["regulamento", fReg]]){
+    if (!f) continue;
+    cMsg("");
+    try{ await processarDocumento(condId, donoId, tipo, f); }
+    catch(err){ falhas.push(err.message || String(err)); }
+  }
+  $("cSalvar").disabled = false;
+  if (falhas.length){
+    cMsg("Dados salvos, mas houve problema com os documentos: " + falhas.join(" | ") + " Você pode reenviar em Editar.", true);
+  } else {
+    cMsg(fConv || fReg ? "Pronto! O SINDICS já conhece as regras deste condomínio." : (condEditId ? "Alterações salvas." : "Condomínio cadastrado!"));
+    setTimeout(() => { $("cProg").hidden = true; }, 2500);
+  }
+  const msgFinal = $("cMsg").textContent, corFinal = $("cMsg").style.color;
+  limparFormCond(); $("cMsg").textContent = msgFinal; $("cMsg").style.color = corFinal;
+  await listarCondominios();
   if (!condAlvo) await recarregarCondominiosPerfil();
   if (condAlvo && $("admDrawer").classList.contains("open")) carregarAdmin();
 });
