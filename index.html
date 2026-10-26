@@ -221,7 +221,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "2.0.3";
+  window.SINDICS_V = "2.0.4";
 })();
 /* ======================= CONFIGURAÇÃO ======================= */
 const AGENT_ID = "agent_6201m5wqfm4xet39s7vtbkh5axex";
@@ -412,7 +412,7 @@ function stopWake(){ if (rec){ rec.onend = null; try{ rec.abort(); }catch(_){} }
 /* ======================= SESSÃO ======================= */
 function standby(note){
   setMode("standby"); wakeBtn.hidden = false; sleepBtn.hidden = true; youEl.textContent = ""; toolEl.textContent = "";
-  captionEl.textContent = SR ? "Em prontidão. Diga “SINDICS” quando precisar." : "Em prontidão. Toque em Chamar agora quando precisar.";
+  captionEl.textContent = !SHOW_CAPTION ? "" : SR ? "Em prontidão. Diga “SINDICS” quando precisar." : "Em prontidão. Toque em Chamar agora quando precisar.";
   if (note) addLog("s", note); startWake();
 }
 function resetIdle(){
@@ -435,7 +435,7 @@ async function wake(){
       }
       case "audio": { const a = m.audio_event?.audio_base_64; if (a){ playChunk(a); resetIdle(); } break; }
       case "agent_response": { const t = m.agent_response_event?.agent_response; if (t){ if (SHOW_CAPTION) typeCaption(t); addLog("a", t); } if (sleepAfterReply) sleepAfterSpeech(); break; }
-      case "user_transcript": { const t = m.user_transcription_event?.user_transcript; if (t && t.trim()){ youEl.textContent = t; addLog("u", t); setMode("thinking"); resetIdle(); if (SLEEP_RE.test(t)) sleepAfterReply = true; } break; }
+      case "user_transcript": { const t = m.user_transcription_event?.user_transcript; if (t && t.trim()){ if (SHOW_CAPTION) youEl.textContent = t; addLog("u", t); setMode("thinking"); resetIdle(); if (SLEEP_RE.test(t)) sleepAfterReply = true; } break; }
       case "client_tool_call": {
         const c = m.client_tool_call || {};
         if (c.tool_name === "mostrar_na_tela"){ try{ showPanel(c.parameters || {}); }catch(_){} }
