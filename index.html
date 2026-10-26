@@ -119,6 +119,10 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
 .overlay span{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.06em;max-width:46ch;line-height:1.6}
 .overlay input{font-family:var(--mono);font-size:16px;letter-spacing:.2em;text-align:center;padding:12px 14px;width:min(280px,80vw);background:transparent;border:1px solid var(--line-strong);color:var(--fg)}
 .overlay input:focus{outline:2px solid var(--cyan);outline-offset:2px}
+#tapOverlay{background:rgba(4,7,13,.4);backdrop-filter:none;cursor:pointer;justify-content:flex-end;padding-bottom:calc(22vh + env(safe-area-inset-bottom,0px))}
+#tapOverlay strong{animation:breathe 2.4s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){#tapOverlay strong{animation:none}}
 #bootlog{position:fixed;left:max(18px, env(safe-area-inset-left, 0px));bottom:calc(90px + env(safe-area-inset-bottom,0px));z-index:12;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--cyan);line-height:1.8;pointer-events:none;text-transform:uppercase}
 #bootlog .ok{color:var(--ok)} #bootlog .warn{color:var(--amber)}
 
@@ -207,10 +211,17 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
 
 <div class="overlay" id="tapOverlay" hidden>
   <strong>ATIVAR SINDICS</strong>
-  <span id="tapMsg">O navegador exige um toque na primeira vez para liberar som e microfone. Toque em qualquer lugar. Depois disso ele fica em prontidão sozinho.</span>
+  <span id="tapMsg">Toque em qualquer lugar para ligar som e microfone. Depois disso ele fica em prontidão sozinho.</span>
 </div>
 
 <script>
+/* ======================= DIAGNÓSTICO NA TELA ======================= */
+(function(){
+  const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
+  window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
+  window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
+  window.SINDICS_V = "2.0.1";
+})();
 /* ======================= CONFIGURAÇÃO ======================= */
 const AGENT_ID = "agent_6201m5wqfm4xet39s7vtbkh5axex";
 const WS_URL = "wss://api.elevenlabs.io/v1/convai/conversation?agent_id=" + AGENT_ID;
@@ -407,6 +418,7 @@ function resetIdle(){
 }
 async function wake(){
   if (inSession()) return;
+  if (!outCtx || !micStream){ $("tapOverlay").hidden = false; return; }
   stopWake(); sndWake(); setMode("connecting"); wakeBtn.hidden = true; sleepBtn.hidden = false; youEl.textContent = "";
   captionEl.textContent = ""; await bootLines(["Canal de voz", "Base condominial", "Banco Central", "Notícias"], 110); captionEl.textContent = "Conectando…";
   ws = new WebSocket(WS_URL);
@@ -487,12 +499,23 @@ $("lockForm").addEventListener("submit", async e => {
 });
 async function start(){
   loadIndicators(); setInterval(loadIndicators, 30*60*1000);
-  try{ const ok = await initAudio(); if (!ok){ $("tapOverlay").hidden = false; return; } $("tapOverlay").hidden = true; await bootSequence(); standby("SINDICS em prontidão."); }
-  catch(_){ $("tapOverlay").hidden = false; $("tapMsg").textContent = "Não consegui acessar o microfone. Libere o microfone no cadeado da barra de endereço e toque aqui."; }
+  captionEl.textContent = "";
+  await bootSequence();
+  stateEl.textContent = "Aguardando ativação";
+  $("tapOverlay").hidden = false;
 }
+let activating = false;
 $("tapOverlay").addEventListener("click", async () => {
-  try{ const ok = await initAudio(); if (ok){ $("tapOverlay").hidden = true; await bootSequence(); standby("SINDICS em prontidão."); } }
-  catch(_){ $("tapMsg").textContent = "Não consegui acessar o microfone. Libere o microfone no cadeado da barra de endereço e toque aqui."; }
+  if (activating) return; activating = true;
+  $("tapMsg").textContent = "Ativando… se o navegador perguntar, clique em Permitir para o microfone.";
+  try{
+    const ok = await initAudio();
+    if (ok){ $("tapOverlay").hidden = true; sndWake(); standby("SINDICS em prontidão."); }
+    else $("tapMsg").textContent = "O som ainda está bloqueado. Toque de novo.";
+  }catch(_){
+    $("tapMsg").textContent = "Não consegui acessar o microfone. Clique no cadeado ao lado do endereço, coloque Microfone em Permitir, recarregue a página e toque aqui.";
+  }
+  activating = false;
 });
 
 /* ======================= NÚCLEO 3D ======================= */
