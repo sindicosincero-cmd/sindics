@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/motion@11.11.13/dist/motion.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <style>
 /* Layout: HUD de tela única. Esquerda = indicadores ao vivo; centro = núcleo 3D + legenda; direita = painéis holográficos. Visual escuro de propósito. */
 :root{
@@ -120,6 +121,14 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
 .overlay span{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.06em;max-width:46ch;line-height:1.6}
 .overlay input{font-family:var(--mono);font-size:16px;letter-spacing:.2em;text-align:center;padding:12px 14px;width:min(280px,80vw);background:transparent;border:1px solid var(--line-strong);color:var(--fg)}
 .overlay input:focus{outline:2px solid var(--cyan);outline-offset:2px}
+.login{z-index:40;background:rgba(4,7,13,.82)}
+.lform{display:flex;flex-direction:column;gap:8px;width:min(320px,86vw);text-align:left}
+.lform label{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-top:6px}
+.lform input{width:100%;text-align:left;letter-spacing:.02em;font-size:16px}
+.lform button{margin-top:12px;width:100%}
+button.link{border:0;background:none;padding:6px;font-family:var(--body);font-weight:400;letter-spacing:.02em;text-transform:none;font-size:13px;color:var(--muted);text-decoration:underline}
+button.link:hover{background:none;color:var(--fg)}
+#loginMsg{min-height:1.5em}
 #tapOverlay{background:rgba(4,7,13,.4);backdrop-filter:none;cursor:pointer;justify-content:flex-end;padding-bottom:calc(22vh + env(safe-area-inset-bottom,0px))}
 #tapOverlay strong{animation:breathe 2.4s ease-in-out infinite}
 @keyframes breathe{50%{opacity:.45}}
@@ -192,6 +201,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
     <button id="mute" type="button" aria-pressed="false">Silenciar mic</button>
     <button id="sfxBtn" type="button" aria-pressed="false">Som ambiente</button>
     <button id="logBtn" type="button">Registro</button>
+    <button id="logoutBtn" type="button">Sair</button>
     <div class="hint" id="hint">Diga “SINDICS” para chamar · “pode descansar” para encerrar · barra de espaço também funciona</div>
   </footer>
 </div>
@@ -203,11 +213,25 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
 
 <div id="bootlog" aria-hidden="true"></div>
 
-<div class="overlay" id="lockOverlay" hidden>
+<div class="overlay login" id="loginOverlay" hidden>
   <strong>SINDICS</strong>
-  <span>Acesso restrito. Digite a senha para liberar.</span>
-  <form id="lockForm"><input id="pwd" type="password" autocomplete="current-password" aria-label="Senha"></form>
-  <span id="lockMsg"></span>
+  <span id="loginSub">Assistente do Síndico · acesso restrito</span>
+  <form id="loginForm" class="lform" novalidate>
+    <label for="email">E-mail</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label for="pwd" id="pwdLabel">Senha</label>
+    <input id="pwd" type="password" autocomplete="current-password" required>
+    <button id="loginBtn" class="primary" type="submit">Entrar</button>
+  </form>
+  <form id="newPwdForm" class="lform" hidden novalidate>
+    <label for="pwd1">Nova senha (mínimo 8 caracteres)</label>
+    <input id="pwd1" type="password" autocomplete="new-password" minlength="8" required>
+    <label for="pwd2">Repita a nova senha</label>
+    <input id="pwd2" type="password" autocomplete="new-password" minlength="8" required>
+    <button class="primary" type="submit">Salvar nova senha</button>
+  </form>
+  <button id="forgotBtn" class="link" type="button">Esqueci minha senha</button>
+  <span id="loginMsg" role="status"></span>
 </div>
 
 <div class="overlay" id="tapOverlay" hidden>
@@ -221,29 +245,23 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "2.1.0";
+  window.SINDICS_V = "3.0.0";
 })();
-/* ======================= PERFIL DO SÍNDICO ======================= */
-/* Cada síndico tem o seu perfil. Na Fase 2 isto passa a vir do login. */
-const PERFIL = {
-  sindico_nome: "Elison",
-  sindico_assinatura: "Elison Cardoso — Síndico Profissional",
-  empresa: "Sindicância Ethics",
-  condominios: [
-    { nome: "Fit Casa Alto do Ipiranga", cidade: "São Paulo/SP", unidades: 370, documentos: "Convenção de Condomínio e Regulamento Interno" }
-  ]
-};
-const condominiosTexto = PERFIL.condominios.map(c => `- ${c.nome} (${c.cidade}, ${c.unidades} unidades): ${c.documentos}.`).join("\n");
-document.getElementById("hdrSindico").textContent = "Assistente do Síndico · " + PERFIL.sindico_assinatura.split("—")[0].trim();
-document.getElementById("hdrEmpresa").textContent = PERFIL.empresa;
-document.getElementById("hdrCondLabel").textContent = PERFIL.condominios.length > 1 ? "Condomínios" : "Condomínio";
-document.getElementById("hdrCond").textContent = PERFIL.condominios.length > 1 ? PERFIL.condominios.length + " cadastrados" : PERFIL.condominios[0].nome;
+/* ======================= SERVIDOR (Supabase) ======================= */
+const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqamNrdmx1eWRjZWptcnhvbHphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNDc3MDMsImV4cCI6MjEwODYyMzcwM30.7MtMPxBEaTkoNCqI2dt-2iLiugm_fkXVV6-TxdkTHR0";
+const FN_SESSAO = SUPABASE_URL + "/functions/v1/sessao-sindics";
+const SITE_URL = "https://sindicosincero-cmd.github.io/sindics/";
+const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
+let PERFIL = null;
 
-/* ======================= CONFIGURAÇÃO ======================= */
-const AGENT_ID = "agent_6201m5wqfm4xet39s7vtbkh5axex";
-const WS_URL = "wss://api.elevenlabs.io/v1/convai/conversation?agent_id=" + AGENT_ID;
-/* SHA-256 da senha da tela. Vazio = sem senha. */
-const SENHA_SHA256 = "";
+function preencherCabecalho(p){
+  document.getElementById("hdrSindico").textContent = "Assistente do Síndico · " + (p.assinatura ? p.assinatura.split("—")[0].trim() : p.nome);
+  document.getElementById("hdrEmpresa").textContent = p.empresa || "—";
+  const cs = p.condominios || [];
+  document.getElementById("hdrCondLabel").textContent = cs.length > 1 ? "Condomínios" : "Condomínio";
+  document.getElementById("hdrCond").textContent = cs.length > 1 ? cs.length + " cadastrados" : (cs[0] ? cs[0].nome : "nenhum");
+}
 const WAKE_RE = /\b(s[ií]ndi(cs|ks|x|ques|quis|cos?)|sin\s?dics|syndics?)\b/i;
 const SLEEP_RE = /(pode descansar|pode desligar|encerrar (a )?conversa|desligar sindics|at[eé] mais,? sindics|obrigado,? sindics)/i;
 const IDLE_MS = 30000;
@@ -439,11 +457,29 @@ async function wake(){
   if (inSession()) return;
   if (!outCtx || !micStream){ $("tapOverlay").hidden = false; return; }
   stopWake(); sndWake(); setMode("connecting"); wakeBtn.hidden = true; sleepBtn.hidden = false; youEl.textContent = "";
-  captionEl.textContent = ""; await bootLines(["Canal de voz", "Base condominial", "Banco Central", "Notícias"], 110); captionEl.textContent = "Conectando…";
-  ws = new WebSocket(WS_URL);
+  captionEl.textContent = "";
+  /* Pede ao servidor um acesso temporário (só para síndico logado e ativo) */
+  let acesso;
+  try{
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session){ endSession("Sessão expirada."); mostrarLogin("Sua sessão expirou. Entre novamente."); return; }
+    const [r] = await Promise.all([
+      fetch(FN_SESSAO, { method:"POST", headers:{ "Authorization":"Bearer " + session.access_token, "apikey": SUPABASE_ANON, "Content-Type":"application/json" }, body:"{}" }),
+      bootLines(["Credenciais", "Base condominial", "Banco Central", "Canal de voz"], 110)
+    ]);
+    acesso = await r.json().catch(() => ({}));
+    if (!r.ok || !acesso.signed_url) throw new Error(acesso.erro || ("Servidor respondeu " + r.status));
+  }catch(err){
+    hintEl.textContent = err.message || "Não foi possível liberar a conversa."; hintEl.classList.add("err");
+    endSession("Conversa não liberada: " + (err.message || "erro")); return;
+  }
+  if (acesso.perfil){ PERFIL = acesso.perfil; preencherCabecalho(PERFIL); }
+  captionEl.textContent = "Conectando…";
+  ws = new WebSocket(acesso.signed_url);
   ws.onopen = () => ws.send(JSON.stringify({
     type:"conversation_initiation_client_data",
-    dynamic_variables: { sindico_nome: PERFIL.sindico_nome, sindico_assinatura: PERFIL.sindico_assinatura, empresa: PERFIL.empresa, condominios: condominiosTexto }
+    dynamic_variables: acesso.dynamic_variables,
+    conversation_config_override: { agent: { prompt: { knowledge_base: acesso.knowledge_base || [] } } }
   }));
   ws.onmessage = ev => {
     let m; try{ m = JSON.parse(ev.data); }catch(_){ return; }
@@ -513,15 +549,61 @@ document.addEventListener("keydown", e => {
 });
 document.addEventListener("visibilitychange", () => { if (!document.hidden && mode === "standby") startWake(); });
 
-/* ======================= SENHA E PARTIDA ======================= */
-async function sha256(t){ const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2,"0")).join(""); }
-function unlocked(){ if (!SENHA_SHA256) return true; try{ return localStorage.getItem("sindics_ok") === SENHA_SHA256; }catch(_){ return false; } }
-$("lockForm").addEventListener("submit", async e => {
+/* ======================= LOGIN ======================= */
+const loginMsg = $("loginMsg");
+function msg(t, err){ loginMsg.textContent = t || ""; loginMsg.style.color = err ? "var(--danger)" : "var(--muted)"; }
+function mostrarLogin(t, err){
+  $("loginOverlay").hidden = false; $("newPwdForm").hidden = true; $("loginForm").hidden = false; $("forgotBtn").hidden = false;
+  msg(t, err); setTimeout(() => $("email").focus(), 80);
+}
+const ERROS = { "Invalid login credentials":"E-mail ou senha incorretos.", "Email not confirmed":"Confirme seu e-mail antes de entrar." };
+$("loginForm").addEventListener("submit", async e => {
   e.preventDefault();
-  const h = await sha256($("pwd").value);
-  if (h === SENHA_SHA256){ try{ localStorage.setItem("sindics_ok", h); }catch(_){} $("lockOverlay").hidden = true; start(); }
-  else { $("lockMsg").textContent = "Senha incorreta."; $("lockMsg").style.color = "var(--danger)"; $("pwd").value = ""; }
+  const email = $("email").value.trim(), password = $("pwd").value;
+  if (!email || !password){ msg("Preencha e-mail e senha.", true); return; }
+  $("loginBtn").disabled = true; msg("Entrando…");
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  $("loginBtn").disabled = false; $("pwd").value = "";
+  if (error){ msg(ERROS[error.message] || "Não foi possível entrar: " + error.message, true); return; }
+  await aposLogin();
 });
+$("forgotBtn").addEventListener("click", async () => {
+  const email = $("email").value.trim();
+  if (!email){ msg("Digite seu e-mail acima e clique de novo em Esqueci minha senha.", true); $("email").focus(); return; }
+  msg("Enviando…");
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: SITE_URL });
+  msg(error ? "Não foi possível enviar: " + error.message : "Se o e-mail estiver cadastrado, chegará um link para criar uma nova senha.", !!error);
+});
+$("newPwdForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const a = $("pwd1").value, b = $("pwd2").value;
+  if (a.length < 8){ msg("A senha precisa ter pelo menos 8 caracteres.", true); return; }
+  if (a !== b){ msg("As duas senhas não são iguais.", true); return; }
+  const { error } = await sb.auth.updateUser({ password: a });
+  if (error){ msg("Não foi possível salvar: " + error.message, true); return; }
+  $("pwd1").value = $("pwd2").value = "";
+  await aposLogin();
+});
+async function sair(){
+  if (inSession()) endSession("Saiu da conta.");
+  stopWake(); await sb.auth.signOut(); PERFIL = null;
+  try{ history.replaceState(null, "", location.pathname); }catch(_){}
+  mostrarLogin("Você saiu. Até logo!");
+}
+$("logoutBtn").addEventListener("click", sair);
+
+let iniciado = false;
+async function aposLogin(){
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user){ mostrarLogin(); return; }
+  const { data: p } = await sb.from("perfis").select("nome, assinatura, empresa, papel, ativo").eq("id", user.id).maybeSingle();
+  if (!p || !p.ativo){ await sb.auth.signOut(); mostrarLogin("Sua conta ainda não foi liberada pelo administrador.", true); return; }
+  const { data: cs } = await sb.from("condominios").select("nome, cidade, unidades").order("nome");
+  PERFIL = { ...p, condominios: cs || [] }; preencherCabecalho(PERFIL);
+  $("loginOverlay").hidden = true; msg("");
+  try{ history.replaceState(null, "", location.pathname); }catch(_){}
+  if (!iniciado){ iniciado = true; start(); }
+}
 async function start(){
   loadIndicators(); setInterval(loadIndicators, 30*60*1000);
   captionEl.textContent = "";
@@ -690,7 +772,21 @@ function initGL(){
 initGL();
 
 /* ======================= PARTIDA ======================= */
-if (unlocked()) start(); else { $("lockOverlay").hidden = false; setTimeout(() => $("pwd").focus(), 100); }
+(async function partida(){
+  if (!sb){ mostrarLogin("Não foi possível carregar o módulo de login. Verifique a internet e recarregue.", true); return; }
+  let recuperando = /type=recovery/.test(location.hash);
+  sb.auth.onAuthStateChange((evento) => {
+    if (evento === "PASSWORD_RECOVERY"){
+      recuperando = true;
+      $("loginOverlay").hidden = false; $("loginForm").hidden = true; $("forgotBtn").hidden = true; $("newPwdForm").hidden = false;
+      msg("Crie sua nova senha."); setTimeout(() => $("pwd1").focus(), 80);
+    }
+    if (evento === "SIGNED_OUT" && $("loginOverlay").hidden){ if (inSession()) endSession("Sessão encerrada."); mostrarLogin("Sua sessão terminou. Entre novamente."); }
+  });
+  const { data: { session } } = await sb.auth.getSession();
+  if (recuperando) return;
+  if (session) await aposLogin(); else mostrarLogin();
+})();
 </script>
 </body>
 </html>
