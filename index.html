@@ -149,11 +149,11 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
   <header>
     <div class="brand">
       <h1>SINDICS</h1>
-      <span>Assistente do Síndico · Elison Cardoso</span>
+      <span id="hdrSindico">Assistente do Síndico</span>
     </div>
     <div class="status">
-      <div><b>Condomínio</b><i>Fit Casa Alto do Ipiranga</i></div>
-      <div class="hide-sm"><b>Base</b><i>Convenção · Regulamento</i></div>
+      <div><b id="hdrCondLabel">Condomínio</b><i id="hdrCond">—</i></div>
+      <div class="hide-sm"><b>Empresa</b><i id="hdrEmpresa">—</i></div>
       <div class="hide-sm"><b>Sistemas</b><i><span class="dot" id="netDot"></span><span id="netTxt">Online</span></i></div>
       <div><b>Horário</b><i id="clock">--:--</i></div>
     </div>
@@ -221,8 +221,24 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "2.0.4";
+  window.SINDICS_V = "2.1.0";
 })();
+/* ======================= PERFIL DO SÍNDICO ======================= */
+/* Cada síndico tem o seu perfil. Na Fase 2 isto passa a vir do login. */
+const PERFIL = {
+  sindico_nome: "Elison",
+  sindico_assinatura: "Elison Cardoso — Síndico Profissional",
+  empresa: "Sindicância Ethics",
+  condominios: [
+    { nome: "Fit Casa Alto do Ipiranga", cidade: "São Paulo/SP", unidades: 370, documentos: "Convenção de Condomínio e Regulamento Interno" }
+  ]
+};
+const condominiosTexto = PERFIL.condominios.map(c => `- ${c.nome} (${c.cidade}, ${c.unidades} unidades): ${c.documentos}.`).join("\n");
+document.getElementById("hdrSindico").textContent = "Assistente do Síndico · " + PERFIL.sindico_assinatura.split("—")[0].trim();
+document.getElementById("hdrEmpresa").textContent = PERFIL.empresa;
+document.getElementById("hdrCondLabel").textContent = PERFIL.condominios.length > 1 ? "Condomínios" : "Condomínio";
+document.getElementById("hdrCond").textContent = PERFIL.condominios.length > 1 ? PERFIL.condominios.length + " cadastrados" : PERFIL.condominios[0].nome;
+
 /* ======================= CONFIGURAÇÃO ======================= */
 const AGENT_ID = "agent_6201m5wqfm4xet39s7vtbkh5axex";
 const WS_URL = "wss://api.elevenlabs.io/v1/convai/conversation?agent_id=" + AGENT_ID;
@@ -425,7 +441,10 @@ async function wake(){
   stopWake(); sndWake(); setMode("connecting"); wakeBtn.hidden = true; sleepBtn.hidden = false; youEl.textContent = "";
   captionEl.textContent = ""; await bootLines(["Canal de voz", "Base condominial", "Banco Central", "Notícias"], 110); captionEl.textContent = "Conectando…";
   ws = new WebSocket(WS_URL);
-  ws.onopen = () => ws.send(JSON.stringify({type:"conversation_initiation_client_data"}));
+  ws.onopen = () => ws.send(JSON.stringify({
+    type:"conversation_initiation_client_data",
+    dynamic_variables: { sindico_nome: PERFIL.sindico_nome, sindico_assinatura: PERFIL.sindico_assinatura, empresa: PERFIL.empresa, condominios: condominiosTexto }
+  }));
   ws.onmessage = ev => {
     let m; try{ m = JSON.parse(ev.data); }catch(_){ return; }
     switch(m.type){
@@ -451,7 +470,10 @@ async function wake(){
     }
   };
   ws.onerror = () => { hintEl.textContent = "Falha na conexão com o SINDICS. Confira a internet."; hintEl.classList.add("err"); };
-  ws.onclose = () => { if (inSession()) endSession("Conversa encerrada."); };
+  ws.onclose = ev => {
+    if (mode === "connecting"){ hintEl.textContent = "O SINDICS recusou a conexão (código " + ev.code + "). Use o endereço oficial: sindicosincero-cmd.github.io/sindics"; hintEl.classList.add("err"); }
+    if (inSession()) endSession("Conversa encerrada.");
+  };
 }
 function sleepAfterSpeech(){ const w = () => { if (outCtx && playHead > outCtx.currentTime){ setTimeout(w,300); return; } setTimeout(() => endSession("Encerrado a seu pedido."), 600); }; setTimeout(w, 400); }
 function endSession(note){
