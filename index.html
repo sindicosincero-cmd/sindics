@@ -128,7 +128,26 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
 .lform button{margin-top:12px;width:100%}
 button.link{border:0;background:none;padding:6px;font-family:var(--body);font-weight:400;letter-spacing:.02em;text-transform:none;font-size:13px;color:var(--muted);text-decoration:underline}
 button.link:hover{background:none;color:var(--fg)}
-#loginMsg{min-height:1.5em}
+#loginMsg{min-height:1.5em;max-width:44ch;line-height:1.5}
+button.google{display:flex;align-items:center;justify-content:center;gap:10px;width:min(320px,86vw);background:#fff;color:#1f1f1f;border-color:#fff;letter-spacing:.08em}
+button.google:hover{background:#e8eef7;color:#1f1f1f}
+.ou{font-size:11px!important;letter-spacing:.12em!important;text-transform:uppercase}
+#resumoDia .rs-t{margin:8px 0 4px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
+.rs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.rs li{font-size:12.5px;line-height:1.35;padding-left:12px;position:relative;overflow-wrap:anywhere}
+.rs li::before{content:"";position:absolute;left:0;top:.45em;width:6px;height:6px;border-radius:50%;background:var(--cyan)}
+.rs li.warn::before{background:var(--amber)} .rs li.crit::before{background:var(--danger)} .rs li.crit{color:#ffc3c9}
+.rs li.ok{color:var(--muted)} .rs li.ok::before{background:var(--ok)}
+.adm{border:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:6px}
+.adm-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.adm small{font-family:var(--mono);font-size:10.5px;color:var(--muted);overflow-wrap:anywhere}
+.pill{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border:1px solid}
+.pill.on{color:var(--ok);border-color:var(--ok)} .pill.off{color:var(--amber);border-color:var(--amber)}
+.adm-acoes button{padding:8px 12px;font-size:11px}
+.adm-cond{display:grid;grid-template-columns:1fr 90px 60px auto;gap:6px}
+.adm-cond input{min-width:0;background:transparent;border:1px solid var(--line-strong);color:var(--fg);padding:7px 8px;font-size:13px;font-family:var(--body)}
+.adm-cond button{padding:7px 10px;font-size:10.5px}
+@media (max-width:860px){ .adm-cond{grid-template-columns:1fr 1fr} }
 #tapOverlay{background:rgba(4,7,13,.4);backdrop-filter:none;cursor:pointer;justify-content:flex-end;padding-bottom:calc(22vh + env(safe-area-inset-bottom,0px))}
 #tapOverlay strong{animation:breathe 2.4s ease-in-out infinite}
 @keyframes breathe{50%{opacity:.45}}
@@ -178,6 +197,10 @@ button.link:hover{background:none;color:var(--fg)}
         <div class="ind"><span>Dólar</span><strong id="i-usd">—</strong><small id="d-usd">carregando…</small>
           <svg class="spark" id="sp-usd" viewBox="0 0 200 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
       </div>
+      <div class="holo" id="resumoDia" aria-live="polite">
+        <h3><span>Hoje</span><em>—</em></h3>
+        <p class="rs-t">Carregando vencimentos e agenda…</p>
+      </div>
     </section>
 
     <section class="center">
@@ -201,10 +224,16 @@ button.link:hover{background:none;color:var(--fg)}
     <button id="mute" type="button" aria-pressed="false">Silenciar mic</button>
     <button id="sfxBtn" type="button" aria-pressed="false">Som ambiente</button>
     <button id="logBtn" type="button">Registro</button>
+    <button id="admBtn" type="button" hidden>Síndicos</button>
     <button id="logoutBtn" type="button">Sair</button>
     <div class="hint" id="hint">Diga “SINDICS” para chamar · “pode descansar” para encerrar · barra de espaço também funciona</div>
   </footer>
 </div>
+
+<aside class="drawer" id="admDrawer" aria-label="Administração de síndicos">
+  <h2>Síndicos cadastrados <button id="closeAdm" type="button">Fechar</button></h2>
+  <div class="log" id="admLista"></div>
+</aside>
 
 <aside class="drawer" id="drawer" aria-label="Registro da sessão">
   <h2>Registro da sessão <button id="closeLog" type="button">Fechar</button></h2>
@@ -216,6 +245,11 @@ button.link:hover{background:none;color:var(--fg)}
 <div class="overlay login" id="loginOverlay" hidden>
   <strong>SINDICS</strong>
   <span id="loginSub">Assistente do Síndico · acesso restrito</span>
+  <button id="googleBtn" class="google" type="button">
+    <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+    Entrar com Google
+  </button>
+  <span class="ou">ou com e-mail e senha</span>
   <form id="loginForm" class="lform" novalidate>
     <label for="email">E-mail</label>
     <input id="email" type="email" autocomplete="username" required>
@@ -245,7 +279,7 @@ button.link:hover{background:none;color:var(--fg)}
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "3.0.1";
+  window.SINDICS_V = "3.1.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -492,10 +526,16 @@ async function wake(){
       case "agent_response": { const t = m.agent_response_event?.agent_response; if (t){ if (SHOW_CAPTION) typeCaption(t); addLog("a", t); } if (sleepAfterReply) sleepAfterSpeech(); break; }
       case "user_transcript": { const t = m.user_transcription_event?.user_transcript; if (t && t.trim()){ if (SHOW_CAPTION) youEl.textContent = t; addLog("u", t); setMode("thinking"); resetIdle(); if (SLEEP_RE.test(t)) sleepAfterReply = true; } break; }
       case "client_tool_call": {
-        const c = m.client_tool_call || {};
-        if (c.tool_name === "mostrar_na_tela"){ try{ showPanel(c.parameters || {}); }catch(_){} }
-        if (c.tool_call_id) ws.send(JSON.stringify({type:"client_tool_result", tool_call_id:c.tool_call_id, result:"Painel exibido na tela.", is_error:false}));
-        resetIdle(); break;
+        const c = m.client_tool_call || {}; const sock = ws;
+        resetIdle();
+        executarFerramenta(c.tool_name, c.parameters || {}).then(res => {
+          if (c.tool_call_id && sock && sock.readyState === 1)
+            sock.send(JSON.stringify({type:"client_tool_result", tool_call_id:c.tool_call_id, result: typeof res === "string" ? res : JSON.stringify(res), is_error:false}));
+        }).catch(err => {
+          if (c.tool_call_id && sock && sock.readyState === 1)
+            sock.send(JSON.stringify({type:"client_tool_result", tool_call_id:c.tool_call_id, result:"Erro: " + (err && err.message || err), is_error:true}));
+        });
+        break;
       }
       case "agent_tool_request": case "agent_tool_response": case "agent_tool_call": {
         const body = m[m.type] || m[m.type + "_event"] || {}; const name = body.tool_name || body.name;
@@ -591,17 +631,187 @@ async function sair(){
   mostrarLogin("Você saiu. Até logo!");
 }
 $("logoutBtn").addEventListener("click", sair);
+$("googleBtn").addEventListener("click", async () => {
+  msg("Abrindo o Google…");
+  const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: SITE_URL, queryParams: { prompt: "select_account" } } });
+  if (error) msg("Não foi possível entrar com Google: " + error.message, true);
+});
+$("admBtn").addEventListener("click", () => { $("admDrawer").classList.add("open"); carregarAdmin(); });
+$("closeAdm").addEventListener("click", () => $("admDrawer").classList.remove("open"));
+
+/* ======================= AGENDA E DOCUMENTOS (ferramentas de voz) ======================= */
+const TZ = "America/Sao_Paulo";
+const hojeISO = () => new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year:"numeric", month:"2-digit", day:"2-digit" }).format(new Date());
+const diasAte = d => Math.round((Date.parse(d + "T00:00:00Z") - Date.parse(hojeISO() + "T00:00:00Z")) / 86400000);
+const dataBR = d => d ? d.split("-").reverse().join("/") : "";
+const quando = ts => new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, weekday:"short", day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" }).format(new Date(ts));
+const norm = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+function acharCondominio(nome){
+  if (!nome) return null;
+  const n = norm(nome), cs = PERFIL?.condominios || [];
+  const c = cs.find(x => norm(x.nome) === n) || cs.find(x => norm(x.nome).includes(n) || n.includes(norm(x.nome)));
+  if (!c) throw new Error(`O condomínio "${nome}" não está cadastrado para este síndico. Condomínios disponíveis: ${cs.map(x => x.nome).join(", ")}.`);
+  return c;
+}
+const nomeCondPorId = id => (PERFIL?.condominios || []).find(c => c.id === id)?.nome || "";
+const exigeData = (v, campo) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(v || "")) throw new Error(`${campo} precisa estar no formato AAAA-MM-DD.`); return v; };
+const comFuso = v => /([+-]\d{2}:?\d{2}|Z)$/.test(v) ? v : v + "-03:00";
+
+async function executarFerramenta(nome, a){
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) throw new Error("Sessão expirada; o síndico precisa entrar de novo.");
+  switch (nome){
+    case "mostrar_na_tela": showPanel(a); return "Painel exibido na tela.";
+
+    case "agenda_criar": {
+      const cond = a.condominio ? acharCondominio(a.condominio) : null;
+      const ini = new Date(comFuso(a.inicio)); if (isNaN(ini)) throw new Error("Data e hora de início inválidas.");
+      const fim = new Date(ini.getTime() + (Number(a.duracao_minutos) || 60) * 60000);
+      const { data, error } = await sb.from("compromissos").insert({ titulo: a.titulo, inicio: ini.toISOString(), fim: fim.toISOString(), condominio_id: cond?.id || null, local: a.local || "", observacoes: a.observacoes || "" }).select("id").single();
+      if (error) throw error;
+      atualizarResumoTela();
+      return { ok: true, id: data.id, mensagem: `Compromisso marcado: ${a.titulo}, ${quando(ini)}${cond ? ", " + cond.nome : ""}.` };
+    }
+    case "agenda_listar": {
+      const di = exigeData(a.data_inicio, "data_inicio"), df = exigeData(a.data_fim, "data_fim");
+      let q = sb.from("compromissos").select("id, titulo, inicio, fim, condominio_id, local, status")
+        .eq("sindico_id", user.id).gte("inicio", new Date(di + "T00:00:00-03:00").toISOString()).lte("inicio", new Date(df + "T23:59:59-03:00").toISOString()).order("inicio");
+      if (!a.incluir_cancelados) q = q.neq("status", "cancelado");
+      const { data, error } = await q; if (error) throw error;
+      return { total: data.length, compromissos: data.map(c => ({ id: c.id, titulo: c.titulo, quando: quando(c.inicio), condominio: nomeCondPorId(c.condominio_id), local: c.local, status: c.status })) };
+    }
+    case "agenda_alterar": {
+      let patch;
+      if (a.acao === "cancelar") patch = { status: "cancelado" };
+      else if (a.acao === "concluir") patch = { status: "concluido" };
+      else if (a.acao === "remarcar"){
+        if (!a.novo_inicio) throw new Error("Para remarcar, informe novo_inicio.");
+        const ini = new Date(comFuso(a.novo_inicio)); if (isNaN(ini)) throw new Error("Nova data inválida.");
+        patch = { inicio: ini.toISOString(), fim: new Date(ini.getTime() + (Number(a.duracao_minutos) || 60) * 60000).toISOString(), status: "agendado" };
+      } else throw new Error("Ação desconhecida.");
+      const { data, error } = await sb.from("compromissos").update(patch).eq("id", a.id).eq("sindico_id", user.id).select("titulo, inicio").maybeSingle();
+      if (error) throw error; if (!data) throw new Error("Compromisso não encontrado.");
+      atualizarResumoTela();
+      return { ok: true, mensagem: `${data.titulo}: ${a.acao === "remarcar" ? "remarcado para " + quando(data.inicio) : a.acao === "cancelar" ? "cancelado" : "concluído"}.` };
+    }
+    case "documento_cadastrar": {
+      const cond = acharCondominio(a.condominio);
+      const venc = exigeData(a.data_vencimento, "data_vencimento");
+      const ren = a.data_renovacao ? exigeData(a.data_renovacao, "data_renovacao") : null;
+      const dias = Math.max(0, Math.min(365, Number(a.alertar_dias_antes) || 30));
+      const { data, error } = await sb.from("documentos_legais").insert({ documento: a.documento, condominio_id: cond.id, data_renovacao: ren, data_vencimento: venc, alertar_dias_antes: dias, observacoes: a.observacoes || "" }).select("id").single();
+      if (error) throw error;
+      atualizarResumoTela();
+      const f = diasAte(venc);
+      return { ok: true, id: data.id, mensagem: `${a.documento} do ${cond.nome} cadastrado. Vence em ${dataBR(venc)} (${f < 0 ? "já vencido" : "faltam " + f + " dias"}). Aviso ${dias} dias antes.` };
+    }
+    case "documentos_listar": {
+      let q = sb.from("documentos_legais").select("id, documento, condominio_id, data_renovacao, data_vencimento, alertar_dias_antes, observacoes").eq("sindico_id", user.id).order("data_vencimento");
+      if (a.condominio) q = q.eq("condominio_id", acharCondominio(a.condominio).id);
+      const { data, error } = await q; if (error) throw error;
+      let itens = data.map(d => ({ id: d.id, documento: d.documento, condominio: nomeCondPorId(d.condominio_id), renovado_em: dataBR(d.data_renovacao), vence_em: dataBR(d.data_vencimento), dias_para_vencer: diasAte(d.data_vencimento), aviso_dias_antes: d.alertar_dias_antes, em_alerta: diasAte(d.data_vencimento) <= d.alertar_dias_antes, observacoes: d.observacoes }));
+      if (a.somente_em_alerta) itens = itens.filter(i => i.em_alerta);
+      return { total: itens.length, documentos: itens };
+    }
+    case "documento_alterar": {
+      if (a.acao === "excluir"){
+        const { data, error } = await sb.from("documentos_legais").delete().eq("id", a.id).eq("sindico_id", user.id).select("documento").maybeSingle();
+        if (error) throw error; if (!data) throw new Error("Documento não encontrado.");
+        atualizarResumoTela(); return { ok: true, mensagem: `${data.documento} excluído.` };
+      }
+      const patch = {};
+      if (a.acao === "renovar"){
+        patch.data_vencimento = exigeData(a.nova_data_vencimento, "nova_data_vencimento");
+        patch.data_renovacao = a.nova_data_renovacao ? exigeData(a.nova_data_renovacao, "nova_data_renovacao") : hojeISO();
+        patch.ultimo_alerta_email = null;
+      }
+      if (a.alertar_dias_antes != null) patch.alertar_dias_antes = Math.max(0, Math.min(365, Number(a.alertar_dias_antes)));
+      if (!Object.keys(patch).length) throw new Error("Nada para alterar.");
+      const { data, error } = await sb.from("documentos_legais").update(patch).eq("id", a.id).eq("sindico_id", user.id).select("documento, data_vencimento, alertar_dias_antes").maybeSingle();
+      if (error) throw error; if (!data) throw new Error("Documento não encontrado.");
+      atualizarResumoTela();
+      return { ok: true, mensagem: `${data.documento}: vence em ${dataBR(data.data_vencimento)}, aviso ${data.alertar_dias_antes} dias antes.` };
+    }
+    default: return "Ferramenta não reconhecida pela tela.";
+  }
+}
+
+/* Painel fixo: vencimentos e agenda de hoje */
+async function atualizarResumoTela(){
+  if (!PERFIL) return;
+  const { data: { user } } = await sb.auth.getUser(); if (!user) return;
+  const hoje = hojeISO();
+  const [{ data: docs }, { data: comps }] = await Promise.all([
+    sb.from("documentos_legais").select("documento, condominio_id, data_vencimento, alertar_dias_antes").eq("sindico_id", user.id).order("data_vencimento"),
+    sb.from("compromissos").select("titulo, inicio, condominio_id").eq("sindico_id", user.id).eq("status", "agendado")
+      .gte("inicio", new Date(hoje + "T00:00:00-03:00").toISOString()).lte("inicio", new Date(hoje + "T23:59:59-03:00").toISOString()).order("inicio")
+  ]);
+  const alerta = (docs || []).map(d => ({ ...d, f: diasAte(d.data_vencimento) })).filter(d => d.f <= d.alertar_dias_antes);
+  const box = $("resumoDia"); box.innerHTML = "";
+  const h = document.createElement("h3"); h.innerHTML = "<span>Hoje</span><em></em>"; h.lastChild.textContent = new Date().toLocaleDateString("pt-BR", { day:"2-digit", month:"short" });
+  box.append(h);
+  const sec = (titulo, linhas, vazio) => {
+    const t = document.createElement("p"); t.className = "rs-t"; t.textContent = titulo; box.append(t);
+    const ul = document.createElement("ul"); ul.className = "rs";
+    if (!linhas.length){ const li = document.createElement("li"); li.className = "ok"; li.textContent = vazio; ul.append(li); }
+    linhas.forEach(([txt, cls]) => { const li = document.createElement("li"); li.textContent = txt; if (cls) li.className = cls; ul.append(li); });
+    box.append(ul);
+  };
+  sec("Documentos em alerta", alerta.slice(0, 5).map(d => [`${d.documento}${d.condominio_id ? " · " + nomeCondPorId(d.condominio_id) : ""} — ${d.f < 0 ? "vencido há " + (-d.f) + "d" : d.f === 0 ? "vence hoje" : "vence em " + d.f + "d"}`, d.f < 0 ? "crit" : d.f <= 15 ? "warn" : ""]), "Nenhum documento no prazo de alerta.");
+  sec("Agenda de hoje", (comps || []).map(c => [`${new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, hour:"2-digit", minute:"2-digit" }).format(new Date(c.inicio))} · ${c.titulo}`, ""]), "Nada marcado para hoje.");
+}
+
+/* ======================= ADMINISTRAÇÃO (aprovar síndicos) ======================= */
+async function carregarAdmin(){
+  const lista = $("admLista"); lista.innerHTML = "<p class='rs-t'>Carregando…</p>";
+  const [{ data: ps, error }, { data: cs }] = await Promise.all([
+    sb.from("perfis").select("id, nome, email, ativo, papel, plano, limite_sessoes_mes, criado_em").order("criado_em", { ascending:false }),
+    sb.from("condominios").select("id, sindico_id, nome")
+  ]);
+  if (error){ lista.textContent = "Erro: " + error.message; return; }
+  lista.innerHTML = "";
+  ps.forEach(p => {
+    const card = document.createElement("div"); card.className = "adm";
+    const conds = (cs || []).filter(c => c.sindico_id === p.id).map(c => c.nome);
+    const topo = document.createElement("div"); topo.className = "adm-top";
+    const n = document.createElement("strong"); n.textContent = p.nome || "(sem nome)";
+    const st = document.createElement("span"); st.className = "pill " + (p.ativo ? "on" : "off"); st.textContent = p.papel === "admin" ? "admin" : p.ativo ? "ativo" : "aguardando";
+    topo.append(n, st);
+    const em = document.createElement("small"); em.textContent = `${p.email} · desde ${new Date(p.criado_em).toLocaleDateString("pt-BR")}`;
+    const cd = document.createElement("small"); cd.textContent = conds.length ? "Condomínios: " + conds.join(", ") : "Nenhum condomínio cadastrado";
+    card.append(topo, em, cd);
+    if (p.papel !== "admin"){
+      const acoes = document.createElement("div"); acoes.className = "adm-acoes";
+      const b = document.createElement("button"); b.type = "button"; b.textContent = p.ativo ? "Bloquear" : "Aprovar"; if (!p.ativo) b.className = "primary";
+      b.onclick = async () => { b.disabled = true; const { error } = await sb.from("perfis").update({ ativo: !p.ativo }).eq("id", p.id); if (error) alertaAdm(error.message); carregarAdmin(); };
+      const f = document.createElement("form"); f.className = "adm-cond";
+      f.innerHTML = `<input placeholder="Novo condomínio" aria-label="Nome do condomínio" required><input placeholder="Cidade/UF" aria-label="Cidade" ><input placeholder="Unid." aria-label="Unidades" inputmode="numeric"><button type="submit">Adicionar</button>`;
+      f.onsubmit = async e => { e.preventDefault(); const [nm, cid, un] = [...f.querySelectorAll("input")].map(i => i.value.trim());
+        const { error } = await sb.from("condominios").insert({ sindico_id: p.id, nome: nm, cidade: cid, unidades: un ? Number(un) : null, documentos: "sem documentos cadastrados" });
+        if (error) alertaAdm(error.message); carregarAdmin(); };
+      acoes.append(b); card.append(acoes, f);
+    }
+    lista.append(card);
+  });
+}
+function alertaAdm(t){ const p = document.createElement("p"); p.className = "rs-t"; p.style.color = "var(--danger)"; p.textContent = "Erro: " + t; $("admLista").prepend(p); }
 
 let iniciado = false;
 async function aposLogin(){
   const { data: { user } } = await sb.auth.getUser();
   if (!user){ mostrarLogin(); return; }
   const { data: p } = await sb.from("perfis").select("nome, assinatura, empresa, papel, ativo").eq("id", user.id).maybeSingle();
-  if (!p || !p.ativo){ await sb.auth.signOut(); mostrarLogin("Sua conta ainda não foi liberada pelo administrador.", true); return; }
-  const { data: cs } = await sb.from("condominios").select("nome, cidade, unidades").order("nome");
+  if (!p || !p.ativo){
+    await sb.auth.signOut();
+    mostrarLogin("Cadastro recebido! Seu acesso está aguardando a aprovação do administrador. Você será avisado quando for liberado.", true);
+    return;
+  }
+  const { data: cs } = await sb.from("condominios").select("id, nome, cidade, unidades").eq("sindico_id", user.id).order("nome");
   PERFIL = { ...p, condominios: cs || [] }; preencherCabecalho(PERFIL);
+  $("admBtn").hidden = p.papel !== "admin";
   $("loginOverlay").hidden = true; msg("");
   try{ history.replaceState(null, "", location.pathname); }catch(_){}
+  atualizarResumoTela();
   if (!iniciado){ iniciado = true; start(); }
 }
 async function start(){
