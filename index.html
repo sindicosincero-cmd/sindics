@@ -245,7 +245,7 @@ button.link:hover{background:none;color:var(--fg)}
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "3.0.0";
+  window.SINDICS_V = "3.0.1";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -385,7 +385,7 @@ async function loadIndicators(){
   sgs(432,1).then(d => set("selic", br(d[0].valor) + "%", "ao ano · " + d[0].data)).catch(()=>fail("selic"));
   sgs(13522,1).then(d => set("ipca", br(d[0].valor) + "%", "ref. " + mes(d[0].data))).catch(()=>fail("ipca"));
   sgs(189,12).then(d => { const acc = (d.reduce((a,x) => a*(1+Number(x.valor)/100), 1) - 1) * 100; set("igpm", br(acc) + "%", "até " + mes(d[d.length-1].data)); }).catch(()=>fail("igpm"));
-  sgs(1,30).then(d => {
+  sgs(1,20).then(d => {
     const v = d.map(x => Number(x.valor)); set("usd", "R$ " + br(v[v.length-1], 4).replace(/0+$/,"").replace(/,$/,""), "venda · " + d[d.length-1].data);
     const mn = Math.min(...v), mx = Math.max(...v), w = 200, h = 30, sx = w/(v.length-1);
     const pts = v.map((y,i) => `${(i*sx).toFixed(1)},${(h-3-(y-mn)/(mx-mn||1)*(h-6)).toFixed(1)}`);
