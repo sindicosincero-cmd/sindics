@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SINDICS</title>
+<meta name="theme-color" content="#04070d">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/motion@11.11.13/dist/motion.js"></script>
+<style>
+/* Layout: HUD de tela única. Esquerda = indicadores ao vivo; centro = núcleo 3D + legenda; direita = painéis holográficos. Visual escuro de propósito. */
+:root{
+  --bg:#04070d;
+  --panel:rgba(10,20,36,.62);
+  --line:rgba(63,208,255,.18);
+  --line-strong:rgba(63,208,255,.45);
+  --fg:#d9e6f5;
+  --muted:#6b84a3;
+  --cyan:#3fd0ff;
+  --amber:#ffb547;
+  --violet:#8f7bff;
+  --ok:#5be3a8;
+  --danger:#ff5d6c;
+  --display:"Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
+  --accent:var(--cyan);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;overflow:hidden}
+#gl{position:fixed;inset:0;width:100%;height:100%;display:block}
+.scan{position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px);mix-blend-mode:overlay}
+.vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%, transparent 40%, rgba(0,0,0,.65) 100%)}
+
+.app{
+  position:relative;height:100%;display:grid;grid-template-rows:auto 1fr auto;
+  padding-left:max(18px, env(safe-area-inset-left, 0px));
+  padding-right:max(18px, env(safe-area-inset-right, 0px));
+  padding-block:max(14px, env(safe-area-inset-top,0px)) max(14px, env(safe-area-inset-bottom,0px));
+}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.brand h1{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.34em;margin:0}
+.brand span{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;margin-top:3px}
+.status{display:flex;gap:22px;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.12em;flex-wrap:wrap}
+.status div{display:flex;flex-direction:column;gap:3px}
+.status b{color:var(--muted);font-weight:400}
+.status i{font-style:normal;color:var(--fg)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:6px;box-shadow:0 0 8px var(--ok)}
+
+main{min-height:0;display:grid;grid-template-columns:240px 1fr minmax(0,340px);gap:22px;align-items:center}
+.col{min-height:0;max-height:100%;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.center{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:4vh;pointer-events:none}
+.state{font-family:var(--display);font-weight:600;letter-spacing:.45em;font-size:12.5px;text-transform:uppercase;color:var(--accent);transition:color .5s}
+.tool{min-height:1.4em;margin-top:6px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--violet);text-transform:uppercase}
+.caption{min-height:3.2em;max-width:60ch;text-align:center;margin-top:8px;font-size:clamp(17px,2vw,21px);line-height:1.45;text-wrap:balance;text-shadow:0 0 18px rgba(0,0,0,.9)}
+.caption .cursor{display:inline-block;width:.5ch;height:1em;background:var(--accent);margin-left:2px;vertical-align:-.15em;animation:blink 1s steps(2) infinite}
+@keyframes blink{to{opacity:0}}
+.you{min-height:1.5em;margin-top:6px;font-family:var(--mono);font-size:12.5px;color:var(--amber);text-align:center;max-width:70ch}
+.you:not(:empty)::before{content:"VOCÊ › ";color:var(--muted)}
+
+.holo{
+  position:relative;border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(8px);
+  padding:12px 14px 14px;clip-path:polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+}
+.holo::before{content:"";position:absolute;left:0;top:0;width:28px;height:2px;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+.holo h3{margin:0 0 8px;font-family:var(--mono);font-weight:500;font-size:10.5px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;display:flex;justify-content:space-between;gap:8px}
+.holo h3 em{font-style:normal;color:var(--accent)}
+
+.ind{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:2px 10px;padding:7px 0;border-top:1px solid var(--line)}
+.ind:first-of-type{border-top:0}
+.ind span{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
+.ind strong{font-family:var(--display);font-weight:600;font-size:20px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.ind small{grid-column:1/-1;font-family:var(--mono);font-size:10px;color:var(--muted)}
+.spark{grid-column:1/-1;width:100%;height:30px;margin-top:4px}
+
+#panels{gap:12px}
+.card .t{font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:.06em;margin:0 0 8px;color:var(--fg)}
+.card ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.card li{font-size:13.5px;line-height:1.4;padding-left:14px;position:relative;overflow-wrap:anywhere}
+.card li::before{content:"";position:absolute;left:0;top:.55em;width:6px;height:1px;background:var(--accent)}
+.card.calculo li{font-family:var(--mono);font-size:12.5px}
+.card .res{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line-strong);font-family:var(--display);font-weight:700;font-size:24px;color:var(--accent);font-variant-numeric:tabular-nums;text-shadow:0 0 14px rgba(63,208,255,.4)}
+.card .src{margin-top:8px;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em}
+.empty-panel{font-size:12.5px;color:var(--muted);line-height:1.5}
+
+footer{display:flex;justify-content:center;align-items:center;gap:10px;padding-top:8px;flex-wrap:wrap}
+button{
+  font-family:var(--display);font-weight:600;letter-spacing:.22em;text-transform:uppercase;font-size:12px;
+  padding:11px 18px;border:1px solid var(--line-strong);background:rgba(4,7,13,.6);color:var(--muted);cursor:pointer;border-radius:0;
+  transition:background .2s,color .2s,border-color .2s;
+}
+button:hover{background:rgba(63,208,255,.12);color:var(--fg)}
+button.primary{border-color:var(--cyan);color:var(--cyan)}
+button.primary:hover{background:var(--cyan);color:var(--bg)}
+button[aria-pressed="true"]{color:var(--amber);border-color:var(--amber)}
+button:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
+.hint{width:100%;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.06em}
+.hint.err{color:var(--danger)}
+
+/* drawer do registro */
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(380px,92vw);background:rgba(6,11,20,.96);border-left:1px solid var(--line);z-index:15;display:flex;flex-direction:column;transform:translateX(105%);transition:transform .45s cubic-bezier(.2,.9,.2,1);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.drawer.open{transform:none}
+.drawer h2{margin:0;padding:16px;border-bottom:1px solid var(--line);font-family:var(--mono);font-weight:500;font-size:11px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;display:flex;justify-content:space-between;align-items:center}
+.drawer h2 button{padding:6px 10px;font-size:10px}
+.log{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:1.45}
+.log p{margin:0;overflow-wrap:anywhere}
+.log small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;margin-bottom:2px}
+.log .a small{color:var(--cyan)} .log .u small{color:var(--amber)} .log .s{color:var(--muted);font-size:12px} .log .s small{color:var(--muted)}
+
+/* boot e bloqueio */
+.overlay{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:rgba(4,7,13,.9);backdrop-filter:blur(6px);text-align:center;
+  padding-left:max(18px, env(safe-area-inset-left, 0px));padding-right:max(18px, env(safe-area-inset-right, 0px))}
+.overlay strong{font-family:var(--display);font-size:clamp(22px,4vw,34px);letter-spacing:.32em;color:var(--cyan)}
+.overlay span{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.06em;max-width:46ch;line-height:1.6}
+.overlay input{font-family:var(--mono);font-size:16px;letter-spacing:.2em;text-align:center;padding:12px 14px;width:min(280px,80vw);background:transparent;border:1px solid var(--line-strong);color:var(--fg)}
+.overlay input:focus{outline:2px solid var(--cyan);outline-offset:2px}
+#bootlog{position:fixed;left:max(18px, env(safe-area-inset-left, 0px));bottom:calc(90px + env(safe-area-inset-bottom,0px));z-index:12;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--cyan);line-height:1.8;pointer-events:none;text-transform:uppercase}
+#bootlog .ok{color:var(--ok)} #bootlog .warn{color:var(--amber)}
+
+@media (max-width:1100px){ main{grid-template-columns:200px 1fr minmax(0,300px)} }
+@media (max-width:860px){
+  main{grid-template-columns:1fr;grid-template-rows:1fr auto;align-items:end}
+  #indCol{display:none}
+  #panels{position:fixed;left:max(14px, env(safe-area-inset-left, 0px));right:max(14px, env(safe-area-inset-right, 0px));top:calc(78px + env(safe-area-inset-top,0px));max-height:38vh;z-index:5}
+  #panels .empty-panel{display:none}
+  #panels .holo:not(:first-child){display:none}
+  .status .hide-sm{display:none}
+  .center{padding-bottom:2vh}
+}
+@media (prefers-reduced-motion:reduce){ .caption .cursor{animation:none} .drawer{transition:none} }
+</style>
+</head>
+<body>
+<canvas id="gl" aria-hidden="true"></canvas>
+<div class="vignette"></div>
+<div class="scan"></div>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <h1>SINDICS</h1>
+      <span>Assistente do Síndico · Elison Cardoso</span>
+    </div>
+    <div class="status">
+      <div><b>Condomínio</b><i>Fit Casa Alto do Ipiranga</i></div>
+      <div class="hide-sm"><b>Base</b><i>Convenção · Regulamento</i></div>
+      <div class="hide-sm"><b>Sistemas</b><i><span class="dot" id="netDot"></span><span id="netTxt">Online</span></i></div>
+      <div><b>Horário</b><i id="clock">--:--</i></div>
+    </div>
+  </header>
+
+  <main>
+    <section class="col" id="indCol" aria-label="Indicadores econômicos">
+      <div class="holo" id="indPanel">
+        <h3>Indicadores <em>BCB</em></h3>
+        <div class="ind"><span>Selic meta</span><strong id="i-selic">—</strong><small id="d-selic">carregando…</small></div>
+        <div class="ind"><span>IPCA 12m</span><strong id="i-ipca">—</strong><small id="d-ipca">carregando…</small></div>
+        <div class="ind"><span>IGP-M 12m</span><strong id="i-igpm">—</strong><small id="d-igpm">carregando…</small></div>
+        <div class="ind"><span>Dólar</span><strong id="i-usd">—</strong><small id="d-usd">carregando…</small>
+          <svg class="spark" id="sp-usd" viewBox="0 0 200 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+      </div>
+    </section>
+
+    <section class="center">
+      <div class="state" id="state">Inicializando</div>
+      <div class="tool" id="tool"></div>
+      <div class="caption" id="caption" aria-live="polite"></div>
+      <div class="you" id="you"></div>
+    </section>
+
+    <section class="col" id="panels" aria-label="Painéis do SINDICS">
+      <div class="holo empty-panel" id="emptyPanel">
+        <h3>Painel <em>aguardando</em></h3>
+        Quando o SINDICS trouxer notícias, contas ou artigos do condomínio, os detalhes aparecem aqui.
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <button id="wakeBtn" class="primary" type="button">Chamar agora</button>
+    <button id="sleepBtn" type="button" hidden>Descansar</button>
+    <button id="mute" type="button" aria-pressed="false">Silenciar mic</button>
+    <button id="sfxBtn" type="button" aria-pressed="false">Som ambiente</button>
+    <button id="logBtn" type="button">Registro</button>
+    <div class="hint" id="hint">Diga “SINDICS” para chamar · “pode descansar” para encerrar · barra de espaço também funciona</div>
+  </footer>
+</div>
+
+<aside class="drawer" id="drawer" aria-label="Registro da sessão">
+  <h2>Registro da sessão <button id="closeLog" type="button">Fechar</button></h2>
+  <div class="log" id="log"></div>
+</aside>
+
+<div id="bootlog" aria-hidden="true"></div>
+
+<div class="overlay" id="lockOverlay" hidden>
+  <strong>SINDICS</strong>
+  <span>Acesso restrito. Digite a senha para liberar.</span>
+  <form id="lockForm"><input id="pwd" type="password" autocomplete="current-password" aria-label="Senha"></form>
+  <span id="lockMsg"></span>
+</div>
+
+<div class="overlay" id="tapOverlay" hidden>
+  <strong>ATIVAR SINDICS</strong>
+  <span id="tapMsg">O navegador exige um toque na primeira vez para liberar som e microfone. Toque em qualquer lugar. Depois disso ele fica em prontidão sozinho.</span>
+</div>
+
+<script>
+/* ======================= CONFIGURAÇÃO ======================= */
+const AGENT_ID = "agent_6201m5wqfm4xet39s7vtbkh5axex";
+const WS_URL = "wss://api.elevenlabs.io/v1/convai/conversation?agent_id=" + AGENT_ID;
+/* SHA-256 da senha da tela. Vazio = sem senha. */
+const SENHA_SHA256 = "";
+const WAKE_RE = /\b(s[ií]ndi(cs|ks|x|ques|quis|cos?)|sin\s?dics|syndics?)\b/i;
+const SLEEP_RE = /(pode descansar|pode desligar|encerrar (a )?conversa|desligar sindics|at[eé] mais,? sindics|obrigado,? sindics)/i;
+const IDLE_MS = 30000;
+const TOOL_LABEL = { indicadores_economicos:"Consultando Banco Central", noticias_brasil:"Buscando notícias", knowledge_base:"Consultando documentos do condomínio", knowledge_base_rag:"Consultando documentos do condomínio", mostrar_na_tela:"Montando painel" };
+
+const $ = id => document.getElementById(id);
+const stateEl=$("state"), toolEl=$("tool"), captionEl=$("caption"), youEl=$("you"), logEl=$("log"), hintEl=$("hint");
+const wakeBtn=$("wakeBtn"), sleepBtn=$("sleepBtn"), muteBtn=$("mute"), sfxBtn=$("sfxBtn");
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const isLite = matchMedia("(max-width: 860px)").matches || (navigator.hardwareConcurrency||8) <= 4;
+
+/* ======================= MOTION (com reserva nativa) ======================= */
+const M = window.Motion;
+function anim(el, kf, opts={}){
+  if (reduce) { const last = {}; for (const k in kf){ const v = kf[k]; last[k] = Array.isArray(v) ? v[v.length-1] : v; } Object.assign(el.style, last); return Promise.resolve(); }
+  if (M && M.animate){ try{ return M.animate(el, kf, opts).finished || Promise.resolve(); }catch(_){} }
+  const frames = {}; for (const k in kf){ frames[k] = Array.isArray(kf[k]) ? kf[k] : [getComputedStyle(el)[k], kf[k]]; }
+  return el.animate(frames, {duration:(opts.duration||.5)*1000, delay:(opts.delay||0)*1000, easing:"cubic-bezier(.2,.9,.2,1)", fill:"forwards"}).finished;
+}
+const springIn = {type:"spring", stiffness:220, damping:22, duration:.7};
+
+/* ======================= RELÓGIO E REDE ======================= */
+function tick(){ $("clock").textContent = new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}); }
+tick(); setInterval(tick, 10000);
+function net(){ const on = navigator.onLine; $("netDot").style.background = on ? "var(--ok)" : "var(--danger)"; $("netDot").style.boxShadow = on ? "0 0 8px var(--ok)" : "0 0 8px var(--danger)"; $("netTxt").textContent = on ? "Online" : "Sem internet"; }
+addEventListener("online", net); addEventListener("offline", net); net();
+
+/* ======================= SONS DE INTERFACE ======================= */
+let sfxCtx = null, hum = null;
+function sfx(){ if (!sfxCtx) sfxCtx = new AudioContext(); return sfxCtx; }
+function tone(freqs, dur=.35, gain=.06, type="sine", delay=0){
+  try{
+    const c = sfx(); const t = c.currentTime + delay;
+    freqs.forEach((f,i) => {
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = type; o.frequency.setValueAtTime(f, t + i*.07);
+      g.gain.setValueAtTime(0, t + i*.07); g.gain.linearRampToValueAtTime(gain, t + i*.07 + .02);
+      g.gain.exponentialRampToValueAtTime(.0001, t + i*.07 + dur);
+      o.connect(g); g.connect(c.destination); o.start(t + i*.07); o.stop(t + i*.07 + dur + .05);
+    });
+  }catch(_){}
+}
+const sndWake = () => tone([523, 784, 1047], .45, .05, "sine");
+const sndSleep = () => tone([880, 587, 392], .45, .045, "sine");
+const sndPanel = () => tone([1568], .12, .025, "triangle");
+const sndBoot = () => { tone([110], 1.2, .05, "sawtooth"); tone([440, 660, 880, 1320], .3, .03, "square", .4); };
+function toggleHum(){
+  const c = sfx();
+  if (hum){ hum.g.gain.linearRampToValueAtTime(0, c.currentTime + .6); const h = hum; setTimeout(()=>{ try{ h.o1.stop(); h.o2.stop(); }catch(_){} }, 800); hum = null; sfxBtn.setAttribute("aria-pressed","false"); return; }
+  const o1 = c.createOscillator(), o2 = c.createOscillator(), g = c.createGain(), f = c.createBiquadFilter();
+  o1.frequency.value = 55; o2.frequency.value = 82.5; o2.detune.value = 6; f.type = "lowpass"; f.frequency.value = 300;
+  g.gain.value = 0; o1.connect(f); o2.connect(f); f.connect(g); g.connect(c.destination); o1.start(); o2.start();
+  g.gain.linearRampToValueAtTime(.025, c.currentTime + 1.2); hum = {o1,o2,g}; sfxBtn.setAttribute("aria-pressed","true");
+}
+
+/* ======================= ESTADO ======================= */
+let mode = "boot";
+const MODE_LABEL = {boot:"Inicializando", standby:"Em prontidão", connecting:"Conectando", listening:"Ouvindo", thinking:"Processando", speaking:"Falando"};
+const MODE_HEX = {boot:"#3fd0ff", standby:"#5a7fa8", connecting:"#8f7bff", listening:"#ffb547", thinking:"#8f7bff", speaking:"#3fd0ff"};
+function setMode(m){
+  if (mode === m) return; mode = m;
+  stateEl.textContent = MODE_LABEL[m];
+  document.documentElement.style.setProperty("--accent", MODE_HEX[m]);
+}
+const inSession = () => ["connecting","listening","thinking","speaking"].includes(mode);
+
+/* ======================= LEGENDA, REGISTRO, PAINÉIS ======================= */
+let typeTimer = null;
+function typeCaption(text){
+  clearInterval(typeTimer); let i = 0; captionEl.textContent = "";
+  const span = document.createElement("span"), cur = document.createElement("span"); cur.className = "cursor";
+  captionEl.append(span, cur);
+  const speed = Math.max(16, Math.min(42, 3400 / Math.max(text.length,1)));
+  typeTimer = setInterval(() => { i++; span.textContent = text.slice(0,i); if (i >= text.length){ clearInterval(typeTimer); setTimeout(()=>cur.remove(), 1500); } }, speed);
+}
+function addLog(who, text){
+  const p = document.createElement("p"); p.className = who; const s = document.createElement("small");
+  s.textContent = who === "a" ? "SINDICS" : who === "u" ? "VOCÊ" : new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  p.append(s, document.createTextNode(text)); logEl.append(p); logEl.scrollTop = logEl.scrollHeight;
+}
+const TYPE_TAG = {noticias:"Notícias", calculo:"Cálculo", regra:"Regra", indicador:"Indicador", checklist:"Checklist", texto:"Info"};
+function showPanel(p){
+  const box = $("panels"); const empty = $("emptyPanel"); if (empty) empty.remove();
+  const tipo = TYPE_TAG[p.tipo] ? p.tipo : "texto";
+  const card = document.createElement("div"); card.className = "holo card " + tipo;
+  const h = document.createElement("h3"); h.innerHTML = `<span></span><em></em>`; h.firstChild.textContent = TYPE_TAG[tipo]; h.lastChild.textContent = new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  const t = document.createElement("p"); t.className = "t"; t.textContent = p.titulo || "";
+  const ul = document.createElement("ul");
+  (Array.isArray(p.itens) ? p.itens : []).slice(0,6).forEach(x => { const li = document.createElement("li"); li.textContent = String(x); ul.append(li); });
+  card.append(h, t, ul);
+  if (p.resultado){ const r = document.createElement("div"); r.className = "res"; r.textContent = p.resultado; card.append(r); }
+  if (p.fonte){ const f = document.createElement("div"); f.className = "src"; f.textContent = "Fonte: " + p.fonte; card.append(f); }
+  box.prepend(card);
+  while (box.children.length > 3) box.lastChild.remove();
+  sndPanel(); core.pulse = 1;
+  card.style.opacity = 0;
+  anim(card, {opacity:[0,1], transform:["translateX(40px) scale(.96)","translateX(0) scale(1)"], filter:["blur(6px)","blur(0px)"]}, springIn);
+  const lis = [...ul.children];
+  lis.forEach((li,i) => { li.style.opacity = 0; anim(li, {opacity:[0,1], transform:["translateX(12px)","translateX(0)"]}, {duration:.35, delay:.15 + i*.08}); });
+  addLog("s", `Painel: ${p.titulo || TYPE_TAG[tipo]}`);
+}
+function showTool(name){
+  const label = TOOL_LABEL[name] || "Processando";
+  toolEl.textContent = "◆ " + label + "…";
+  anim(toolEl, {opacity:[0,1]}, {duration:.25});
+  clearTimeout(showTool.t); showTool.t = setTimeout(() => { toolEl.textContent = ""; }, 6000);
+}
+
+/* ======================= INDICADORES AO VIVO (Banco Central) ======================= */
+async function sgs(code, n){
+  const r = await fetch(`https://api.bcb.gov.br/dados/serie/bcdata.sgs.${code}/dados/ultimos/${n}?formato=json`);
+  if (!r.ok) throw new Error(r.status); return r.json();
+}
+const br = (v, d=2) => Number(v).toLocaleString("pt-BR",{minimumFractionDigits:d, maximumFractionDigits:d});
+const mes = s => { const [, m, a] = s.split("/"); return ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"][+m-1] + "/" + a; };
+async function loadIndicators(){
+  const set = (id, val, date) => { $("i-"+id).textContent = val; $("d-"+id).textContent = date; };
+  const fail = id => set(id, "—", "indisponível agora");
+  sgs(432,1).then(d => set("selic", br(d[0].valor) + "%", "ao ano · " + d[0].data)).catch(()=>fail("selic"));
+  sgs(13522,1).then(d => set("ipca", br(d[0].valor) + "%", "ref. " + mes(d[0].data))).catch(()=>fail("ipca"));
+  sgs(189,12).then(d => { const acc = (d.reduce((a,x) => a*(1+Number(x.valor)/100), 1) - 1) * 100; set("igpm", br(acc) + "%", "até " + mes(d[d.length-1].data)); }).catch(()=>fail("igpm"));
+  sgs(1,30).then(d => {
+    const v = d.map(x => Number(x.valor)); set("usd", "R$ " + br(v[v.length-1], 4).replace(/0+$/,"").replace(/,$/,""), "venda · " + d[d.length-1].data);
+    const mn = Math.min(...v), mx = Math.max(...v), w = 200, h = 30, sx = w/(v.length-1);
+    const pts = v.map((y,i) => `${(i*sx).toFixed(1)},${(h-3-(y-mn)/(mx-mn||1)*(h-6)).toFixed(1)}`);
+    const last = pts[pts.length-1].split(",");
+    $("sp-usd").innerHTML = `<polyline points="0,${h} ${pts.join(" ")} ${w},${h}" fill="rgba(63,208,255,.10)" stroke="none"/><polyline points="${pts.join(" ")}" fill="none" stroke="#3fd0ff" stroke-width="1.4"/><circle cx="${last[0]}" cy="${last[1]}" r="2.6" fill="#3fd0ff"/>`;
+  }).catch(()=>fail("usd"));
+}
+
+/* ======================= ÁUDIO ======================= */
+let micStream=null, inCtx=null, processor=null, micAnalyser=null;
+let outCtx=null, outAnalyser=null, outRate=16000, playHead=0, playing=[];
+let ws=null, muted=false, idleTimer=null, sleepAfterReply=false;
+function b64FromInt16(a){ const b = new Uint8Array(a.buffer); let s = ""; for (let i=0;i<b.length;i+=0x8000) s += String.fromCharCode.apply(null, b.subarray(i,i+0x8000)); return btoa(s); }
+function int16FromB64(s){ const bin = atob(s); const b = new Uint8Array(bin.length); for (let i=0;i<bin.length;i++) b[i] = bin.charCodeAt(i); return new Int16Array(b.buffer, 0, b.length>>1); }
+async function initAudio(){
+  if (!outCtx){ outCtx = new AudioContext(); outAnalyser = outCtx.createAnalyser(); outAnalyser.fftSize = 512; outAnalyser.smoothingTimeConstant = .6; outAnalyser.connect(outCtx.destination); }
+  if (!micStream){
+    micStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true, autoGainControl:true, channelCount:1}});
+    inCtx = new AudioContext({sampleRate:16000});
+    const src = inCtx.createMediaStreamSource(micStream);
+    micAnalyser = inCtx.createAnalyser(); micAnalyser.fftSize = 512;
+    processor = inCtx.createScriptProcessor(2048,1,1);
+    processor.onaudioprocess = e => {
+      if (!ws || ws.readyState !== 1 || muted) return;
+      const f = e.inputBuffer.getChannelData(0), o = new Int16Array(f.length);
+      for (let i=0;i<f.length;i++){ const s = Math.max(-1, Math.min(1, f[i])); o[i] = s<0 ? s*0x8000 : s*0x7fff; }
+      ws.send(JSON.stringify({user_audio_chunk: b64FromInt16(o)}));
+    };
+    const sink = inCtx.createGain(); sink.gain.value = 0;
+    src.connect(micAnalyser); src.connect(processor); processor.connect(sink); sink.connect(inCtx.destination);
+  }
+  await outCtx.resume(); await inCtx.resume(); sfx().resume();
+  return outCtx.state === "running";
+}
+function playChunk(b64){
+  const pcm = int16FromB64(b64); if (!pcm.length) return;
+  const buf = outCtx.createBuffer(1, pcm.length, outRate), ch = buf.getChannelData(0);
+  for (let i=0;i<pcm.length;i++) ch[i] = pcm[i]/0x8000;
+  const src = outCtx.createBufferSource(); src.buffer = buf; src.connect(outAnalyser);
+  playHead = Math.max(playHead, outCtx.currentTime + .04); src.start(playHead); playHead += buf.duration;
+  playing.push(src); src.onended = () => { playing = playing.filter(s => s !== src); };
+}
+function stopPlayback(){ playing.forEach(s => { try{ s.stop(); }catch(_){} }); playing = []; if (outCtx) playHead = outCtx.currentTime; }
+
+/* ======================= PALAVRA DE ATIVAÇÃO ======================= */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec=null, recOn=false;
+function startWake(){
+  if (!SR || recOn || inSession()) return;
+  rec = new SR(); rec.lang = "pt-BR"; rec.continuous = true; rec.interimResults = true;
+  rec.onresult = e => { for (let i=e.resultIndex;i<e.results.length;i++){ if (WAKE_RE.test(e.results[i][0].transcript)){ wake(); return; } } };
+  rec.onend = () => { recOn = false; if (mode === "standby") setTimeout(startWake, 300); };
+  rec.onerror = e => { if (e.error === "not-allowed" || e.error === "service-not-allowed") hintEl.textContent = "O navegador bloqueou a escuta da palavra “SINDICS”. Use Chamar agora ou a barra de espaço."; };
+  try{ rec.start(); recOn = true; }catch(_){}
+}
+function stopWake(){ if (rec){ rec.onend = null; try{ rec.abort(); }catch(_){} } recOn = false; }
+
+/* ======================= SESSÃO ======================= */
+function standby(note){
+  setMode("standby"); wakeBtn.hidden = false; sleepBtn.hidden = true; youEl.textContent = ""; toolEl.textContent = "";
+  captionEl.textContent = SR ? "Em prontidão. Diga “SINDICS” quando precisar." : "Em prontidão. Toque em Chamar agora quando precisar.";
+  if (note) addLog("s", note); startWake();
+}
+function resetIdle(){
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => { if (outCtx && playHead > outCtx.currentTime){ resetIdle(); return; } endSession("Sem conversa por 30 segundos. Voltei à prontidão."); }, IDLE_MS);
+}
+async function wake(){
+  if (inSession()) return;
+  stopWake(); sndWake(); setMode("connecting"); wakeBtn.hidden = true; sleepBtn.hidden = false; youEl.textContent = "";
+  captionEl.textContent = ""; await bootLines(["Canal de voz", "Base condominial", "Banco Central", "Notícias"], 110); captionEl.textContent = "Conectando…";
+  ws = new WebSocket(WS_URL);
+  ws.onopen = () => ws.send(JSON.stringify({type:"conversation_initiation_client_data"}));
+  ws.onmessage = ev => {
+    let m; try{ m = JSON.parse(ev.data); }catch(_){ return; }
+    switch(m.type){
+      case "conversation_initiation_metadata": {
+        const f = m.conversation_initiation_metadata_event?.agent_output_audio_format || "pcm_16000"; const r = /pcm_(\d+)/.exec(f); outRate = r ? +r[1] : 16000;
+        setMode("listening"); hintEl.classList.remove("err"); hintEl.textContent = "Conectado · pode falar e interromper quando quiser · diga “pode descansar” para encerrar"; resetIdle(); break;
+      }
+      case "audio": { const a = m.audio_event?.audio_base_64; if (a){ playChunk(a); resetIdle(); } break; }
+      case "agent_response": { const t = m.agent_response_event?.agent_response; if (t){ typeCaption(t); addLog("a", t); } if (sleepAfterReply) sleepAfterSpeech(); break; }
+      case "user_transcript": { const t = m.user_transcription_event?.user_transcript; if (t && t.trim()){ youEl.textContent = t; addLog("u", t); setMode("thinking"); resetIdle(); if (SLEEP_RE.test(t)) sleepAfterReply = true; } break; }
+      case "client_tool_call": {
+        const c = m.client_tool_call || {};
+        if (c.tool_name === "mostrar_na_tela"){ try{ showPanel(c.parameters || {}); }catch(_){} }
+        if (c.tool_call_id) ws.send(JSON.stringify({type:"client_tool_result", tool_call_id:c.tool_call_id, result:"Painel exibido na tela.", is_error:false}));
+        resetIdle(); break;
+      }
+      case "agent_tool_request": case "agent_tool_response": case "agent_tool_call": {
+        const body = m[m.type] || m[m.type + "_event"] || {}; const name = body.tool_name || body.name;
+        if (m.type !== "agent_tool_response" && name && name !== "mostrar_na_tela") showTool(name); resetIdle(); break;
+      }
+      case "interruption": stopPlayback(); break;
+      case "ping": { const id = m.ping_event?.event_id, d = m.ping_event?.ping_ms || 0; setTimeout(() => { if (ws && ws.readyState === 1) ws.send(JSON.stringify({type:"pong", event_id:id})); }, d); break; }
+    }
+  };
+  ws.onerror = () => { hintEl.textContent = "Falha na conexão com o SINDICS. Confira a internet."; hintEl.classList.add("err"); };
+  ws.onclose = () => { if (inSession()) endSession("Conversa encerrada."); };
+}
+function sleepAfterSpeech(){ const w = () => { if (outCtx && playHead > outCtx.currentTime){ setTimeout(w,300); return; } setTimeout(() => endSession("Encerrado a seu pedido."), 600); }; setTimeout(w, 400); }
+function endSession(note){
+  clearTimeout(idleTimer); sleepAfterReply = false; const s = ws; ws = null;
+  try{ s && s.readyState <= 1 && s.close(); }catch(_){}
+  stopPlayback(); if (inSession()) sndSleep(); standby(note);
+}
+
+/* ======================= SEQUÊNCIA DE INICIALIZAÇÃO ======================= */
+const bootEl = $("bootlog");
+async function bootLines(lines, gap=160){
+  bootEl.innerHTML = "";
+  for (const l of lines){
+    const d = document.createElement("div"); d.innerHTML = `<span></span> <span class="ok">OK</span>`; d.firstChild.textContent = "▸ " + l + " " + ".".repeat(Math.max(2, 22 - l.length));
+    bootEl.append(d); anim(d, {opacity:[0,1], transform:["translateX(-10px)","translateX(0)"]}, {duration:.2});
+    await new Promise(r => setTimeout(r, reduce ? 0 : gap));
+  }
+  setTimeout(() => anim(bootEl, {opacity:[1,0]}, {duration:.6}).then(() => { bootEl.innerHTML = ""; bootEl.style.opacity = 1; }), 900);
+}
+async function bootSequence(){
+  core.boot = 0; sndBoot();
+  await bootLines(["Núcleo SINDICS", "Reconhecimento de voz", "Base condominial · Fit Casa", "Indicadores · Banco Central", "Módulo de notícias", "Síntese de voz"]);
+  ["indCol","panels"].forEach((id,i) => { const el = $(id); el.style.opacity = 0; anim(el, {opacity:[0,1], transform:[`translateX(${i ? 30 : -30}px)`, "translateX(0)"]}, {...springIn, delay:.1 + i*.12}); });
+}
+
+/* ======================= BOTÕES ======================= */
+wakeBtn.addEventListener("click", wake);
+sleepBtn.addEventListener("click", () => endSession("Encerrado pelo botão."));
+muteBtn.addEventListener("click", () => { muted = !muted; muteBtn.textContent = muted ? "Ativar mic" : "Silenciar mic"; muteBtn.setAttribute("aria-pressed", String(muted)); });
+sfxBtn.addEventListener("click", toggleHum);
+$("logBtn").addEventListener("click", () => $("drawer").classList.add("open"));
+$("closeLog").addEventListener("click", () => $("drawer").classList.remove("open"));
+document.addEventListener("keydown", e => {
+  if (e.target.closest("button,input")) return;
+  if (e.code === "Space"){ e.preventDefault(); inSession() ? endSession("Encerrado pelo teclado.") : (mode === "standby" && wake()); }
+  if (e.key === "Escape") $("drawer").classList.remove("open");
+});
+document.addEventListener("visibilitychange", () => { if (!document.hidden && mode === "standby") startWake(); });
+
+/* ======================= SENHA E PARTIDA ======================= */
+async function sha256(t){ const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2,"0")).join(""); }
+function unlocked(){ if (!SENHA_SHA256) return true; try{ return localStorage.getItem("sindics_ok") === SENHA_SHA256; }catch(_){ return false; } }
+$("lockForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const h = await sha256($("pwd").value);
+  if (h === SENHA_SHA256){ try{ localStorage.setItem("sindics_ok", h); }catch(_){} $("lockOverlay").hidden = true; start(); }
+  else { $("lockMsg").textContent = "Senha incorreta."; $("lockMsg").style.color = "var(--danger)"; $("pwd").value = ""; }
+});
+async function start(){
+  loadIndicators(); setInterval(loadIndicators, 30*60*1000);
+  try{ const ok = await initAudio(); if (!ok){ $("tapOverlay").hidden = false; return; } $("tapOverlay").hidden = true; await bootSequence(); standby("SINDICS em prontidão."); }
+  catch(_){ $("tapOverlay").hidden = false; $("tapMsg").textContent = "Não consegui acessar o microfone. Libere o microfone no cadeado da barra de endereço e toque aqui."; }
+}
+$("tapOverlay").addEventListener("click", async () => {
+  try{ const ok = await initAudio(); if (ok){ $("tapOverlay").hidden = true; await bootSequence(); standby("SINDICS em prontidão."); } }
+  catch(_){ $("tapMsg").textContent = "Não consegui acessar o microfone. Libere o microfone no cadeado da barra de endereço e toque aqui."; }
+});
+
+/* ======================= NÚCLEO 3D ======================= */
+const core = { level:0, gather:0, pulse:0, boot:1, color:new (window.THREE ? THREE.Color : Object)("#3fd0ff") };
+const bins = new Uint8Array(256);
+function readLevel(an){ if (!an) return 0; an.getByteFrequencyData(bins); let s = 0; for (let i=2;i<70;i++) s += bins[i]; return s/(68*255); }
+
+function initGL(){
+  if (!window.THREE){ hintEl.textContent = "Não foi possível carregar o núcleo 3D. Verifique a internet."; return; }
+  const canvas = $("gl");
+  let renderer;
+  try{ renderer = new THREE.WebGLRenderer({canvas, antialias:!isLite, alpha:false, powerPreference:"high-performance"}); }
+  catch(_){ hintEl.textContent = "Este navegador não suporta o núcleo 3D."; return; }
+  renderer.setPixelRatio(Math.min(devicePixelRatio, isLite ? 1.25 : 2));
+  renderer.setClearColor(0x04070d, 1);
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(42, 1, .1, 100); camera.position.set(0, 0, 9);
+  const group = new THREE.Group(); scene.add(group);
+
+  const NOISE = `
+  vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;} vec4 mod289(vec4 x){return x-floor(x*(1.0/289.0))*289.0;}
+  vec4 permute(vec4 x){return mod289(((x*34.0)+1.0)*x);} vec4 taylorInvSqrt(vec4 r){return 1.79284291400159-0.85373472095314*r;}
+  float snoise(vec3 v){const vec2 C=vec2(1.0/6.0,1.0/3.0);const vec4 D=vec4(0.0,0.5,1.0,2.0);
+  vec3 i=floor(v+dot(v,C.yyy));vec3 x0=v-i+dot(i,C.xxx);vec3 g=step(x0.yzx,x0.xyz);vec3 l=1.0-g;vec3 i1=min(g.xyz,l.zxy);vec3 i2=max(g.xyz,l.zxy);
+  vec3 x1=x0-i1+C.xxx;vec3 x2=x0-i2+C.yyy;vec3 x3=x0-D.yyy;i=mod289(i);
+  vec4 p=permute(permute(permute(i.z+vec4(0.0,i1.z,i2.z,1.0))+i.y+vec4(0.0,i1.y,i2.y,1.0))+i.x+vec4(0.0,i1.x,i2.x,1.0));
+  float n_=0.142857142857;vec3 ns=n_*D.wyz-D.xzx;vec4 j=p-49.0*floor(p*ns.z*ns.z);vec4 x_=floor(j*ns.z);vec4 y_=floor(j-7.0*x_);
+  vec4 x=x_*ns.x+ns.yyyy;vec4 y=y_*ns.x+ns.yyyy;vec4 h=1.0-abs(x)-abs(y);vec4 b0=vec4(x.xy,y.xy);vec4 b1=vec4(x.zw,y.zw);
+  vec4 s0=floor(b0)*2.0+1.0;vec4 s1=floor(b1)*2.0+1.0;vec4 sh=-step(h,vec4(0.0));vec4 a0=b0.xzyw+s0.xzyw*sh.xxyy;vec4 a1=b1.xzyw+s1.xzyw*sh.zzww;
+  vec3 p0=vec3(a0.xy,h.x);vec3 p1=vec3(a0.zw,h.y);vec3 p2=vec3(a1.xy,h.z);vec3 p3=vec3(a1.zw,h.w);
+  vec4 norm=taylorInvSqrt(vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3)));p0*=norm.x;p1*=norm.y;p2*=norm.z;p3*=norm.w;
+  vec4 m=max(0.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0);m=m*m;
+  return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));}`;
+
+  /* esfera de plasma */
+  const uni = { uTime:{value:0}, uLevel:{value:0}, uColor:{value:new THREE.Color("#3fd0ff")}, uBoot:{value:0} };
+  const plasma = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(1.35, isLite ? 32 : 64),
+    new THREE.ShaderMaterial({ uniforms:uni, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false,
+      vertexShader: NOISE + `
+        uniform float uTime; uniform float uLevel; uniform float uBoot; varying vec3 vN; varying vec3 vV; varying float vD;
+        void main(){ float n = snoise(normal*1.6 + uTime*0.35) * (0.10 + uLevel*0.55) + snoise(normal*4.0 - uTime*0.8) * (0.03 + uLevel*0.18);
+          vec3 p = position * uBoot + normal * n; vD = n; vec4 mv = modelViewMatrix * vec4(p,1.0); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }`,
+      fragmentShader: `
+        uniform vec3 uColor; uniform float uLevel; varying vec3 vN; varying vec3 vV; varying float vD;
+        void main(){ float f = pow(1.0 - abs(dot(vN, vV)), 2.2); float core = pow(abs(dot(vN, vV)), 6.0);
+          vec3 c = uColor * (f*1.4 + vD*1.2 + 0.08) + vec3(1.0)*core*(0.12 + uLevel*0.5);
+          gl_FragColor = vec4(c, clamp(f*0.95 + core*0.25 + 0.05, 0.0, 1.0)); }`
+    })
+  );
+  group.add(plasma);
+
+  /* brilho */
+  const glowTex = (() => { const c = document.createElement("canvas"); c.width = c.height = 256; const g = c.getContext("2d"); const r = g.createRadialGradient(128,128,0,128,128,128);
+    r.addColorStop(0,"rgba(255,255,255,1)"); r.addColorStop(.2,"rgba(255,255,255,.55)"); r.addColorStop(.5,"rgba(255,255,255,.12)"); r.addColorStop(1,"rgba(255,255,255,0)"); g.fillStyle = r; g.fillRect(0,0,256,256); return new THREE.CanvasTexture(c); })();
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex, color:0x3fd0ff, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, opacity:.55}));
+  glow.scale.set(7,7,1); scene.add(glow);
+  const heart = new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex, color:0xffffff, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, opacity:.9}));
+  heart.scale.set(1.6,1.6,1); scene.add(heart);
+
+  /* partículas orbitais */
+  const N = isLite ? 700 : 1800;
+  const pos = new Float32Array(N*3), seed = new Float32Array(N*3);
+  for (let i=0;i<N;i++){ const th = Math.acos(2*Math.random()-1), ph = Math.random()*Math.PI*2, r = 1.9 + Math.pow(Math.random(),2)*1.6; seed[i*3]=th; seed[i*3+1]=ph; seed[i*3+2]=r; }
+  const pGeo = new THREE.BufferGeometry(); pGeo.setAttribute("position", new THREE.BufferAttribute(pos,3));
+  const pMat = new THREE.PointsMaterial({color:0x3fd0ff, size: isLite ? .045 : .035, map:glowTex, transparent:true, opacity:.85, blending:THREE.AdditiveBlending, depthWrite:false});
+  const points = new THREE.Points(pGeo, pMat); group.add(points);
+
+  /* anéis HUD segmentados */
+  function ringSeg(r, seg, gapFrac, tiltX, tiltY, opacity){
+    const v = []; const step = Math.PI*2/seg, res = 12;
+    for (let k=0;k<seg;k++){ const a0 = k*step, a1 = a0 + step*(1-gapFrac);
+      for (let j=0;j<res;j++){ const t0 = a0+(a1-a0)*j/res, t1 = a0+(a1-a0)*(j+1)/res; v.push(Math.cos(t0)*r, Math.sin(t0)*r, 0, Math.cos(t1)*r, Math.sin(t1)*r, 0); } }
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(v,3));
+    const m = new THREE.LineSegments(g, new THREE.LineBasicMaterial({color:0x3fd0ff, transparent:true, opacity, blending:THREE.AdditiveBlending, depthWrite:false}));
+    m.rotation.x = tiltX; m.rotation.y = tiltY; return m;
+  }
+  const rings = [
+    {m:ringSeg(2.55, 3, .3, 1.25, .2, .85), s:.35},
+    {m:ringSeg(2.85, 64, .55, 1.35, -.15, .45), s:-.12},
+    {m:ringSeg(3.25, 8, .45, 1.2, .35, .55), s:.2},
+    {m:ringSeg(3.7, 120, .7, 1.5, 0, .3), s:-.05},
+  ];
+  rings.forEach(r => group.add(r.m));
+
+  /* anel de frequência (espectro da voz) */
+  const FB = 128, fPos = new Float32Array(FB*2*3);
+  const fGeo = new THREE.BufferGeometry(); fGeo.setAttribute("position", new THREE.BufferAttribute(fPos,3));
+  const fLines = new THREE.LineSegments(fGeo, new THREE.LineBasicMaterial({color:0x3fd0ff, transparent:true, opacity:.9, blending:THREE.AdditiveBlending, depthWrite:false}));
+  scene.add(fLines);
+
+  function resize(){
+    const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w/h;
+    camera.position.z = w < 860 ? 11.5 : 9; camera.position.y = w < 860 ? -.6 : -.35; camera.updateProjectionMatrix();
+  }
+  addEventListener("resize", resize); resize();
+
+  let last = performance.now(), mx = 0, my = 0;
+  addEventListener("pointermove", e => { mx = (e.clientX/innerWidth - .5); my = (e.clientY/innerHeight - .5); });
+  const target = new THREE.Color();
+
+  function frame(now){
+    const dt = Math.min(.05, (now - last)/1000); last = now; const t = now/1000;
+    const outL = readLevel(outAnalyser), inL = readLevel(micAnalyser);
+    const speakingNow = outCtx && playHead > outCtx.currentTime + .02;
+    if (["listening","thinking","speaking"].includes(mode)){ if (speakingNow) setMode("speaking"); else if (mode === "speaking") setMode("listening"); }
+    const want = mode === "speaking" ? outL*2.4 : mode === "listening" ? inL*2.8 : (mode === "thinking" || mode === "connecting") ? .22 + .1*Math.sin(t*7) : mode === "standby" ? .03 + inL*.5 : .05;
+    core.level += (Math.min(1,want) - core.level) * .16;
+    core.gather += (((mode === "thinking" || mode === "connecting") ? 1 : 0) - core.gather) * .05;
+    core.pulse *= .93; core.boot += (1 - core.boot) * .035;
+    const L = core.level + core.pulse*.35;
+
+    target.set(MODE_HEX[mode]); uni.uColor.value.lerp(target, .05);
+    const col = uni.uColor.value;
+    uni.uTime.value = t; uni.uLevel.value = L; uni.uBoot.value = core.boot;
+    glow.material.color.copy(col); glow.material.opacity = .35 + L*.5; glow.scale.setScalar((5.5 + L*3) * core.boot);
+    heart.material.opacity = .55 + L*.45; heart.scale.setScalar((1.1 + L*1.4) * core.boot);
+    pMat.color.copy(col); fLines.material.color.copy(col);
+    rings.forEach(r => r.m.material.color.copy(col));
+
+    const sp = reduce ? 0 : 1, spin = (mode === "standby" ? .45 : 1) * sp;
+    plasma.rotation.y += dt*.15*spin; plasma.rotation.x += dt*.05*spin;
+    rings.forEach((r,i) => { r.m.rotation.z += dt * r.s * (1 + L*3) * spin; r.m.scale.setScalar(core.boot * (1 + L*.06*(i%2 ? 1 : -1))); });
+
+    for (let i=0;i<N;i++){
+      const th = seed[i*3], ph = seed[i*3+1] + t*(.12 + (i%7)*.015)*spin, r0 = seed[i*3+2];
+      const r = (r0 * (1 - core.gather*.45) + L*.6*Math.sin(t*6 + i)) * core.boot;
+      pos[i*3] = r*Math.sin(th)*Math.cos(ph); pos[i*3+1] = r*Math.cos(th)*.92; pos[i*3+2] = r*Math.sin(th)*Math.sin(ph);
+    }
+    pGeo.attributes.position.needsUpdate = true;
+
+    const an = mode === "speaking" ? outAnalyser : micAnalyser; if (an) an.getByteFrequencyData(bins);
+    const live = inSession() ? 1 : .2;
+    for (let k=0;k<FB;k++){
+      const v = an ? bins[2 + (k % 64)]/255 : 0, a = k/FB*Math.PI*2 + t*.08*spin;
+      const r1 = 2.05*core.boot, r2 = r1 + .06 + v*.9*live + Math.sin(t*2+k)*.015;
+      fPos.set([Math.cos(a)*r1, Math.sin(a)*r1, 0, Math.cos(a)*r2, Math.sin(a)*r2, 0], k*6);
+    }
+    fGeo.attributes.position.needsUpdate = true;
+
+    group.rotation.y += ((mx*.35) - group.rotation.y) * .04; group.rotation.x += ((my*.25) - group.rotation.x) * .04;
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+initGL();
+
+/* ======================= PARTIDA ======================= */
+if (unlocked()) start(); else { $("lockOverlay").hidden = false; setTimeout(() => $("pwd").focus(), 100); }
+</script>
+</body>
+</html>
