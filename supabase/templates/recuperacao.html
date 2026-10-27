@@ -1,0 +1,19 @@
+<!-- Supabase → Authentication → Emails → "Reset password". Assunto: SINDICS — acesso e senha -->
+<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#0f1c2b;line-height:1.5">
+  <h2 style="margin:0 0 4px;letter-spacing:.12em">SINDICS</h2>
+  <p style="margin:0 0 20px;color:#4f6f94;font-size:13px">Inteligência Condominial</p>
+  {{ if .Data.senha_temporaria }}
+  <p>Olá{{ if .Data.nome }}, {{ .Data.nome }}{{ end }}! Aqui está o seu acesso ao SINDICS:</p>
+  <table style="border-collapse:collapse;margin:12px 0;font-size:15px">
+    <tr><td style="padding:6px 12px 6px 0;color:#4f6f94">Endereço</td><td style="padding:6px 0"><a href="https://sindics.com.br/app/">sindics.com.br/app</a></td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#4f6f94">E-mail</td><td style="padding:6px 0">{{ .Email }}</td></tr>
+    <tr><td style="padding:6px 12px 6px 0;color:#4f6f94">Senha temporária</td><td style="padding:6px 0;font-family:Consolas,monospace;font-size:18px;font-weight:bold;letter-spacing:.06em">{{ .Data.senha_temporaria }}</td></tr>
+  </table>
+  <p>Ao entrar, crie a sua senha pessoal. <strong>A senha temporária vale por 72 horas</strong> e substitui qualquer senha temporária anterior.</p>
+  <p>Ou entre direto por aqui:</p>
+  {{ else }}
+  <p>Recebemos um pedido para criar ou trocar a sua senha do SINDICS. Clique no botão abaixo:</p>
+  {{ end }}
+  <p style="margin:20px 0"><a href="{{ .ConfirmationURL }}" style="background:#0477ab;color:#fff;padding:12px 22px;border-radius:999px;text-decoration:none;font-weight:bold">{{ if .Data.senha_temporaria }}Entrar no SINDICS{{ else }}Criar nova senha{{ end }}</a></p>
+  <p style="font-size:12px;color:#6b84a3">Se você não pediu isso, ignore esta mensagem: sua senha atual continua valendo.</p>
+</div>

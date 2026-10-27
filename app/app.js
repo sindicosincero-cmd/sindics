@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "4.1.1";
+  window.SINDICS_V = "4.2.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -509,13 +509,31 @@ $("forgotBtn").addEventListener("click", async () => {
   const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: SITE_URL });
   msg(error ? "Não foi possível enviar: " + error.message : "Se o e-mail estiver cadastrado, chegará um link para criar uma nova senha.", !!error);
 });
+/* Convite com senha temporária: no primeiro acesso a pessoa cria a própria senha antes de usar o sistema.
+   A senha temporária é apagada do cadastro assim que ela entra e vale no máximo 72 horas. */
+const META_TEMP_LIMPA = { trocar_senha: false, senha_temporaria: null, senha_temp_expira: null, senha_temp_expirada: null };
+async function exigirTrocaSenha(user){
+  const m = user.user_metadata || {};
+  if (!m.trocar_senha) return false;
+  if (m.senha_temp_expirada || (m.senha_temp_expira && Date.parse(m.senha_temp_expira) < Date.now())){
+    await sb.auth.signOut();
+    mostrarLogin("Sua senha temporária expirou. Peça ao síndico para reenviar o acesso em Minha equipe.", true);
+    return true;
+  }
+  if (m.senha_temporaria) await sb.auth.updateUser({ data: { senha_temporaria: null } }).catch(() => {});
+  $("perfilOverlay").hidden = true;
+  $("loginOverlay").hidden = false; $("loginForm").hidden = true; $("forgotBtn").hidden = true; $("newPwdForm").hidden = false;
+  msg("Bem-vindo ao SINDICS! Por segurança, crie agora a sua senha pessoal. A senha temporária deixa de valer.");
+  setTimeout(() => $("pwd1").focus(), 80);
+  return true;
+}
 $("newPwdForm").addEventListener("submit", async e => {
   e.preventDefault();
   const a = $("pwd1").value, b = $("pwd2").value;
   if (a.length < 8){ msg("A senha precisa ter pelo menos 8 caracteres.", true); return; }
   if (a !== b){ msg("As duas senhas não são iguais.", true); return; }
-  const { error } = await sb.auth.updateUser({ password: a });
-  if (error){ msg("Não foi possível salvar: " + error.message, true); return; }
+  const { error } = await sb.auth.updateUser({ password: a, data: META_TEMP_LIMPA });
+  if (error){ msg(/different|same/i.test(error.message) ? "Escolha uma senha diferente da temporária." : "Não foi possível salvar: " + error.message, true); return; }
   $("pwd1").value = $("pwd2").value = "";
   await aposLogin();
 });
@@ -1867,10 +1885,25 @@ function caixasCondominios(alvo, marcados = []){
   });
   if (!(PERFIL?.condominios || []).length){ const v = document.createElement("small"); v.textContent = "Cadastre um condomínio antes de convidar gestores."; alvo.append(v); }
 }
+/* Senha temporária do convite: mostrada uma única vez para o síndico repassar (WhatsApp ou pessoalmente). */
+function caixaSenhaTemp(depoisDe, senha, horas){
+  depoisDe.parentElement.querySelectorAll(".eq-senha").forEach(x => x.remove());
+  if (!senha) return;
+  const box = document.createElement("div"); box.className = "eq-senha";
+  const t = document.createElement("small"); t.textContent = `Senha temporária (vale ${horas || 72} horas; o gestor cria a própria senha no primeiro acesso):`;
+  const c = document.createElement("code"); c.textContent = senha;
+  const b = document.createElement("button"); b.type = "button"; b.textContent = "Copiar acesso";
+  b.onclick = async () => {
+    const texto = `Seu acesso ao SINDICS\nEndereço: ${SITE_URL}\nSenha temporária: ${senha}\n(Use o seu e-mail de convite. No primeiro acesso, crie a sua senha pessoal.)`;
+    try{ await navigator.clipboard.writeText(texto); b.textContent = "Copiado ✓"; }catch(_){ b.textContent = "Selecione e copie"; }
+  };
+  const d = document.createElement("small"); d.textContent = "Ela também vai no e-mail do convite. Por segurança, não fica guardada aqui: ao fechar, ela some.";
+  box.append(t, c, b, d); depoisDe.after(box);
+}
 const marcadosEm = el => [...el.querySelectorAll("input:checked")].map(i => i.value);
 async function abrirEquipe(){
   if (souGestor()) return;
-  abrirGaveta("equipeDrawer"); eqMsg(""); caixasCondominios($("eqConds"));
+  abrirGaveta("equipeDrawer"); eqMsg(""); caixaSenhaTemp($("eqMsg"), ""); caixasCondominios($("eqConds"));
   await listarEquipe();
 }
 async function listarEquipe(){
@@ -1895,7 +1928,7 @@ async function listarEquipe(){
       st.textContent = error ? "Erro: " + error.message : "Condomínios atualizados ✓"; st.style.color = error ? "var(--danger)" : "var(--ok)";
     };
     const bR = document.createElement("button"); bR.type = "button"; bR.textContent = "Reenviar acesso";
-    bR.onclick = async () => { bR.disabled = true; try{ const j = await chamarEquipe({ acao: "reenviar", id: g.id }); st.textContent = j.mensagem; st.style.color = "var(--ok)"; }catch(err){ st.textContent = err.message; st.style.color = "var(--danger)"; } bR.disabled = false; };
+    bR.onclick = async () => { bR.disabled = true; try{ const j = await chamarEquipe({ acao: "reenviar", id: g.id }); st.textContent = j.mensagem; st.style.color = "var(--ok)"; caixaSenhaTemp(st, j.senha_temporaria, j.validade_horas); }catch(err){ st.textContent = err.message; st.style.color = "var(--danger)"; } bR.disabled = false; };
     const bX = document.createElement("button"); bX.type = "button"; bX.className = "perigo"; bX.textContent = "Remover";
     bX.onclick = async () => {
       if (!await confirmarNaTela("REMOVER GESTOR", `${g.nome} perde o acesso aos seus condomínios na hora. Os registros que ele fez continuam no sistema.`, "Remover gestor")) return;
@@ -1905,7 +1938,7 @@ async function listarEquipe(){
   });
 }
 $("equipeBtn").addEventListener("click", abrirEquipe);
-$("closeEquipe").addEventListener("click", () => $("equipeDrawer").classList.remove("open"));
+$("closeEquipe").addEventListener("click", () => { $("equipeDrawer").classList.remove("open"); document.querySelectorAll(".eq-senha").forEach(x => x.remove()); });
 $("eqForm").addEventListener("submit", async e => {
   e.preventDefault();
   const nome = $("eqNome").value.trim(), email = $("eqEmail").value.trim().toLowerCase(), condominios = marcadosEm($("eqConds"));
@@ -1913,7 +1946,7 @@ $("eqForm").addEventListener("submit", async e => {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ eqMsg("Informe um e-mail válido.", true); $("eqEmail").focus(); return; }
   if (!condominios.length){ eqMsg("Marque pelo menos um condomínio.", true); return; }
   $("eqEnviar").disabled = true; eqMsg("Enviando convite…");
-  try{ const j = await chamarEquipe({ acao: "convidar", nome, email, condominios }); eqMsg(j.mensagem); $("eqNome").value = $("eqEmail").value = ""; caixasCondominios($("eqConds")); await listarEquipe(); }
+  try{ const j = await chamarEquipe({ acao: "convidar", nome, email, condominios }); eqMsg(j.mensagem); caixaSenhaTemp($("eqMsg"), j.senha_temporaria, j.validade_horas); $("eqNome").value = $("eqEmail").value = ""; caixasCondominios($("eqConds")); await listarEquipe(); }
   catch(err){ eqMsg(err.message, true); }
   $("eqEnviar").disabled = false;
 });
@@ -2307,6 +2340,7 @@ let iniciado = false;
 async function aposLogin(){
   const { data: { user } } = await sb.auth.getUser();
   if (!user){ mostrarLogin(); return; }
+  if (await exigirTrocaSenha(user)) return;
   const { data: p } = await sb.from("perfis").select("nome, tratamento, assinatura, empresa, papel, ativo, email, cnpj, cep, endereco, cidade, uf, email_contato, telefone, voz, cadastro_completo_em, aceite_termos_em, aceite_termos_versao, exclusao_solicitada_em").eq("id", user.id).maybeSingle();
   $("equipeBtn").hidden = p?.papel === "gestor";
   if (p && p.papel === "gestor"){
@@ -2583,7 +2617,7 @@ initGL();
   if (recuperando) return;
   if (convite && session){
     $("loginOverlay").hidden = false; $("loginForm").hidden = true; $("forgotBtn").hidden = true; $("newPwdForm").hidden = false;
-    msg("Pagamento confirmado. Bem-vindo ao SINDICS! Crie sua senha para entrar."); setTimeout(() => $("pwd1").focus(), 80);
+    msg(session.user?.user_metadata?.convite === "gestor" ? "Bem-vindo à equipe do SINDICS! Crie sua senha pessoal para entrar." : "Pagamento confirmado. Bem-vindo ao SINDICS! Crie sua senha para entrar."); setTimeout(() => $("pwd1").focus(), 80);
     return;
   }
   if (session) await aposLogin(); else mostrarLogin();

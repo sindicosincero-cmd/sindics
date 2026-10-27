@@ -9,6 +9,17 @@ function cors(origin: string | null) {
   const allow = origin && ORIGENS.includes(origin) ? origin : ORIGENS[0];
   return { "Access-Control-Allow-Origin": allow, "Access-Control-Allow-Headers": "authorization, content-type, apikey, x-client-info", "Access-Control-Allow-Methods": "POST, OPTIONS", "Vary": "Origin" };
 }
+// Senha temporária do convite: entra no e-mail, vale 72 horas e precisa ser trocada no primeiro acesso.
+const VALIDADE_TEMP_H = 72;
+function senhaTemporaria(): string {
+  const M = "ABCDEFGHJKLMNPQRSTUVWXYZ", m = "abcdefghijkmnpqrstuvwxyz", d = "23456789", todos = M + m + d;
+  const r = crypto.getRandomValues(new Uint32Array(12));
+  const c = Array.from(r, (x, i) => (i === 0 ? M : i === 1 ? m : i === 2 ? d : todos)[x % (i === 0 ? M.length : i === 1 ? m.length : i === 2 ? d.length : todos.length)]);
+  for (let i = c.length - 1; i > 0; i--) { const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1); [c[i], c[j]] = [c[j], c[i]]; }
+  const t = c.join(""); return `${t.slice(0, 4)}-${t.slice(4, 8)}-${t.slice(8)}`;
+}
+const metaTemp = (senha: string) => ({ senha_temporaria: senha, trocar_senha: true, senha_temp_expirada: false, senha_temp_expira: new Date(Date.now() + VALIDADE_TEMP_H * 3600000).toISOString() });
+
 const json = (b: unknown, s: number, o: string | null) => new Response(JSON.stringify(b), { status: s, headers: { ...cors(o), "Content-Type": "application/json" } });
 
 Deno.serve(async (req: Request) => {
@@ -47,18 +58,35 @@ Deno.serve(async (req: Request) => {
       const { data: linha, error: e1 } = await admin.from("gestores").insert({ sindico_id: uid, nome, email, condominios: conds, sindico_nome: sindicoNome }).select("id").single();
       if (e1) return json({ erro: e1.message }, 400, origin);
 
-      let gid = existente?.id || null, aviso = "";
+      let gid = existente?.id || null, aviso = "", comSenha = false, senha = "";
       if (!gid) {
-        const { data, error } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo: SITE_URL, data: { nome, convite: "gestor" } });
-        if (error) { await admin.from("gestores").delete().eq("id", linha.id); return json({ erro: "Não consegui enviar o convite: " + error.message }, 502, origin); }
-        gid = data.user.id;
+        senha = senhaTemporaria();
+        const meta = { nome, convite: "gestor", ...metaTemp(senha) };
+        const { data, error } = await admin.auth.admin.inviteUserByEmail(email, { redirectTo: SITE_URL, data: meta });
+        if (error) {
+          // e-mail não saiu (ex.: servidor de e-mail ainda não configurado): cria a conta mesmo assim
+          // e o síndico repassa a senha temporária ao gestor
+          console.error("convite email", error.message);
+          const { data: cu, error: ec } = await admin.auth.admin.createUser({ email, password: senha, email_confirm: true, user_metadata: meta });
+          if (ec || !cu?.user) { await admin.from("gestores").delete().eq("id", linha.id); return json({ erro: "Não consegui criar o acesso: " + (ec?.message || error.message) }, 502, origin); }
+          gid = cu.user.id; aviso = " (o e-mail não saiu: repasse a senha temporária abaixo ao gestor)";
+        } else gid = data.user.id;
+        // a mesma senha do e-mail passa a valer para entrar (e-mail confirmado pelo próprio convite)
+        if (!aviso) {
+          const { error: ep } = await admin.auth.admin.updateUserById(gid, { password: senha, email_confirm: true });
+          if (ep) { console.error("senha temporaria", ep.message); aviso = " (a senha temporária não foi ativada; o gestor entra pelo link do e-mail)"; }
+          else comSenha = true;
+        } else comSenha = true;
       } else {
         const { error } = await admin.auth.resetPasswordForEmail(email, { redirectTo: SITE_URL });
         if (error) aviso = " (o e-mail de acesso não saiu; use Reenviar acesso)";
       }
       await admin.from("perfis").update({ papel: "gestor", ativo: true, plano: "gestor" }).eq("id", gid);
       await admin.from("gestores").update({ gestor_id: gid }).eq("id", linha.id);
-      return json({ ok: true, mensagem: `Convite enviado para ${email}${aviso}. ${nome} cria a senha pelo e-mail e já entra com acesso aos condomínios autorizados.` }, 200, origin);
+      // a senha temporária volta também para o síndico, que pode repassá-la pessoalmente ou por WhatsApp
+      return json({ ok: true, senha_temporaria: comSenha ? senha : undefined, validade_horas: VALIDADE_TEMP_H, mensagem: comSenha
+        ? `${aviso ? "Acesso criado para " + email + aviso : "Convite enviado para " + email + ", com uma senha temporária válida por " + VALIDADE_TEMP_H + " horas"}. No primeiro acesso, ${nome} cria a própria senha e já entra nos condomínios autorizados.`
+        : `Convite enviado para ${email}${aviso}. ${nome} cria a senha pelo e-mail e já entra com acesso aos condomínios autorizados.` }, 200, origin);
     }
 
     const { data: g } = await admin.from("gestores").select("*").eq("id", b.id || "").eq("sindico_id", uid).maybeSingle();
@@ -70,11 +98,26 @@ Deno.serve(async (req: Request) => {
     }
     if (b.acao === "reenviar") {
       if (g.status !== "ativo") return json({ erro: "Este gestor foi removido." }, 400, origin);
+      // Gestor que ainda não criou a própria senha: recebe uma senha temporária nova (a anterior deixa de valer).
+      // Quem já usa o SINDICS recebe só o link de troca de senha, sem perder o acesso atual.
+      let novaTemp = "";
+      if (g.gestor_id) {
+        const { data: gu } = await admin.auth.admin.getUserById(g.gestor_id);
+        const meta = gu?.user?.user_metadata || {};
+        if (gu?.user && (!gu.user.last_sign_in_at || meta.trocar_senha)) {
+          novaTemp = senhaTemporaria();
+          const { error: ep } = await admin.auth.admin.updateUserById(g.gestor_id, { password: novaTemp, email_confirm: true, user_metadata: { ...meta, ...metaTemp(novaTemp) } });
+          if (ep) { console.error("senha temporaria", ep.message); novaTemp = ""; }
+        }
+      }
       const { error } = g.gestor_id
         ? await admin.auth.resetPasswordForEmail(g.email, { redirectTo: SITE_URL })
         : await admin.auth.admin.inviteUserByEmail(g.email, { redirectTo: SITE_URL, data: { nome: g.nome, convite: "gestor" } });
-      if (error) return json({ erro: "O e-mail não saiu: " + error.message }, 502, origin);
-      return json({ ok: true, mensagem: `Enviei para ${g.email} um link para criar ou trocar a senha.` }, 200, origin);
+      if (error && !novaTemp) return json({ erro: "O e-mail não saiu: " + error.message }, 502, origin);
+      if (error) return json({ ok: true, senha_temporaria: novaTemp, validade_horas: VALIDADE_TEMP_H, mensagem: `O e-mail não saiu, mas a nova senha temporária já vale (por ${VALIDADE_TEMP_H} horas): repasse-a ao gestor. A senha anterior deixou de valer.` }, 200, origin);
+      return json({ ok: true, senha_temporaria: novaTemp || undefined, validade_horas: VALIDADE_TEMP_H, mensagem: novaTemp
+        ? `Enviei para ${g.email} uma nova senha temporária (válida por ${VALIDADE_TEMP_H} horas) e o link de acesso. A senha anterior deixou de valer.`
+        : `Enviei para ${g.email} um link para criar ou trocar a senha.` }, 200, origin);
     }
     return json({ erro: "Ação desconhecida." }, 400, origin);
   } catch (e) {

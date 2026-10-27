@@ -504,6 +504,9 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   .iconbtn .lbl{display:none}
 }
 @media (prefers-reduced-motion:reduce){ .caption .cursor{animation:none} .drawer{transition:none} }
+.eq-senha{margin:10px 0;padding:10px 12px;border:1px dashed var(--amber);display:flex;flex-direction:column;gap:6px}
+.eq-senha code{font-family:var(--mono);font-size:18px;letter-spacing:.08em;color:var(--fg);user-select:all}
+.eq-senha button{align-self:flex-start}
 /* Apresentação inicial (boas-vindas): aparece em prontidão e some durante a conversa */
 .boas{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:14px;padding:22px 36px 10px;border-radius:40px;background:radial-gradient(ellipse at 50% 55%, var(--overlay) 0%, var(--overlay-soft) 55%, transparent 75%);pointer-events:auto;transition:opacity .45s ease, transform .45s ease}
 .boas[hidden]{display:none}
@@ -967,6 +970,6 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
   <span id="tapMsg">Toque em qualquer lugar para ligar som e microfone. Depois disso ele fica em prontidão sozinho.</span>
 </div>
 
-<script src="app.js?v=4.1.1"></script>
+<script src="app.js?v=4.2.0"></script>
 </body>
 </html>

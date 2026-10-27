@@ -18,6 +18,7 @@ Este repositório guarda o **projeto completo**: o site, o aplicativo, o código
 | `assets/` | Tema claro/escuro e redirecionamentos | — |
 | `supabase/migrations/` | Estrutura do banco de dados, em ordem cronológica (tabelas, regras de segurança por linha, gatilhos) | Supabase (projeto `hjjckvluydcejmrxolza`, São Paulo) |
 | `supabase/functions/` | Funções do servidor (ver abaixo) | Supabase Edge Functions |
+| `supabase/templates/` | Modelos dos e-mails de convite e de senha (com a senha temporária do gestor). Só podem ser aplicados no Supabase depois de configurar um servidor de e-mail próprio (SMTP) | Supabase → Authentication → Emails |
 | `agente/prompt.md` | Instruções de comportamento da voz | ElevenLabs |
 | `agente/ferramentas.json` | As 20 ferramentas que a voz usa | ElevenLabs |
 | `agente/configuracao.json` | Voz, modelo, reconhecimento de fala, privacidade, segurança e limites | ElevenLabs |
@@ -33,7 +34,7 @@ Este repositório guarda o **projeto completo**: o site, o aplicativo, o código
 | `radar-condominial` | Radar Condominial (notícias do setor) e busca de notícias |
 | `assinar` | Assinatura pelos planos Essencial e Profissional via Asaas; link de pagamento; conexão do webhook |
 | `asaas-webhook` | Recebe do Asaas pagamentos, atrasos e cancelamentos e libera ou bloqueia o acesso |
-| `equipe` | Convida, reenvia acesso e remove gestores auxiliares |
+| `equipe` | Convida, reenvia acesso e remove gestores auxiliares. O convite leva uma senha temporária (72 horas, troca obrigatória no primeiro acesso); uma rotina de hora em hora invalida as senhas temporárias vencidas |
 
 Existe ainda no Supabase uma função antiga `adicionar-voz-temp`, já desativada (responde 410) e sem uso; pode ser apagada.
 
