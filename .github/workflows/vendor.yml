@@ -4,7 +4,7 @@ name: Copiar bibliotecas (vendor)
 on:
   workflow_dispatch:
   push:
-    paths: ['.github/workflows/vendor.yml', 'vendor/lista.txt']
+    paths: ['.github/workflows/vendor.yml', 'app/vendor/lista.txt']
 permissions:
   contents: write
 jobs:
@@ -15,19 +15,19 @@ jobs:
       - name: Baixar e conferir
         run: |
           set -euo pipefail
-          mkdir -p vendor
+          mkdir -p app/vendor
           while read -r destino url; do
             [ -z "$destino" ] && continue
             case "$destino" in \#*) continue;; esac
-            curl -fsSL --retry 3 "$url" -o "vendor/$destino"
-            test -s "vendor/$destino"
-          done < vendor/lista.txt
-          ( cd vendor && for f in *.js; do echo "$f sha384-$(openssl dgst -sha384 -binary "$f" | openssl base64 -A)"; done ) > vendor/SRI.txt
-          cat vendor/SRI.txt
+            curl -fsSL --retry 3 "$url" -o "app/vendor/$destino"
+            test -s "app/vendor/$destino"
+          done < app/vendor/lista.txt
+          ( cd app/vendor && for f in *.js; do echo "$f sha384-$(openssl dgst -sha384 -binary "$f" | openssl base64 -A)"; done ) > app/vendor/SRI.txt
+          cat app/vendor/SRI.txt
       - name: Salvar no repositório
         run: |
           git config user.name "sindics-bot"
           git config user.email "sindics-bot@users.noreply.github.com"
-          git add vendor
+          git add app/vendor
           git diff --cached --quiet || git commit -m "Atualiza bibliotecas locais (vendor)"
           git push

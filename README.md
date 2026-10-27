@@ -2,14 +2,14 @@
 
 Assistente de voz do síndico, no estilo JARVIS. Criado por **Elison Cardoso — Síndico Profissional** (Sindicância Ethics).
 
-**Acesso:** https://sindicosincero-cmd.github.io/sindics/ (Chrome no computador ou Android)
+**Acesso:** https://sindics.com.br/app/ (landing: https://sindics.com.br/)
 
 - Diga **"SINDICS"** para chamar; **"pode descansar"** para encerrar. Barra de espaço também funciona.
 - Consulta a convenção e o regulamento de cada condomínio, notícias do Brasil e indicadores do Banco Central.
 - Voz e inteligência via ElevenLabs Agents.
 
 ## Segurança (Fase 1)
-- O agente só aceita conexões vindas de `sindicosincero-cmd.github.io`.
+- O agente só aceita conexões vindas de `sindics.com.br` (e o endereço antigo do GitHub, durante a transição).
 - Limite de 3 conversas simultâneas e 150 por dia.
 - Os documentos dos condomínios ficam apenas na ElevenLabs, nunca neste repositório.
 

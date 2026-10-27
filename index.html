@@ -2,946 +2,478 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https://hjjckvluydcejmrxolza.supabase.co wss://hjjckvluydcejmrxolza.supabase.co https://api.elevenlabs.io wss://api.elevenlabs.io https://*.elevenlabs.io wss://*.elevenlabs.io https://api.bcb.gov.br https://viacep.com.br https://nominatim.openstreetmap.org https://cdn.jsdelivr.net https://tessdata.projectnaptha.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src https://hjjckvluydcejmrxolza.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>SINDICS</title>
+<title>SINDICS · Inteligência Condominial</title>
+<meta name="description" content="SINDICS é a inteligência condominial por voz do síndico: agenda com alarmes, prazos dos documentos legais, regras do regulamento na tela, diário operacional com relatório mensal e comunicados prontos. Planos a partir de R$ 450 por mês.">
+<meta property="og:title" content="SINDICS · Inteligência Condominial">
+<meta property="og:description" content="Fale com o SINDICS e ele cuida da agenda, dos prazos legais, das regras e dos comunicados do seu condomínio.">
+<meta property="og:image" content="https://sindics.com.br/icon-512.png">
+<meta property="og:url" content="https://sindics.com.br/">
+<link rel="canonical" href="https://sindics.com.br/">
 <meta name="theme-color" content="#04070d">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon-192.png" type="image/png">
-<link rel="apple-touch-icon" href="icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<script src="assets/tema.js"></script>
+<link rel="icon" href="icon-192.png">
+<script src="assets/rota.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="vendor/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu"></script>
-<script src="vendor/motion.js" integrity="sha384-czaB7zH9slIhvFgUxhO8sSnYf4cnCeV2N3zOvDnNKFzRKu5AwqDKEZlCLsaQkoop"></script>
-<script src="vendor/supabase.js" integrity="sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o"></script>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* Layout: HUD de tela única. Esquerda = indicadores ao vivo; centro = núcleo 3D + legenda; direita = painéis holográficos. Visual escuro de propósito. */
 :root{
-  --bg:#04070d;
-  --panel:rgba(10,20,36,.62);
-  --line:rgba(63,208,255,.18);
-  --line-strong:rgba(63,208,255,.45);
-  --fg:#d9e6f5;
-  --muted:#6b84a3;
-  --cyan:#3fd0ff;
-  --amber:#ffb547;
-  --violet:#8f7bff;
-  --ok:#5be3a8;
-  --danger:#ff5d6c;
-  --display:"Chakra Petch", "Segoe UI", system-ui, sans-serif;
-  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  --mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
-  --accent:var(--cyan);
-  --drawer:#060b14;
-  --overlay:rgba(4,7,13,.9);
-  --overlay-soft:rgba(4,7,13,.4);
-  --btn-bg:rgba(4,7,13,.6);
-  --btn-hover:rgba(63,208,255,.12);
-  --warn-fg:#ffd9a0;
-  --crit-fg:#ffc3c9;
-  --text-shadow:0 0 18px rgba(0,0,0,.9);
-  --vignette:rgba(0,0,0,.65);
-  --scan-opacity:1;
+  --fundo:#04070d; --painel:#07101c; --painel-2:#0a1626;
+  --texto:#d9e6f5; --apagado:#8aa0b8; --linha:rgba(63,208,255,.16); --linha-forte:rgba(63,208,255,.38);
+  --ciano:#3fd0ff; --ambar:#f2c14e; --verde:#4fd18b; --vermelho:#ff7a7a;
+  --display:"Chakra Petch",system-ui,sans-serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
   color-scheme:dark;
 }
-/* Tema claro (opção): mesmo layout, cores de alto contraste sobre fundo claro */
-:root[data-theme="light"]{
-  --bg:#e9eff5;
-  --panel:rgba(255,255,255,.8);
-  --line:rgba(10,110,160,.2);
-  --line-strong:rgba(10,110,160,.45);
-  --fg:#0f1c2b;
-  --muted:#4f6279;
-  --cyan:#0477ab;
-  --amber:#a35c00;
-  --violet:#5a45d1;
-  --ok:#0b8452;
-  --danger:#c62839;
-  --drawer:#f6f9fc;
-  --overlay:rgba(233,239,245,.93);
-  --overlay-soft:rgba(233,239,245,.55);
-  --btn-bg:rgba(255,255,255,.75);
-  --btn-hover:rgba(4,119,171,.1);
-  --warn-fg:#6e4300;
-  --crit-fg:#9b1c2c;
-  --text-shadow:none;
-  --vignette:rgba(140,160,185,.35);
-  --scan-opacity:0;
-  color-scheme:light;
-}
 *{box-sizing:border-box}
-[hidden]{display:none!important}
-.pulsar{animation:pulsar 1.2s ease-in-out infinite;border-color:var(--cyan)!important}
-@keyframes pulsar{0%,100%{box-shadow:0 0 0 0 rgba(63,208,255,.55)}50%{box-shadow:0 0 0 8px rgba(63,208,255,0)}}
-@media (prefers-reduced-motion:reduce){.pulsar{animation:none;outline:2px solid var(--cyan)}}
-html,body{height:100%;margin:0}
-body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;overflow:hidden}
-#gl{position:fixed;inset:0;width:100%;height:100%;display:block}
-.scan{position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px);mix-blend-mode:overlay;opacity:var(--scan-opacity)}
-.vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%, transparent 40%, var(--vignette) 100%)}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--fundo);color:var(--texto);font-family:var(--body);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+.w{width:min(1120px,100%);margin:0 auto;padding:0 20px}
+:focus-visible{outline:2px solid var(--ambar);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 
-.app{
-  position:relative;height:100%;display:grid;grid-template-rows:auto 1fr auto;
-  padding-left:max(18px, env(safe-area-inset-left, 0px));
-  padding-right:max(18px, env(safe-area-inset-right, 0px));
-  padding-block:max(14px, env(safe-area-inset-top,0px)) max(14px, env(safe-area-inset-bottom,0px));
-}
-header{display:flex;justify-content:space-between;align-items:center;gap:16px;position:relative;z-index:6}
-.brand h1{font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:.34em;margin:0;opacity:.85}
-.brand .tagline{margin:3px 0 0;font-family:var(--mono);font-size:9.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);opacity:.85}
-/* Botão de menu: a única coisa além do núcleo na tela */
-.iconbtn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:10px 12px;opacity:.62;transition:opacity .2s,background .2s,color .2s}
-.iconbtn:hover,.iconbtn:focus-visible,.iconbtn[aria-expanded="true"]{opacity:1}
-.iconbtn .bars{display:inline-flex;flex-direction:column;gap:4px}
-.iconbtn .bars i{display:block;width:18px;height:2px;background:currentColor}
-.iconbtn .lbl{font-size:11px}
-.status{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.12em}
-.status div{display:flex;flex-direction:column;gap:3px;min-width:0;overflow-wrap:anywhere}
-.menu-quem{margin:0;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
-.menu-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.menu-btns button{width:100%;padding:11px 10px;font-size:11px;letter-spacing:.14em}
-.menu-sec{margin:6px 0 0;font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
-.drawer .holo{flex-shrink:0}
-.status b{color:var(--muted);font-weight:400}
-.status i{font-style:normal;color:var(--fg)}
-.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:6px;box-shadow:0 0 8px var(--ok)}
+/* ---------- topo ---------- */
+.topo{position:fixed;top:0;left:0;right:0;z-index:20;transition:background .3s,border-color .3s;border-bottom:1px solid transparent}
+.topo.rolou{background:rgba(4,7,13,.82);backdrop-filter:blur(10px);border-bottom-color:var(--linha)}
+.topo .w{display:flex;align-items:center;gap:22px;height:64px}
+.marca{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:.32em;text-decoration:none;color:var(--ciano)}
+.marca small{display:block;margin-top:1px;font-family:var(--mono);font-weight:400;font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--apagado)}
+.topo nav{display:flex;gap:22px;margin-left:auto;font-size:14.5px}
+.topo nav a{text-decoration:none;color:var(--apagado)}
+.topo nav a:hover{color:var(--texto)}
+.topo .entrar{font-size:14.5px;color:var(--apagado);text-decoration:none}
+.topo .entrar:hover{color:var(--texto)}
+@media (max-width:860px){ .topo nav{display:none} .topo .entrar{margin-left:auto} }
 
-main{min-height:0;display:grid;grid-template-columns:minmax(0,340px) 1fr minmax(0,340px);gap:22px;align-items:center}
-main > .center{grid-column:2;grid-row:1} main > #panels{grid-column:3;grid-row:1}
-.col{min-height:0;max-height:100%;display:flex;flex-direction:column;gap:12px;overflow:hidden}
-.center{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:4vh;pointer-events:none}
-.state{font-family:var(--display);font-weight:600;letter-spacing:.45em;font-size:12.5px;text-transform:uppercase;color:var(--accent);transition:color .5s}
-.tool{min-height:1.4em;margin-top:6px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--violet);text-transform:uppercase}
-.caption{min-height:3.2em;max-width:60ch;text-align:center;margin-top:8px;font-size:clamp(17px,2vw,21px);line-height:1.45;text-wrap:balance;text-shadow:var(--text-shadow)}
-.caption .cursor{display:inline-block;width:.5ch;height:1em;background:var(--accent);margin-left:2px;vertical-align:-.15em;animation:blink 1s steps(2) infinite}
-@keyframes blink{to{opacity:0}}
-.you{min-height:1.5em;margin-top:6px;font-family:var(--mono);font-size:12.5px;color:var(--amber);text-align:center;max-width:70ch}
-.you:not(:empty)::before{content:"VOCÊ › ";color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;
+  padding:15px 26px;border:1px solid var(--linha-forte);background:rgba(7,16,28,.6);color:var(--texto);cursor:pointer;transition:background .2s,color .2s,border-color .2s,box-shadow .2s;
+  clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+.btn:hover{border-color:var(--ciano);color:#fff}
+.btn.forte{background:var(--ciano);border-color:var(--ciano);color:#02121c}
+.btn.forte:hover{background:#7fe0ff;color:#02121c;box-shadow:0 0 30px rgba(63,208,255,.45)}
+.btn.peq{padding:9px 16px;font-size:12.5px}
+.btn svg{width:19px;height:19px;flex:none}
 
-.holo{
-  position:relative;border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(8px);
-  padding:12px 14px 14px;clip-path:polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
-}
-.holo::before{content:"";position:absolute;left:0;top:0;width:28px;height:2px;background:var(--accent);box-shadow:0 0 10px var(--accent)}
-.holo h3{margin:0 0 8px;font-family:var(--mono);font-weight:500;font-size:10.5px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;display:flex;justify-content:space-between;gap:8px}
-.holo h3 em{font-style:normal;color:var(--accent)}
-.holo h3 .x{margin-left:auto;padding:0 4px;border:0;background:none;font-family:var(--mono);font-size:15px;line-height:1;letter-spacing:0;color:var(--muted)}
-.holo h3 .x:hover{background:none;color:var(--fg)}
+/* ---------- abertura: o núcleo esperando ---------- */
+.abre{position:relative;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 20px max(48px,env(safe-area-inset-bottom));overflow:hidden;text-align:center}
+#nucleo{position:absolute;left:0;top:0;width:100%;height:100vh;height:100svh;display:block}
+@media (max-width:700px) and (orientation:portrait){ .abre{justify-content:flex-start;padding-top:calc(46svh + 40px)} .fala-abre::before{top:30%} }
+.abre::after{content:"";position:absolute;inset:auto 0 0 0;height:40%;background:linear-gradient(to bottom,rgba(4,7,13,0),var(--fundo));pointer-events:none}
+.hud{position:absolute;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:#5d7a92;z-index:2;line-height:1.7;text-align:left;pointer-events:none}
+.hud.esq{left:22px;top:88px}
+.hud.dir{right:22px;top:88px;text-align:right}
+.hud .ok{color:var(--verde)}
+@media (max-width:700px){ .hud.dir{display:none} .hud.esq{top:76px;left:16px;font-size:10px} }
+.fala-abre{position:relative;z-index:3;max-width:820px}
+.fala-abre::before{content:"";position:absolute;z-index:-1;left:50%;top:46%;width:150%;height:125%;transform:translate(-50%,-50%);background:radial-gradient(ellipse at center,rgba(4,7,13,.82) 0%,rgba(4,7,13,.6) 42%,rgba(4,7,13,0) 70%);pointer-events:none}
+.estado{font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.5em;color:var(--ciano);margin:0 0 18px;min-height:1.2em;text-shadow:0 0 14px rgba(63,208,255,.6)}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(27px,4.6vw,54px);line-height:1.12;margin:0 0 16px;min-height:2.3em;color:#fff;text-shadow:0 0 30px rgba(63,208,255,.25)}
+h1 .cursor{display:inline-block;width:.42ch;height:.9em;margin-left:4px;vertical-align:-.08em;background:var(--ciano);animation:pisca 1s steps(2) infinite}
+@keyframes pisca{50%{opacity:0}}
+.sub{font-size:clamp(17px,1.7vw,19px);color:#a9bdd1;max-width:36em;margin:0 auto 30px}
+.surge{opacity:0;transform:translateY(10px);transition:opacity .8s,transform .8s}
+.surge.on{opacity:1;transform:none}
+.abre .acoes{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.preco-mini{margin:18px 0 0;font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:var(--apagado)}
+.preco-mini b{color:var(--ciano);font-weight:500}
+.rolar{display:block;margin:22px auto 0;width:22px;height:34px;border:1px solid var(--linha-forte);border-radius:12px;position:relative}
+.rolar::after{content:"";position:absolute;left:50%;top:7px;width:2px;height:7px;margin-left:-1px;background:var(--ciano);animation:desce 1.8s ease-in-out infinite}
+@keyframes desce{60%{transform:translateY(10px);opacity:0}}
+@media (prefers-reduced-motion:reduce){ h1 .cursor,.rolar::after{animation:none} .surge{transition:none} }
 
-.ind{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:2px 10px;padding:7px 0;border-top:1px solid var(--line)}
-.ind:first-of-type{border-top:0}
-.ind span{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase}
-.ind strong{font-family:var(--display);font-weight:600;font-size:20px;font-variant-numeric:tabular-nums;color:var(--fg)}
-.ind small{grid-column:1/-1;font-family:var(--mono);font-size:10px;color:var(--muted)}
-.spark{grid-column:1/-1;width:100%;height:30px;margin-top:4px}
+/* ---------- seções ---------- */
+section.bloco{position:relative;padding:110px 0;border-top:1px solid var(--linha)}
+h2{font-family:var(--display);font-weight:600;font-size:clamp(28px,3.4vw,42px);line-height:1.12;margin:0 0 14px;color:#fff}
+.intro{color:var(--apagado);max-width:40em;margin:0 0 48px;font-size:18px}
+.marcador{font-family:var(--mono);font-size:12px;color:var(--ciano);margin:0 0 14px;letter-spacing:.06em}
 
-#panels{gap:12px}
-.card .t{font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:.06em;margin:0 0 8px;color:var(--fg)}
-.card ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
-.card li{font-size:13.5px;line-height:1.4;padding-left:14px;position:relative;overflow-wrap:anywhere}
-.card li::before{content:"";position:absolute;left:0;top:.55em;width:6px;height:1px;background:var(--accent)}
-.card.calculo li{font-family:var(--mono);font-size:12.5px}
-.card .res{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line-strong);font-family:var(--display);font-weight:700;font-size:24px;color:var(--accent);font-variant-numeric:tabular-nums;text-shadow:var(--text-shadow)}
-.card .src{margin-top:8px;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em}
-.empty-panel{font-size:12.5px;color:var(--muted);line-height:1.5}
-.card.alarme{border-color:var(--amber)} .card.alarme::before{background:var(--amber);box-shadow:0 0 10px var(--amber)}
-.card.alarme h3 span{color:var(--amber)} .card.alarme li::before{background:var(--amber)}
+/* moldura holográfica com cantos */
+.holo{position:relative;background:linear-gradient(180deg,rgba(10,22,38,.92),rgba(7,16,28,.92));border:1px solid var(--linha)}
+.holo::before,.holo::after{content:"";position:absolute;width:18px;height:18px;border:2px solid var(--ciano);pointer-events:none}
+.holo::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
+.holo::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
 
-/* ---------- Calendário ---------- */
-.cal-wrap{position:fixed;inset:0;z-index:14;display:flex;align-items:center;justify-content:center;
-  padding:max(14px, env(safe-area-inset-top,0px)) max(14px, env(safe-area-inset-right,0px)) max(14px, env(safe-area-inset-bottom,0px)) max(14px, env(safe-area-inset-left,0px));
-  background:var(--overlay-soft);backdrop-filter:blur(3px)}
-.cal{width:min(1040px,100%);height:min(720px,100%);display:flex;flex-direction:column;gap:12px;background:var(--drawer);padding:16px 18px}
-.cal-top{display:flex;align-items:center;gap:8px}
-.cal-top h2{flex:1;margin:0;text-align:center;font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:.2em;text-transform:uppercase}
-.cal-top button{padding:8px 12px;font-size:11px}
-#calPrev,#calNext{font-size:18px;line-height:1;padding:6px 14px;letter-spacing:0}
-.cal-corpo{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px}
-.cal-mes{min-height:0;display:flex;flex-direction:column;gap:6px}
-.cal-sem,.cal-grade{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
-.cal-sem span{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;text-align:center}
-.cal-grade{flex:1;min-height:0;grid-auto-rows:minmax(0,1fr)}
-button.cal-d{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:3px;padding:5px 6px;min-height:0;min-width:0;overflow:hidden;text-align:left;
-  font-family:var(--body);text-transform:none;letter-spacing:0;font-weight:400;font-size:12px;color:var(--fg);background:transparent;border:1px solid var(--line)}
-button.cal-d:hover{background:var(--btn-hover)}
-.cal-d .n{font-family:var(--mono);font-size:12px;color:var(--muted);align-self:flex-start;padding:0 4px}
-.cal-d.hoje .n{color:var(--bg);background:var(--cyan)}
-button.cal-d.sel{border-color:var(--cyan);background:var(--btn-hover)}
-.cal-d.vazio{visibility:hidden}
-.cal-d .ev{display:block;font-size:11px;line-height:1.3;padding:1px 4px;border-left:2px solid var(--cyan);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cal-d .ev.doc{border-left-color:var(--amber)} .cal-d .ev.doc.venc{border-left-color:var(--danger)}
-.cal-d .ev.feito{opacity:.55;text-decoration:line-through}
-.cal-d .mais{font-family:var(--mono);font-size:10px;color:var(--muted)}
-.cal-legenda{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.08em}
-.cal-legenda i{display:inline-block;width:12px;height:3px;margin-right:6px;vertical-align:middle;background:var(--cyan)}
-.cal-legenda i.d{background:var(--amber)} .cal-legenda i.v{background:var(--danger)}
-.cal-dia{min-height:0;overflow-y:auto;border-left:1px solid var(--line);padding-left:16px;display:flex;flex-direction:column;gap:10px}
-.cal-dia h3{margin:0;font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:.06em;color:var(--fg);text-transform:none}
-.cal-item{border:1px solid var(--line);border-left:3px solid var(--cyan);padding:9px 11px;display:flex;flex-direction:column;gap:3px}
-.cal-item.doc{border-left-color:var(--amber)} .cal-item.doc.venc{border-left-color:var(--danger)}
-.cal-item.feito{opacity:.6}
-.cal-item b{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--cyan)}
-.cal-item.doc b{color:var(--amber)}
-.cal-item strong{font-size:14px;font-weight:500;overflow-wrap:anywhere}
-.cal-item small{font-family:var(--mono);font-size:10.5px;color:var(--muted);overflow-wrap:anywhere}
-.cal-vazio{font-size:13px;line-height:1.5;color:var(--muted)}
-/* ---------- Pasta de Documentação Legal ---------- */
-.dl-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.dl-top h2{flex:1;margin:0;font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:.2em;text-transform:uppercase}
-.dl-top select{font-family:var(--body);font-size:14px;padding:7px 10px;background:var(--btn-bg);color:var(--fg);border:1px solid var(--line-strong);max-width:100%}
-.dl-top button{padding:8px 12px;font-size:11px}
-.dl-resumo{display:flex;gap:8px;flex-wrap:wrap}
-.dl-resumo span{font-family:var(--mono);font-size:11px;letter-spacing:.06em;padding:5px 9px;border:1px solid var(--line-strong);color:var(--muted)}
-.dl-resumo .vencido{color:var(--danger);border-color:var(--danger)} .dl-resumo .vencendo{color:var(--amber);border-color:var(--amber)}
-.dl-resumo .emdia{color:var(--ok);border-color:var(--ok)} .dl-resumo .falta{color:var(--fg);border-color:var(--fg)}
-.dl-lista{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:4px}
-.dl-grupo{margin:8px 0 0;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
-.dl-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:start;border:1px solid var(--line);border-left:3px solid var(--line-strong);padding:10px 12px}
-.dl-item.vencido{border-left-color:var(--danger)} .dl-item.vencendo{border-left-color:var(--amber)} .dl-item.emdia{border-left-color:var(--ok)}
-.dl-item.falta{border-left-color:var(--fg)} .dl-item.naoaplica{opacity:.55}
-.dl-pill{grid-row:span 2;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:3px 7px;border:1px solid currentColor;white-space:nowrap;color:var(--muted)}
-.dl-item.vencido .dl-pill{color:var(--danger)} .dl-item.vencendo .dl-pill{color:var(--amber)} .dl-item.emdia .dl-pill{color:var(--ok)} .dl-item.falta .dl-pill{color:var(--fg)}
-.dl-item strong{font-size:14px;font-weight:500;overflow-wrap:anywhere}
-.dl-item small{grid-column:2;font-family:var(--mono);font-size:10.5px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere}
-.dl-item .dl-quando{grid-column:2;font-size:12.5px;color:var(--fg)}
-.dl-item button{grid-column:3;grid-row:1 / span 2;align-self:center;padding:6px 9px;font-size:10px;letter-spacing:.1em}
-.dl-nota{margin:0;font-size:11.5px;line-height:1.5;color:var(--muted)}
-.dl-nota a,.lg-ul a,.aceite a,.lg-check a{color:var(--cyan)}
+/* conversa de exemplo */
+.duas{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:64px;align-items:center}
+.duas p{color:var(--apagado);margin:0 0 16px}
+@media (max-width:900px){ .duas{grid-template-columns:1fr;gap:36px} }
+.conversa{padding:26px 24px}
+.fala{margin:0 0 14px;font-size:16px;line-height:1.5;max-width:92%}
+.fala small{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:#5d7a92;margin-bottom:2px}
+.fala.voce{margin-left:auto;text-align:right;color:var(--ambar)}
+.cartao{margin:4px 0 16px;border:1px solid var(--linha-forte);border-left:3px solid var(--ciano);background:rgba(4,7,13,.7);padding:12px 14px}
+.cartao h3{margin:0 0 8px;font-family:var(--display);font-weight:600;font-size:15px;color:#fff}
+.cartao ul{list-style:none;margin:0;padding:0;font-size:14px}
+.cartao li{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid var(--linha)}
+.cartao li span:last-child{white-space:nowrap}
+.c-ok{color:var(--verde)} .c-at{color:var(--ambar)} .c-ve{color:var(--vermelho)}
+.passo{opacity:0;transform:translateY(6px)}
+.passo.on{opacity:1;transform:none;transition:opacity .45s,transform .45s}
 
-/* ---------- Assinatura: aviso de atraso e bloqueio ---------- */
-.pag-banner{position:fixed;top:0;left:0;right:0;z-index:25;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
-  padding:10px 16px calc(10px);padding-top:max(10px,env(safe-area-inset-top,0px));background:#3a2a00;color:#ffe2a0;border-bottom:1px solid var(--amber);font-size:14px;text-align:center}
-:root[data-theme="light"] .pag-banner{background:#fff1cc;color:#5a3d00}
-.pag-banner button{padding:7px 12px;font-size:10.5px}
-.pag-banner #pagBannerFechar{border:0;background:none;padding:4px 8px;font-size:14px;letter-spacing:0;color:inherit}
-.bloq-acoes{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-.bloq-nota{font-size:11px!important}
+/* você diz, ele faz */
+.dialogos{border-top:1px solid var(--linha-forte)}
+.dl{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.25fr) minmax(0,.62fr);gap:28px;padding:26px 0;border-bottom:1px solid var(--linha);align-items:baseline}
+.dl q{font-family:var(--display);font-weight:500;font-size:clamp(18px,1.8vw,21px);line-height:1.3;color:#fff;quotes:"“" "”"}
+.dl p{margin:0;color:var(--apagado)}
+.dl strong{font-family:var(--mono);font-weight:500;font-size:12.5px;letter-spacing:.06em;color:var(--ciano);text-align:right}
+@media (max-width:820px){ .dl{grid-template-columns:1fr;gap:6px} .dl strong{text-align:left;order:-1} }
 
-/* ---------- Cadastro do síndico ---------- */
-.perfil-wrap{z-index:45;background:var(--overlay)}
-.perfil{width:min(640px,100%);height:auto;max-height:100%;overflow-y:auto}
-.cform.pf-form{border:0;padding:0;margin:0}
-.pf-bloco{display:flex;flex-direction:column;gap:6px;min-width:0}
-.pf-bloco[hidden]{display:none}
-.pf-form fieldset{border:1px solid var(--line);padding:10px 14px 14px;margin:0 0 6px;display:flex;flex-direction:column;gap:6px;min-width:0}
-.pf-form legend{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;color:var(--cyan);text-transform:uppercase;padding:0 6px}
-.aceite{display:flex;gap:10px;align-items:flex-start;font-family:var(--body)!important;font-size:13px!important;letter-spacing:0!important;text-transform:none!important;color:var(--fg)!important;line-height:1.5;margin-top:8px!important}
-.aceite input{width:18px!important;height:18px;flex:none;margin-top:2px;accent-color:var(--cyan)}
-button.link.destaque{color:var(--cyan);text-decoration:none;border-bottom:1px solid var(--cyan);padding:4px 0}
-.pol-link{font-family:var(--body);font-size:12px;color:var(--muted)}
-.pol-link:hover{color:var(--fg)}
-.login{overflow-y:auto;justify-content:safe center;padding-top:24px;padding-bottom:24px}
+/* pasta */
+.pasta{padding:6px 0}
+.doc{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 16px;padding:14px 20px;border-bottom:1px solid var(--linha)}
+.doc:last-child{border-bottom:0}
+.doc b{font-weight:500;color:#fff}
+.doc small{grid-column:1;color:#6f879e;font-size:13px}
+.doc .st{grid-row:1 / span 2;grid-column:2;align-self:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;padding:4px 9px;border:1px solid currentColor;white-space:nowrap}
+.st.v{color:var(--vermelho)} .st.a{color:var(--ambar)} .st.e{color:var(--verde)} .st.f{color:var(--apagado)}
 
-/* ---------- Privacidade e LGPD ---------- */
-.lg-abas{display:flex;gap:6px}
-.lg-abas button{padding:8px 12px;font-size:10.5px}
-.lg-abas button[aria-selected="true"]{border-color:var(--cyan);color:var(--cyan)}
-.lg-corpo{flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;padding-right:4px}
-.lg-corpo[hidden]{display:none}
-.lg-col{display:flex;flex-direction:column;gap:10px;min-width:0}
-.lg-larga{grid-column:1 / -1}
-.lg-col h3{margin:6px 0 0;font-family:var(--mono);font-weight:500;font-size:10.5px;letter-spacing:.16em;color:var(--accent);text-transform:uppercase;border-top:1px solid var(--line-strong);padding-top:8px}
-.lg-dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;font-size:13.5px}
-.lg-dl dt{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;padding-top:2px}
-.lg-dl dd{margin:0;overflow-wrap:anywhere}
-.lg-ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;line-height:1.5}
-.lg-acoes{display:flex;gap:8px;flex-wrap:wrap}
-.lg-acoes button{padding:9px 12px;font-size:10.5px}
-.lg-acoes select,.cform select,.cform textarea{font-family:var(--body);font-size:14px;padding:8px 10px;background:var(--btn-bg);color:var(--fg);border:1px solid var(--line-strong);max-width:100%;min-width:0}
-.cform textarea{resize:vertical}
-button.perigo{border-color:var(--danger);color:var(--danger)}
-button.perigo:hover{background:var(--danger);color:var(--bg)}
-.lg-lista{display:flex;flex-direction:column;gap:6px}
-.lg-sol{border:1px solid var(--line);border-left:3px solid var(--amber);padding:8px 10px;font-size:13px;display:flex;flex-direction:column;gap:2px}
-.lg-sol.atendida{border-left-color:var(--ok)} .lg-sol.recusada{border-left-color:var(--danger)}
-.lg-sol small{font-family:var(--mono);font-size:10.5px;color:var(--muted);overflow-wrap:anywhere}
-.lg-topo{display:flex;flex-direction:column;gap:10px}
-.lg-prog{margin:0;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--muted)}
-.lg-check{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.lg-item{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;border:1px solid var(--line);border-left:3px solid var(--line-strong);padding:10px 12px;cursor:pointer}
-.lg-item.feito{border-left-color:var(--ok)}
-.lg-item input{width:18px;height:18px;margin-top:2px;accent-color:var(--ok);grid-row:span 3}
-.lg-item strong{font-size:14px;font-weight:500}
-.lg-item span{font-size:12.5px;line-height:1.5;color:var(--muted)}
-.lg-item small{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--accent)}
-.eq-lista{display:flex;flex-direction:column;gap:10px}
-.eq-card{border:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:8px}
-.eq-card strong{font-size:15px}
-.eq-card small{font-family:var(--mono);font-size:10.5px;color:var(--muted);overflow-wrap:anywhere}
-.eq-conds{display:flex;flex-direction:column;gap:6px}
-.eq-conds label{display:flex;gap:8px;align-items:center;font-family:var(--body);font-size:13.5px;letter-spacing:0;text-transform:none;color:var(--fg);margin:0}
-.eq-conds input{width:16px!important;height:16px;accent-color:var(--cyan)}
-.eq-acoes{display:flex;gap:6px;flex-wrap:wrap}
-.eq-acoes button{padding:6px 10px;font-size:10px}
-.eq-sub{margin-top:6px}
-#opDrawer textarea{width:100%;resize:vertical;font:inherit;background:transparent;color:var(--fg);border:1px solid var(--line-strong);padding:9px 10px}
-#opDrawer select{width:100%}
-.op-sec{margin:18px 0 8px}
-.op-lista{display:flex;flex-direction:column;gap:8px}
-.op-item{border:1px solid var(--line);padding:10px 12px;display:flex;flex-direction:column;gap:5px}
-.op-item .op-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.op-item p{margin:0;font-size:13.5px;line-height:1.45;overflow-wrap:anywhere}
-.op-item small{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
-.op-tag{font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:2px 7px;border:1px solid var(--line-strong);color:var(--muted);text-transform:uppercase}
-.op-tag.ok{color:var(--ok);border-color:var(--ok)} .op-tag.alerta{color:var(--amber);border-color:var(--amber)} .op-tag.ruim{color:var(--danger);border-color:var(--danger)}
-.op-item .eq-acoes{margin-top:2px}
-.op-resolver{display:flex;flex-direction:column;gap:6px}
-.op-fotos{display:flex;gap:6px;flex-wrap:wrap}
-.op-fotos img{width:64px;height:64px;object-fit:cover;border:1px solid var(--line)}
-.op-rel{margin-top:18px}
-.op-vazio{font-size:13px;color:var(--muted);margin:0}
-.cond-local{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px}
-.cond-local small{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
-.cond-local button{padding:5px 9px;font-size:10px}
-.com-folha.rel-folha{font-family:var(--body);font-size:13.5px;line-height:1.5}
-.rel-folha h1{font-size:22px;margin:4px 0 2px;text-align:left}
-.rel-folha .rel-sub{color:#4a4f57;margin:0 0 18px;font-size:12.5px}
-.rel-folha h3{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#4a4f57;margin:22px 0 8px;border-bottom:1px solid #d8dbe0;padding-bottom:4px}
-.rel-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.rel-kpi{border:1px solid #d8dbe0;padding:10px}
-.rel-kpi b{display:block;font-size:22px;line-height:1.1}
-.rel-kpi span{font-size:11.5px;color:#4a4f57}
-.rel-barras{display:flex;flex-direction:column;gap:5px}
-.rel-barra{display:grid;grid-template-columns:150px minmax(0,1fr) 40px;gap:8px;align-items:center;font-size:12.5px}
-.rel-barra i{display:block;height:10px;background:#1b6fa8}
-.rel-barra em{font-style:normal;text-align:right}
-.rel-item{border-bottom:1px solid #e6e8eb;padding:8px 0;display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px}
-.rel-item .q{font-size:12px;color:#4a4f57}
-.rel-item .t{font-weight:600}
-.rel-item .m{font-size:11.5px;color:#4a4f57}
-.rel-item .fts{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
-.rel-item .fts img{width:150px;height:110px;object-fit:cover;border:1px solid #d8dbe0}
-.rel-pend{color:#a35a00;font-weight:600} .rel-fora{color:#b3261e}
-.rel-nota{font-size:11px;color:#4a4f57;margin-top:20px}
-@media (max-width:860px){ .rel-kpis{grid-template-columns:repeat(2,minmax(0,1fr))} .rel-barra{grid-template-columns:100px minmax(0,1fr) 34px} .rel-item{grid-template-columns:1fr} }
-.adm-lgpd{border:1px solid var(--amber);padding:10px 12px;display:flex;flex-direction:column;gap:6px}
-.adm-lgpd h4{margin:0;font-family:var(--mono);font-weight:500;font-size:10.5px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase}
+/* para quem */
+.publico{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.publico > div{padding:28px 24px}
+.publico h3{font-family:var(--display);font-weight:600;font-size:20px;margin:0 0 8px;color:#fff}
+.publico p{margin:0;color:var(--apagado)}
+@media (max-width:820px){ .publico{grid-template-columns:1fr} }
 
-/* ---------- Radar Condominial (edição do dia) ---------- */
-.rd{width:min(1100px,100%)}
-.rd-cab{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:3px double var(--line-strong);padding-bottom:10px}
-.rd-cab h2{margin:0;font-family:var(--display);font-weight:700;font-size:clamp(22px,4vw,38px);letter-spacing:.18em;text-transform:uppercase;line-height:1}
-.rd-cab p{margin:6px 0 0;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
-.rd-cab .acoes{display:flex;gap:8px} .rd-cab button{padding:8px 12px;font-size:11px}
-.rd-corpo{flex:1;min-height:0;overflow-y:auto;columns:2 340px;column-gap:28px;padding-top:6px}
-.rd-sec{break-inside:avoid;margin:0 0 18px}
-.rd-sec h3{margin:0 0 8px;font-family:var(--mono);font-weight:500;font-size:10.5px;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;border-top:1px solid var(--line-strong);padding-top:8px}
-.rd-art{display:block;margin:0 0 12px;color:var(--fg);text-decoration:none}
-.rd-art strong{display:block;font-family:var(--display);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:.01em}
-.rd-art.manchete strong{font-size:clamp(20px,2.4vw,26px)}
-.rd-art small{display:block;margin-top:4px;font-family:var(--mono);font-size:10.5px;color:var(--muted)}
-.rd-art:hover strong,.rd-art:focus-visible strong{text-decoration:underline;text-underline-offset:3px}
-.rd-nota{margin:0;font-size:11px;color:var(--muted)}
+/* segurança */
+.seguro ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:30px 56px}
+.seguro li{padding-left:22px;border-left:2px solid var(--ciano)}
+.seguro li b{display:block;font-family:var(--display);font-weight:600;font-size:19px;color:#fff;margin-bottom:4px}
+.seguro li span{color:var(--apagado)}
+.seguro a{color:var(--ciano)}
+@media (max-width:820px){ .seguro ul{grid-template-columns:1fr} }
 
-/* ---------- Comunicado em tela inteira (folha de papel) ---------- */
-.com-wrap{position:fixed;inset:0;z-index:16;display:flex;flex-direction:column;align-items:center;gap:10px;overflow-y:auto;
-  padding:max(12px, env(safe-area-inset-top,0px)) max(12px, env(safe-area-inset-right,0px)) max(16px, env(safe-area-inset-bottom,0px)) max(12px, env(safe-area-inset-left,0px));
-  background:rgba(4,7,13,.9);backdrop-filter:blur(6px)}
-.com-barra{position:sticky;top:0;z-index:2;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:min(860px,100%);padding:6px 0}
-.com-barra button{padding:9px 14px;font-size:11px;background:#0b1422;color:#d9e6f5;border-color:rgba(63,208,255,.5)}
-.com-barra button.primary{color:#3fd0ff}
-.com-folha{width:min(860px,100%);min-height:calc(100% - 60px);background:#fffefb;color:#1b1d21;box-shadow:0 20px 60px rgba(0,0,0,.45);
-  padding:clamp(22px,6vw,64px) clamp(20px,7vw,72px);font-family:Georgia,"Times New Roman",serif;font-size:clamp(15px,1.6vw,17px);line-height:1.7}
-.com-folha header{display:block;border-bottom:2px solid #1b1d21;padding-bottom:12px;margin-bottom:22px}
-.com-folha .com-cond{font-family:var(--body);font-weight:600;font-size:clamp(16px,2vw,20px);letter-spacing:.04em;text-transform:uppercase;margin:0}
-.com-folha .dados{font-family:var(--body);font-size:12.5px;color:#4a4f57;margin:4px 0 0;line-height:1.5}
-.com-folha .tipo{font-family:var(--body);font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:#4a4f57;text-align:center;margin:0}
-.com-folha h1{font-family:var(--body);font-weight:700;font-size:clamp(20px,2.6vw,26px);text-align:center;margin:6px 0 22px;line-height:1.3}
-.com-folha .meta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px;color:#4a4f57;margin-bottom:16px}
-.com-folha .corpo p{margin:0 0 1em;text-align:justify;hyphens:auto}
-.com-folha .corpo[contenteditable="true"]:focus{outline:2px dashed #3fd0ff;outline-offset:8px}
-.com-folha .ass{margin-top:48px;text-align:center}
-.com-folha .ass .linha{width:min(320px,80%);margin:0 auto 6px;border-top:1px solid #1b1d21}
-.com-folha .ass strong{display:block;font-family:var(--body);font-size:14px}
-.com-folha .ass small{display:block;font-family:var(--body);font-size:12px;color:#4a4f57}
-.com-dica{font-family:var(--mono);font-size:11px;color:#9fb3c8;text-align:center;margin:0}
-@media print{
-  @page{margin:18mm 16mm}
-  body.imprimindo{background:#fff!important;overflow:visible!important}
-  body.imprimindo > *:not(#comOverlay){display:none!important}
-  body.imprimindo-rel{background:#fff!important;overflow:visible!important}
-  body.imprimindo-rel > *:not(#relOverlay){display:none!important}
-  body.imprimindo-rel #relOverlay{position:static;inset:auto;overflow:visible;background:none;backdrop-filter:none;padding:0;display:block}
-  body.imprimindo-rel .com-barra, body.imprimindo-rel .com-dica{display:none!important}
-  body.imprimindo-rel .rel-folha{width:auto;min-height:0;box-shadow:none;padding:0;font-size:10.5pt}
-  .rel-item, .rel-kpis, .rel-bloco{break-inside:avoid}
-  body.imprimindo-rel .rel-folha{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-  body.imprimindo-rel .rel-kpis{grid-template-columns:repeat(4,minmax(0,1fr))!important}
-  body.imprimindo-rel .rel-item{grid-template-columns:90px minmax(0,1fr)!important}
-  body.imprimindo-rel .rel-barra{grid-template-columns:170px minmax(0,1fr) 34px!important}
-  body.imprimindo #comOverlay{position:static;inset:auto;overflow:visible;background:none;backdrop-filter:none;padding:0;display:block}
-  body.imprimindo .com-barra, body.imprimindo .com-dica{display:none!important}
-  body.imprimindo .com-folha{width:auto;min-height:0;box-shadow:none;padding:0;font-size:12.5pt}
-}
+/* planos */
+.planos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:34px}
+.pl{padding:32px 28px;display:flex;flex-direction:column;gap:8px;position:relative}
+.pl.destaque{border-color:var(--ciano);box-shadow:0 0 40px rgba(63,208,255,.14)}
+.pl-selo{position:absolute;top:-11px;left:28px;margin:0;padding:3px 10px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;background:var(--ciano);color:#03121c}
+.pl-nome{margin:0;font-family:var(--display);font-weight:600;font-size:22px;color:#fff}
+.pl-faixa{margin:0;font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;color:var(--ciano)}
+.pl .numero{font-family:var(--display);font-weight:700;font-size:clamp(44px,5vw,60px);line-height:1;margin:14px 0 6px;color:#fff;text-shadow:0 0 34px rgba(63,208,255,.35)}
+.pl .numero.peq{font-size:clamp(30px,3.4vw,38px);padding:8px 0 6px}
+.pl .numero small{font-size:.32em;font-weight:500;color:var(--apagado);margin-left:6px;text-shadow:none}
+.pl .numero.peq small{display:block;margin:6px 0 0;font-size:.42em}
+.pl-txt{margin:0 0 18px;color:var(--apagado);flex:1}
+.pl .btn{align-self:stretch;text-align:center;justify-content:center}
+.inclui-todos{margin-top:18px;padding:32px 28px}
+.inclui-todos h3{font-family:var(--display);font-weight:600;font-size:19px;margin:0 0 16px;color:#fff}
+.inclui-todos ul{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 28px}
+.inclui-todos li{padding-left:26px;position:relative}
+.inclui-todos li::before{content:"";position:absolute;left:2px;top:.5em;width:11px;height:6px;border-left:2px solid var(--ciano);border-bottom:2px solid var(--ciano);transform:rotate(-45deg)}
+.pl-nota{margin:20px 0 0;color:var(--apagado);font-size:14px}
+.ma-planos{display:grid;gap:8px;margin:4px 0 6px}
+.modal-caixa .ma-planos label{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--linha);cursor:pointer;font-family:var(--body);font-size:14px;letter-spacing:0;color:var(--texto);margin:0}
+.modal-caixa .ma-planos label:has(input:checked){border-color:var(--ciano);background:rgba(63,208,255,.06)}
+.modal-caixa .ma-planos label b{color:#fff}
+.modal-caixa .ma-planos input[type=radio]{accent-color:var(--ciano);width:16px;height:16px;flex:none;margin:0;padding:0}
+@media (max-width:900px){ .planos{grid-template-columns:1fr} .inclui-todos ul{grid-template-columns:1fr} }
+/* preço */
+.plano{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr)}
+.plano .valor{padding:44px 40px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:6px}
+.plano .valor p{margin:0;color:var(--apagado)}
+.plano .numero{font-family:var(--display);font-weight:700;font-size:clamp(56px,7vw,82px);line-height:1;margin:10px 0 6px;color:#fff;text-shadow:0 0 34px rgba(63,208,255,.35)}
+.plano .numero small{font-size:.28em;font-weight:500;color:var(--apagado);margin-left:6px;text-shadow:none}
+.plano .valor .btn{margin-top:24px;align-self:flex-start}
+.plano .inclui{padding:44px 40px}
+.plano .inclui h3{font-family:var(--display);font-weight:600;font-size:19px;margin:0 0 16px;color:#fff}
+.plano ul{margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.plano li{padding-left:26px;position:relative}
+.plano li::before{content:"";position:absolute;left:2px;top:.5em;width:11px;height:6px;border-left:2px solid var(--ciano);border-bottom:2px solid var(--ciano);transform:rotate(-45deg)}
+@media (max-width:820px){ .plano{grid-template-columns:1fr} .plano .valor{border-right:0;border-bottom:1px solid var(--linha);padding:30px 24px} .plano .inclui{padding:30px 24px} }
 
-@media (max-width:860px){
-  .cal{height:100%;padding:12px}
-  .perfil{height:auto}
-  .lg-corpo,.lg-check{grid-template-columns:1fr}
-  .lg-abas{order:3;width:100%}
-  .lg-abas button{flex:1}
-  .dl-item{grid-template-columns:minmax(0,1fr) auto}
-  .dl-pill{grid-row:auto;grid-column:1;justify-self:start}
-  .dl-item small,.dl-item .dl-quando,.dl-item strong{grid-column:1 / -1}
-  .dl-item button{grid-column:2;grid-row:1}
-  .rd-corpo{columns:1}
-  .cal-corpo{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);gap:10px}
-  .cal-grade{grid-auto-rows:48px;flex:none}
-  button.cal-d{padding:3px;gap:2px}
-  .cal-d .ev{font-size:0;height:4px;padding:0;border-left:0;background:var(--cyan)}
-  .cal-d .ev.doc{background:var(--amber)} .cal-d .ev.doc.venc{background:var(--danger)}
-  .cal-d .mais{display:none}
-  .cal-dia{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:10px}
-  .cal-top{gap:6px}
-  .cal-top h2{font-size:14px;letter-spacing:.06em;white-space:nowrap}
-  .cal-top button{padding:7px 8px;font-size:10px;letter-spacing:.1em}
-  #calPrev,#calNext{padding:5px 10px}
-}
+/* perguntas */
+.faq{max-width:800px}
+.faq details{border-bottom:1px solid var(--linha)}
+.faq summary{cursor:pointer;list-style:none;padding:20px 40px 20px 0;font-family:var(--display);font-weight:500;font-size:19px;position:relative;color:#fff}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";position:absolute;right:4px;top:15px;font-size:26px;color:var(--ciano)}
+.faq details[open] summary::after{content:"–"}
+.faq details p{margin:0 0 20px;color:var(--apagado);max-width:42em}
 
-footer{display:flex;justify-content:center;align-items:center;gap:10px;padding-top:8px;flex-wrap:wrap}
-button{
-  font-family:var(--display);font-weight:600;letter-spacing:.22em;text-transform:uppercase;font-size:12px;
-  padding:11px 18px;border:1px solid var(--line-strong);background:var(--btn-bg);color:var(--muted);cursor:pointer;border-radius:0;
-  transition:background .2s,color .2s,border-color .2s;
-}
-button:hover{background:var(--btn-hover);color:var(--fg)}
-button.primary{border-color:var(--cyan);color:var(--cyan)}
-button.primary:hover{background:var(--cyan);color:var(--bg)}
-button[aria-pressed="true"]{color:var(--amber);border-color:var(--amber)}
-button:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
-.hint{width:100%;min-height:1.4em;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.06em;transition:opacity .8s}
-.hint.apagada{opacity:0}
-.hint.err{color:var(--danger)}
-
-/* drawer do registro */
-.drawer{position:fixed;top:0;right:0;bottom:0;width:min(380px,92vw);background:var(--drawer);border-left:1px solid var(--line);z-index:15;display:flex;flex-direction:column;transform:translateX(105%);transition:transform .45s cubic-bezier(.2,.9,.2,1);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
-.drawer.open{transform:none}
-.drawer h2{margin:0;padding:16px;border-bottom:1px solid var(--line);font-family:var(--mono);font-weight:500;font-size:11px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;display:flex;justify-content:space-between;align-items:center}
-.drawer h2 button{padding:6px 10px;font-size:10px}
-.log{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px;font-size:14px;line-height:1.45}
-.log p{margin:0;overflow-wrap:anywhere}
-.log small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;margin-bottom:2px}
-.log .a small{color:var(--cyan)} .log .u small{color:var(--amber)} .log .s{color:var(--muted);font-size:12px} .log .s small{color:var(--muted)}
-
-/* boot e bloqueio */
-.overlay{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:var(--overlay);backdrop-filter:blur(6px);text-align:center;
-  padding-left:max(18px, env(safe-area-inset-left, 0px));padding-right:max(18px, env(safe-area-inset-right, 0px))}
-.overlay strong{font-family:var(--display);font-size:clamp(22px,4vw,34px);letter-spacing:.32em;color:var(--cyan)}
-.overlay span{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.06em;max-width:46ch;line-height:1.6}
-.overlay input{font-family:var(--mono);font-size:16px;letter-spacing:.2em;text-align:center;padding:12px 14px;width:min(280px,80vw);background:transparent;border:1px solid var(--line-strong);color:var(--fg)}
-.overlay input:focus{outline:2px solid var(--cyan);outline-offset:2px}
-.login{z-index:40;background:var(--overlay)}
-.lform{display:flex;flex-direction:column;gap:8px;width:min(320px,86vw);text-align:left}
-.lform label{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-top:6px}
-.lform input{width:100%;text-align:left;letter-spacing:.02em;font-size:16px}
-.lform button{margin-top:12px;width:100%}
-button.link{border:0;background:none;padding:6px;font-family:var(--body);font-weight:400;letter-spacing:.02em;text-transform:none;font-size:13px;color:var(--muted);text-decoration:underline}
-button.link:hover{background:none;color:var(--fg)}
-#loginMsg{min-height:1.5em;max-width:44ch;line-height:1.5}
-button.google{display:flex;align-items:center;justify-content:center;gap:10px;width:min(320px,86vw);background:#fff;color:#1f1f1f;border-color:#fff;letter-spacing:.08em}
-button.google:hover{background:#e8eef7;color:#1f1f1f}
-.ou{font-size:11px!important;letter-spacing:.12em!important;text-transform:uppercase}
-#resumoDia .rs-t{margin:8px 0 4px;font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase}
-.rs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
-.rs li{font-size:12.5px;line-height:1.35;padding-left:12px;position:relative;overflow-wrap:anywhere}
-.rs li::before{content:"";position:absolute;left:0;top:.45em;width:6px;height:6px;border-radius:50%;background:var(--cyan)}
-.rs li.warn::before{background:var(--amber)} .rs li.crit::before{background:var(--danger)} .rs li.crit{color:var(--crit-fg)}
-.rs li.ok{color:var(--muted)} .rs li.ok::before{background:var(--ok)}
-.adm{border:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:6px}
-.adm-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
-.adm small{font-family:var(--mono);font-size:10.5px;color:var(--muted);overflow-wrap:anywhere}
-.pill{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border:1px solid}
-.pill.on{color:var(--ok);border-color:var(--ok)} .pill.off{color:var(--amber);border-color:var(--amber)}
-.adm-acoes button{padding:8px 12px;font-size:11px}
-.adm-cond{display:grid;grid-template-columns:1fr 90px 60px auto;gap:6px}
-.adm-cond input{min-width:0;background:transparent;border:1px solid var(--line-strong);color:var(--fg);padding:7px 8px;font-size:13px;font-family:var(--body)}
-.adm-cond button{padding:7px 10px;font-size:10.5px}
-@media (max-width:860px){ .adm-cond{grid-template-columns:1fr 1fr} }
-.cform{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);padding:14px;margin-top:6px}
-.cform label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-top:4px}
-.cform input{width:100%;min-width:0;background:transparent;border:1px solid var(--line-strong);color:var(--fg);padding:9px 10px;font-size:15px;font-family:var(--body)}
-.cform input:focus{outline:2px solid var(--cyan);outline-offset:1px}
-.cform input[aria-invalid="true"]{border-color:var(--danger)}
-.c2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.c2 > div{display:flex;flex-direction:column;gap:6px;min-width:0}
-.c2b{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.cmsg{min-height:1.3em;margin:4px 0 0;font-size:12.5px}
-.cond-aviso{margin:0;padding:10px 12px;border:1px solid var(--amber);color:var(--warn-fg);font-size:13px;line-height:1.5}
-.cond{border:1px solid var(--line);padding:10px 12px;display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
-.cond strong{font-family:var(--display);font-size:14px;letter-spacing:.04em}
-.cond small{font-family:var(--mono);font-size:10.5px;color:var(--muted);overflow-wrap:anywhere}
-.cond .falta{color:var(--amber)}
-.cond button{align-self:flex-start;margin-top:6px;padding:6px 10px;font-size:10px}
-.cform input[type=file]{padding:7px;font-size:13px;color:var(--muted)}
-.cform input[type=file]::file-selector-button{font-family:var(--display);letter-spacing:.12em;text-transform:uppercase;font-size:10.5px;background:transparent;color:var(--cyan);border:1px solid var(--cyan);padding:6px 10px;margin-right:10px;cursor:pointer}
-.dica{margin:2px 0 0;font-size:12px;line-height:1.45;color:var(--muted)}
-.prog{display:flex;flex-direction:column;gap:6px;margin-top:6px}
-.prog-barra{height:6px;background:rgba(63,208,255,.12);overflow:hidden}
-.prog-barra i{display:block;height:100%;width:0;background:var(--cyan);box-shadow:0 0 10px var(--cyan);transition:width .3s}
-.prog span{font-family:var(--mono);font-size:11px;color:var(--cyan)}
-.docst{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
-.docst span{font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:3px 7px;border:1px solid var(--line-strong);color:var(--muted)}
-.docst .pronto{color:var(--ok);border-color:var(--ok)} .docst .erro{color:var(--danger);border-color:var(--danger)} .docst .processando,.docst .enviado{color:var(--violet);border-color:var(--violet)}
-.cond .docmsg{color:var(--crit-fg)}
-#tapOverlay{background:var(--overlay-soft);backdrop-filter:none;cursor:pointer;justify-content:flex-end;padding-bottom:calc(22vh + env(safe-area-inset-bottom,0px))}
-#tapOverlay strong{animation:breathe 2.4s ease-in-out infinite}
-@keyframes breathe{50%{opacity:.45}}
-@media (prefers-reduced-motion:reduce){#tapOverlay strong{animation:none}}
-#bootlog{position:fixed;left:max(18px, env(safe-area-inset-left, 0px));bottom:calc(90px + env(safe-area-inset-bottom,0px));z-index:12;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--cyan);line-height:1.8;pointer-events:none;text-transform:uppercase}
-#bootlog .ok{color:var(--ok)} #bootlog .warn{color:var(--amber)}
-
-@media (max-width:1100px){ main{grid-template-columns:minmax(0,300px) 1fr minmax(0,300px)} }
-@media (max-width:860px){
-  main{grid-template-columns:1fr;grid-template-rows:1fr auto;align-items:end}
-  main > .center{grid-column:1}
-  #panels{position:fixed;left:max(14px, env(safe-area-inset-left, 0px));right:max(14px, env(safe-area-inset-right, 0px));top:calc(70px + env(safe-area-inset-top,0px));max-height:38vh;z-index:5}
-  #panels .holo:not(:first-child){display:none}
-  .center{padding-bottom:2vh}
-  .iconbtn .lbl{display:none}
-}
-@media (prefers-reduced-motion:reduce){ .caption .cursor{animation:none} .drawer{transition:none} }
-  .opc{ display:inline; font-size:inherit; opacity:.65; margin-left:.4em; }
+/* fechamento */
+.fecha{text-align:center;padding:120px 0;border-top:1px solid var(--linha);position:relative;overflow:hidden}
+.fecha .orbe{width:150px;height:150px;margin:0 auto 34px;border-radius:50%;
+  background:radial-gradient(circle,#fff 0 5%,rgba(63,208,255,.95) 13%,rgba(63,208,255,.3) 40%,rgba(63,208,255,0) 68%);animation:respira 3.2s ease-in-out infinite}
+@keyframes respira{50%{transform:scale(1.07);filter:brightness(1.2)}}
+@media (prefers-reduced-motion:reduce){ .fecha .orbe{animation:none} }
+.fecha h2{max-width:18em;margin:0 auto 14px}
+.fecha p{color:var(--apagado);margin:0 auto 30px;max-width:34em}
+.fecha .acoes{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.modal{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,5,10,.82);backdrop-filter:blur(6px);overflow-y:auto}
+.modal[hidden]{display:none}
+.modal-caixa{width:min(520px,100%);padding:30px 28px 24px;display:flex;flex-direction:column;gap:8px;margin:auto}
+.modal-caixa h2{font-size:28px;margin:0}
+.modal-caixa .marcador{margin:0}
+.ma-sub{color:var(--apagado);font-size:15px;margin:0 0 8px}
+.modal-caixa label{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--apagado);margin-top:6px}
+.modal-caixa input:not([type=checkbox]){width:100%;min-width:0;font-family:var(--body);font-size:16px;color:#fff;background:rgba(4,7,13,.7);border:1px solid var(--linha-forte);padding:11px 12px}
+.modal-caixa input:focus{outline:2px solid var(--ciano);outline-offset:1px}
+.modal-caixa input[aria-invalid=true]{border-color:var(--vermelho)}
+.ma-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ma-2 > div{display:flex;flex-direction:column;gap:8px;min-width:0}
+@media (max-width:480px){ .ma-2{grid-template-columns:1fr} }
+label.ma-aceite{display:flex;gap:10px;align-items:flex-start;font-family:var(--body);font-size:14px;letter-spacing:0;color:var(--texto);margin-top:10px}
+.ma-aceite input{width:18px;height:18px;flex:none;margin-top:2px;accent-color:var(--ciano)}
+.ma-aceite a,.ma-nota a{color:var(--ciano)}
+.ma-msg{min-height:1.3em;margin:4px 0;font-size:14px;color:var(--vermelho)}
+.ma-msg.ok{color:var(--verde)}
+.modal-caixa .btn{margin-top:4px}
+.ma-nota{margin:8px 0 0;font-size:13px;color:var(--apagado);text-align:center}
+.fechar{position:absolute;top:10px;right:12px;background:none;border:0;color:var(--apagado);font-size:18px;cursor:pointer;padding:6px}
+.fechar:hover{color:#fff}
+footer{border-top:1px solid var(--linha);padding:28px 0 40px;font-size:14px;color:#6f879e}
+footer .w{display:flex;gap:20px;flex-wrap:wrap;justify-content:space-between}
+footer nav{display:flex;gap:20px;flex-wrap:wrap}
+footer a:hover{color:var(--texto)}
 </style>
 </head>
 <body>
-<canvas id="gl" aria-hidden="true"></canvas>
-<div class="vignette"></div>
-<div class="scan"></div>
 
-<div class="app">
-  <header>
-    <div class="brand"><h1>SINDICS</h1><p class="tagline">Inteligência Condominial</p></div>
-    <button id="menuBtn" class="iconbtn" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="menuDrawer">
-      <span class="lbl">Menu</span><span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>
-    </button>
-  </header>
-
-  <main>
-    <section class="center">
-      <div class="state" id="state">Inicializando</div>
-      <div class="tool" id="tool"></div>
-      <div class="caption" id="caption" aria-live="polite"></div>
-      <div class="you" id="you"></div>
-    </section>
-
-    <section class="col" id="panels" aria-label="Painéis do SINDICS"></section>
-  </main>
-
-  <footer>
-    <div class="hint" id="hint">Diga “SINDICS” para chamar</div>
-  </footer>
-</div>
-
-<aside class="drawer" id="menuDrawer" aria-label="Menu do SINDICS">
-  <h2>Menu <button id="closeMenu" type="button">Fechar</button></h2>
-  <div class="log">
-    <p class="menu-quem" id="hdrSindico">Inteligência Condominial</p>
-    <div class="status">
-      <div><b id="hdrCondLabel">Condomínio</b><i id="hdrCond">—</i></div>
-      <div><b>Empresa</b><i id="hdrEmpresa">—</i></div>
-      <div><b>Sistemas</b><i><span class="dot" id="netDot"></span><span id="netTxt">Online</span></i></div>
-      <div><b>Horário</b><i id="clock">--:--</i></div>
-    </div>
-    <div class="menu-btns">
-      <button id="wakeBtn" class="primary" type="button">Chamar agora</button>
-      <button id="sleepBtn" type="button" hidden>Descansar</button>
-      <button id="opBtn" type="button">Operação do dia</button>
-      <button id="calBtn" type="button">Calendário</button>
-      <button id="docBtn" type="button">Documentação legal</button>
-      <button id="radarBtn" type="button">Radar condominial</button>
-      <button id="condBtn" type="button">Condomínios</button>
-      <button id="logBtn" type="button">Registro</button>
-      <button id="mute" type="button" aria-pressed="false">Silenciar mic</button>
-      <button id="sfxBtn" type="button" aria-pressed="false">Som ambiente</button>
-      <button id="themeBtn" type="button">Tema claro</button>
-      <button id="vozBtn" type="button">Voz: masculina</button>
-      <button id="perfilBtn" type="button">Meu cadastro</button>
-      <button id="lgpdBtn" type="button">Privacidade e LGPD</button>
-      <button id="installBtn" type="button" hidden>Instalar app</button>
-      <button id="equipeBtn" type="button">Minha equipe</button>
-      <button id="admBtn" type="button" hidden>Síndicos</button>
-      <button id="logoutBtn" type="button">Sair</button>
-    </div>
-    <div class="holo" id="resumoDia" aria-live="polite">
-      <h3><span>Hoje</span><em>—</em></h3>
-      <p class="rs-t">Carregando vencimentos e agenda…</p>
-    </div>
-    <div class="holo" id="indPanel">
-      <h3>Indicadores <em>BCB</em></h3>
-      <div class="ind"><span>Selic meta</span><strong id="i-selic">—</strong><small id="d-selic">carregando…</small></div>
-      <div class="ind"><span>IPCA 12m</span><strong id="i-ipca">—</strong><small id="d-ipca">carregando…</small></div>
-      <div class="ind"><span>IGP-M 12m</span><strong id="i-igpm">—</strong><small id="d-igpm">carregando…</small></div>
-      <div class="ind"><span>Dólar</span><strong id="i-usd">—</strong><small id="d-usd">carregando…</small>
-        <svg class="spark" id="sp-usd" viewBox="0 0 200 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
-    </div>
-    <p class="menu-sec">Diga “SINDICS” para chamar · “abre o menu” · “tema claro” · “muda para voz feminina” · “pode descansar”</p>
+<header class="topo" id="topo">
+  <div class="w">
+    <a class="marca" href="#">SINDICS<small>Inteligência Condominial</small></a>
+    <nav aria-label="Seções">
+      <a href="#conversa">Como funciona</a>
+      <a href="#documentos">Documentos legais</a>
+      <a href="#preco">Preço</a>
+      <a href="#perguntas">Perguntas</a>
+    </nav>
+    <a class="entrar" href="app/">Entrar</a>
+    <a class="btn forte peq js-assinar" href="#preco">Assinar</a>
   </div>
-</aside>
+</header>
 
-<aside class="drawer" id="condDrawer" aria-label="Condomínios">
-  <h2><span id="condTitulo">Meus condomínios</span> <button id="closeCond" type="button">Fechar</button></h2>
-  <div class="log">
-    <p class="cond-aviso" id="condAviso" hidden></p>
-    <div id="condLista"></div>
-    <form id="condForm" class="cform" novalidate>
-      <p class="rs-t" id="condFormTitulo">Cadastrar condomínio</p>
-      <label for="cCnpj">CNPJ *</label>
-      <input id="cCnpj" inputmode="text" autocomplete="off" placeholder="00.000.000/0000-00" maxlength="18" required>
-      <label for="cNome">Nome do condomínio *</label>
-      <input id="cNome" autocomplete="organization" required>
-      <div class="c2">
-        <div><label for="cCep">CEP</label><input id="cCep" inputmode="numeric" placeholder="00000-000" maxlength="9"></div>
-        <div><label for="cUnid">Apartamentos *</label><input id="cUnid" inputmode="numeric" placeholder="ex.: 120" required></div>
-      </div>
-      <label for="cEnd">Endereço (rua, número, bairro) *</label>
-      <input id="cEnd" autocomplete="street-address" required>
-      <div class="c2">
-        <div><label for="cCidade">Cidade *</label><input id="cCidade" autocomplete="address-level2" required></div>
-        <div><label for="cUf">UF *</label><input id="cUf" maxlength="2" autocomplete="address-level1" required></div>
-      </div>
-      <label for="cReg">Regulamento Interno (PDF) <span id="cRegObr">*</span></label>
-      <input id="cReg" type="file" accept="application/pdf,.pdf">
-      <label for="cConv">Convenção de Condomínio (PDF) <small class="opc">opcional</small></label>
-      <input id="cConv" type="file" accept="application/pdf,.pdf">
-      <p class="dica" id="cDocDica">O SINDICS lê o Regulamento Interno e passa a conhecer as regras de convivência do condomínio. A Convenção é opcional: envie quando quiser. PDFs escaneados também funcionam, só demoram um pouco mais.</p>
-      <div class="prog" id="cProg" hidden><div class="prog-barra"><i id="cProgBar"></i></div><span id="cProgTxt"></span></div>
-      <p class="cmsg" id="cMsg" role="status"></p>
-      <div class="c2b">
-        <button id="cSalvar" class="primary" type="submit">Salvar condomínio</button>
-        <button id="cCancelar" type="button" hidden>Cancelar edição</button>
-      </div>
-    </form>
-  </div>
-</aside>
+<main>
+  <section class="abre" aria-label="Apresentação">
+    <canvas id="nucleo" aria-hidden="true"></canvas>
+    <div class="hud esq" id="bootlog" aria-hidden="true"></div>
+    <div class="hud dir" aria-hidden="true"><span id="relogio">--:--</span><br>São Paulo · BR<br>Canal de voz <span class="ok">ativo</span></div>
 
-<div class="cal-wrap" id="calOverlay" hidden>
-  <section class="cal holo" role="dialog" aria-labelledby="calTitulo">
-    <div class="cal-top">
-      <button id="calPrev" type="button" aria-label="Mês anterior">‹</button>
-      <h2 id="calTitulo">Calendário</h2>
-      <button id="calNext" type="button" aria-label="Próximo mês">›</button>
-      <button id="calHoje" type="button">Hoje</button>
-      <button id="calFechar" type="button">Fechar</button>
-    </div>
-    <div class="cal-corpo">
-      <div class="cal-mes">
-        <div class="cal-sem" aria-hidden="true"><span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span></div>
-        <div class="cal-grade" id="calGrade"></div>
-        <div class="cal-legenda"><span><i></i>Compromisso</span><span><i class="d"></i>Documento vence</span><span><i class="v"></i>Documento vencido</span></div>
+    <div class="fala-abre">
+      <p class="estado" id="estado">INICIALIZANDO</p>
+      <h1 id="saudacao"><span id="digitado"></span><span class="cursor" aria-hidden="true"></span></h1>
+      <p class="sub surge">Eu cuido da sua agenda com alarmes, controlo o vencimento dos documentos legais, mostro a regra do regulamento na tela, registro a operação do dia e escrevo o comunicado pronto para imprimir. Você só precisa falar.</p>
+      <div class="acoes surge">
+        <a class="btn forte js-assinar" href="#preco">
+          Assinar agora
+        </a>
+        <a class="btn" href="#conversa">Ver uma conversa</a>
       </div>
-      <div class="cal-dia" id="calDiaLista" aria-live="polite"></div>
+      <p class="preco-mini surge">Planos a partir de <b>R$ 450</b> por mês · todos os recursos incluídos</p>
+      <a class="rolar surge" href="#conversa" aria-label="Rolar para baixo"></a>
     </div>
   </section>
-</div>
 
-<div class="cal-wrap" id="docOverlay" hidden>
-  <section class="cal holo" role="dialog" aria-labelledby="dlTitulo">
-    <div class="dl-top">
-      <h2 id="dlTitulo">Documentação legal</h2>
-      <select id="dlCond" aria-label="Condomínio"></select>
-      <button id="dlFechar" type="button">Fechar</button>
+  <section class="bloco" id="conversa">
+    <div class="w duas">
+      <div>
+        <p class="marcador">// como funciona</p>
+        <h2>Fale como falaria com o seu gerente predial.</h2>
+        <p>Diga “SINDICS” e peça. Ele responde em voz, coloca o que importa na tela e já deixa tudo registrado: o compromisso na agenda, o prazo na pasta de documentos, a regra com o número do artigo.</p>
+        <p>Sem menus para decorar. Funciona no computador e no celular, e pode ser instalado como aplicativo.</p>
+      </div>
+      <div class="conversa holo" id="demo" aria-label="Exemplo de conversa com o SINDICS">
+        <p class="fala voce passo"><small>VOCÊ</small>SINDICS, como está a documentação do Residencial Aurora?</p>
+        <p class="fala passo"><small>SINDICS</small>O seguro vence em 12 dias e a limpeza da caixa d’água está vencida. O resto está em dia. Coloquei na tela.</p>
+        <div class="cartao passo">
+          <h3>Residencial Aurora · documentos</h3>
+          <ul>
+            <li><span>Limpeza da caixa d’água</span><span class="c-ve">vencida</span></li>
+            <li><span>Seguro obrigatório</span><span class="c-at">vence em 12 dias</span></li>
+            <li><span>AVCB</span><span class="c-ok">em dia até 03/2028</span></li>
+            <li><span>Extintores</span><span class="c-ok">em dia até 05/2027</span></li>
+          </ul>
+        </div>
+        <p class="fala voce passo"><small>VOCÊ</small>Marca a limpeza para sexta às 9h.</p>
+        <p class="fala passo"><small>SINDICS</small>Marquei sexta, às 9h, com aviso meia hora antes.</p>
+      </div>
     </div>
-    <div class="dl-resumo" id="dlResumo" aria-live="polite"></div>
-    <div class="dl-lista" id="dlLista"></div>
-    <p class="dl-nota">Lista padrão do SINDICS: lei federal, normas ABNT e regras do Estado e da cidade de São Paulo. Em outros estados e cidades, confirme as regras locais. Para cadastrar, diga: “SINDICS, o AVCB do Fit Casa vence em 10 de março de 2028”.</p>
   </section>
-</div>
 
-<div class="cal-wrap" id="radarOverlay" hidden>
-  <section class="cal holo rd" role="dialog" aria-labelledby="rdTitulo">
-    <div class="rd-cab">
-      <div><h2 id="rdTitulo">Radar Condominial</h2><p id="rdData">—</p></div>
-      <div class="acoes"><button id="rdAtualizar" type="button">Atualizar</button><button id="rdFechar" type="button">Fechar</button></div>
+  <section class="bloco" id="o-que-faz">
+    <div class="w">
+      <p class="marcador">// comandos de voz</p>
+      <h2>Você diz. Ele faz.</h2>
+      <p class="intro">Sete pedidos do dia a dia do síndico e o que o SINDICS faz com cada um.</p>
+      <div class="dialogos">
+        <div class="dl"><q>Marca a assembleia dia 28 às 19h30 no salão e me avisa um dia antes.</q><p>Agenda, confere conflitos de horário e toca o alarme na hora certa. O calendário do mês abre na tela quando você pedir.</p><strong>agenda + alarmes</strong></div>
+        <div class="dl"><q>Pode fazer obra no sábado?</q><p>Procura no Regulamento Interno do condomínio (e na Convenção, se você enviar) e mostra o artigo na tela, com a penalidade quando houver.</p><strong>regras do condomínio</strong></div>
+        <div class="dl"><q>Registra: ronda na garagem feita, lâmpada do bloco B trocada.</q><p>Grava no diário operacional com data, hora, quem fez e a confirmação de presença no condomínio. No fim do mês, o relatório com indicadores e fotos sai pronto em PDF.</p><strong>operação do dia</strong></div>
+        <div class="dl"><q>Escreve um comunicado sobre o horário da piscina.</q><p>Redige o texto formal com cabeçalho, CNPJ, data e sua assinatura. Abre em tela cheia para ajustar, copiar ou imprimir em PDF.</p><strong>comunicados</strong></div>
+        <div class="dl"><q>O AVCB foi renovado, vence em março de 2028.</q><p>Atualiza a Pasta de Documentação Legal e passa a avisar com antecedência antes do próximo vencimento.</p><strong>prazos legais</strong></div>
+        <div class="dl"><q>Divide uma obra de 48 mil em 6 parcelas entre os 120 apartamentos.</q><p>Faz a conta passo a passo e mostra o valor por unidade, usando os índices oficiais do Banco Central quando precisar de correção.</p><strong>cálculos de rateio</strong></div>
+        <div class="dl"><q>Quais são as notícias do setor hoje?</q><p>Apresenta as principais notícias do mercado condominial do dia, como um telejornal, com o veículo de cada uma.</p><strong>radar condominial</strong></div>
+      </div>
     </div>
-    <div class="rd-corpo" id="rdCorpo"></div>
-    <p class="rd-nota">Notícias públicas do setor condominial reunidas automaticamente (Google Notícias). Toque numa manchete para ler a matéria completa no veículo.</p>
   </section>
-</div>
 
-<div class="com-wrap" id="relOverlay" hidden role="dialog" aria-label="Relatório operacional">
-  <div class="com-barra">
-    <button id="relImprimir" type="button" class="primary">Baixar PDF / imprimir</button>
-    <button id="relFechar" type="button">Fechar</button>
-  </div>
-  <article class="com-folha rel-folha" id="relFolha"></article>
-  <p class="com-dica">Na janela de impressão, escolha “Salvar como PDF” para baixar o relatório.</p>
-</div>
-
-<div class="com-wrap" id="comOverlay" hidden role="dialog" aria-labelledby="comTitulo">
-  <div class="com-barra">
-    <button id="comCopiar" type="button" class="primary">Copiar texto</button>
-    <button id="comImprimir" type="button">Imprimir / salvar PDF</button>
-    <button id="comFechar" type="button">Fechar</button>
-  </div>
-  <article class="com-folha" id="comFolha">
-    <header><p class="com-cond" id="comCond">—</p><p class="dados" id="comDados"></p></header>
-    <p class="tipo" id="comTipo">Comunicado</p>
-    <h1 id="comTitulo">—</h1>
-    <div class="meta"><span id="comPara"></span><span id="comData"></span></div>
-    <div class="corpo" id="comCorpo" contenteditable="true" spellcheck="true"></div>
-    <div class="ass"><div class="linha"></div><strong id="comAss">—</strong><small id="comAssCargo">Síndico</small></div>
-  </article>
-  <p class="com-dica">Você pode clicar no texto e ajustar antes de imprimir. Para mudar por voz: “SINDICS, troca o segundo parágrafo…”.</p>
-</div>
-
-<aside class="drawer" id="equipeDrawer" aria-label="Minha equipe">
-  <h2>Minha equipe <button id="closeEquipe" type="button">Fechar</button></h2>
-  <div class="log">
-    <p class="dica">Gestores auxiliares usam o SINDICS no dia a dia, só nos condomínios que você autorizar: agenda, documentos legais, comunicados, regras e cálculos. Não podem cadastrar ou excluir condomínios, nem mexer na assinatura ou na equipe.</p>
-    <p class="rs-t" id="eqContagem"></p>
-    <div id="eqLista" class="eq-lista"></div>
-    <form id="eqForm" class="cform" novalidate>
-      <p class="rs-t">Convidar gestor</p>
-      <label for="eqNome">Nome do gestor *</label>
-      <input id="eqNome" autocomplete="off">
-      <label for="eqEmail">E-mail do gestor *</label>
-      <input id="eqEmail" type="email" autocomplete="off">
-      <p class="rs-t eq-sub">Condomínios que ele vai cuidar *</p>
-      <div id="eqConds" class="eq-conds"></div>
-      <p class="cmsg" id="eqMsg" role="status"></p>
-      <button id="eqEnviar" class="primary" type="submit">Enviar convite</button>
-    </form>
-  </div>
-</aside>
-
-<aside class="drawer" id="opDrawer" aria-label="Operação do dia">
-  <h2>Operação do dia <button id="closeOp" type="button">Fechar</button></h2>
-  <div class="log">
-    <form id="opForm" class="cform" novalidate>
-      <p class="rs-t">Novo registro</p>
-      <label for="opCond">Condomínio *</label>
-      <select id="opCond"></select>
-      <label for="opTipo">Tipo *</label>
-      <select id="opTipo"></select>
-      <label for="opDesc">O que foi feito ou aconteceu *</label>
-      <textarea id="opDesc" rows="3" maxlength="2000" placeholder="Ex.: Ronda na garagem; lâmpada do hall do bloco B trocada."></textarea>
-      <div class="c2">
-        <div><label for="opUnid">Unidade (opcional)</label><input id="opUnid" maxlength="40" placeholder="Ex.: 52-B"></div>
-        <div><label for="opSit">Situação *</label><select id="opSit"><option value="resolvido">Resolvido</option><option value="pendente">Pendente</option></select></div>
+  <section class="bloco" id="documentos">
+    <div class="w duas">
+      <div>
+        <p class="marcador">// pasta de documentação legal</p>
+        <h2>Nenhum laudo vencido passa despercebido.</h2>
+        <p>Cada condomínio ganha a mesma pasta, montada a partir da lei e das normas técnicas: AVCB, seguro obrigatório, brigada de incêndio, extintores, para-raios, caixa d’água, elevadores, PMOC, PGR e PCMSO, entre outros.</p>
+        <p>Você informa só a data da última renovação. O SINDICS calcula o vencimento pelo prazo legal e avisa com antecedência, logo na abertura do dia.</p>
+        <p>A lista segue a lei federal e as regras do Estado e da cidade de São Paulo. Em outros locais, ele indica o que conferir na regra local.</p>
       </div>
-      <label for="opFotos">Fotos (até 3)</label>
-      <input id="opFotos" type="file" accept="image/*" multiple>
-      <div class="op-fotos" id="opFotosPrev"></div>
-      <p class="dica">Use só o número da unidade, nunca o nome de morador, e evite fotografar pessoas (LGPD). Ao registrar, o SINDICS confere sua localização: guarda apenas a distância até o condomínio, não as coordenadas.</p>
-      <p class="cmsg" id="opMsg" role="status"></p>
-      <button id="opEnviar" class="primary" type="submit">Registrar</button>
-    </form>
-    <p class="rs-t op-sec">Pendências abertas</p>
-    <div id="opPend" class="op-lista"></div>
-    <p class="rs-t op-sec">Registros de hoje</p>
-    <div id="opHoje" class="op-lista"></div>
-    <div class="cform op-rel">
-      <p class="rs-t">Relatório operacional do mês</p>
-      <div class="c2">
-        <div><label for="opRelCond">Condomínio</label><select id="opRelCond"></select></div>
-        <div><label for="opRelMes">Mês</label><input id="opRelMes" type="month"></div>
+      <div class="pasta holo" aria-label="Exemplo da Pasta de Documentação Legal">
+        <div class="doc"><b>Limpeza da caixa d’água</b><small>A cada 6 meses · Comunicado CVS 36/1991</small><span class="st v">vencido</span></div>
+        <div class="doc"><b>Seguro obrigatório da edificação</b><small>Anual · Código Civil, art. 1.346</small><span class="st a">12 dias</span></div>
+        <div class="doc"><b>AVCB</b><small>3 anos em SP para residencial · Decreto 69.118/2024</small><span class="st e">em dia</span></div>
+        <div class="doc"><b>Atestado de brigada de incêndio</b><small>12 meses · IT 17/2025</small><span class="st e">em dia</span></div>
+        <div class="doc"><b>Laudo do para-raios (SPDA)</b><small>3 anos · ABNT NBR 5419</small><span class="st f">sem cadastro</span></div>
+        <div class="doc"><b>RIA dos elevadores</b><small>Anual · Lei municipal 10.348/1987</small><span class="st e">em dia</span></div>
       </div>
-      <button id="opRelBtn" type="button" class="primary">Gerar relatório</button>
     </div>
-  </div>
-</aside>
-
-<aside class="drawer" id="admDrawer" aria-label="Administração de síndicos">
-  <h2>Síndicos cadastrados <button id="closeAdm" type="button">Fechar</button></h2>
-  <div class="log" id="admLista"></div>
-</aside>
-
-<aside class="drawer" id="drawer" aria-label="Registro da sessão">
-  <h2>Registro da sessão <button id="closeLog" type="button">Fechar</button></h2>
-  <div class="log" id="log"></div>
-</aside>
-
-<div id="bootlog" aria-hidden="true"></div>
-
-<div class="overlay login" id="loginOverlay" hidden>
-  <strong>SINDICS</strong>
-  <span id="loginSub">Inteligência Condominial · acesso restrito</span>
-  <button id="googleBtn" class="google" type="button">
-    <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
-    Entrar com Google
-  </button>
-  <span class="ou">ou com e-mail e senha</span>
-  <form id="loginForm" class="lform" novalidate>
-    <label for="email">E-mail</label>
-    <input id="email" type="email" autocomplete="username" required>
-    <label for="pwd" id="pwdLabel">Senha</label>
-    <input id="pwd" type="password" autocomplete="current-password" required>
-    <button id="loginBtn" class="primary" type="submit">Entrar</button>
-  </form>
-  <form id="newPwdForm" class="lform" hidden novalidate>
-    <label for="pwd1">Nova senha (mínimo 8 caracteres)</label>
-    <input id="pwd1" type="password" autocomplete="new-password" minlength="8" required>
-    <label for="pwd2">Repita a nova senha</label>
-    <input id="pwd2" type="password" autocomplete="new-password" minlength="8" required>
-    <button class="primary" type="submit">Salvar nova senha</button>
-  </form>
-  <button id="forgotBtn" class="link" type="button">Esqueci minha senha</button>
-  <span id="loginMsg" role="status"></span>
-  <button id="criarContaBtn" class="link destaque" type="button">Ainda não tem conta? Criar conta de síndico</button>
-  <a class="pol-link" href="conheca/">Conheça o SINDICS e assine</a>
-  <a class="pol-link" href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade e Termos de Uso</a>
-</div>
-
-<div class="cal-wrap perfil-wrap" id="perfilOverlay" hidden>
-  <section class="cal holo perfil" role="dialog" aria-labelledby="pfTitulo">
-    <div class="dl-top">
-      <h2 id="pfTitulo">Cadastro do síndico</h2>
-      <button id="pfFechar" type="button">Fechar</button>
-    </div>
-    <p class="dica" id="pfIntro"></p>
-    <form id="perfilForm" class="cform pf-form" novalidate>
-      <fieldset id="pfAcesso">
-        <legend>Acesso ao sistema</legend>
-        <label for="pfEmail">E-mail de login *</label>
-        <input id="pfEmail" type="email" autocomplete="username">
-        <div class="c2">
-          <div><label for="pfSenha">Senha (mín. 8) *</label><input id="pfSenha" type="password" autocomplete="new-password" minlength="8"></div>
-          <div><label for="pfSenha2">Repita a senha *</label><input id="pfSenha2" type="password" autocomplete="new-password" minlength="8"></div>
-        </div>
-      </fieldset>
-      <fieldset>
-        <legend>Seus dados</legend>
-        <label for="pfNome">Seu nome completo *</label>
-        <input id="pfNome" autocomplete="name">
-        <div class="pf-bloco" id="pfBlocoEmpresa">
-        <label for="pfEmpresa">Sua empresa *</label>
-        <input id="pfEmpresa" autocomplete="organization">
-        <label for="pfCnpj">CNPJ da empresa *</label>
-        <input id="pfCnpj" autocomplete="off" placeholder="00.000.000/0000-00" maxlength="18">
-        <div class="c2">
-          <div><label for="pfCep">CEP *</label><input id="pfCep" inputmode="numeric" placeholder="00000-000" maxlength="9" autocomplete="postal-code"></div>
-          <div><label for="pfUf">UF *</label><input id="pfUf" maxlength="2" autocomplete="address-level1"></div>
-        </div>
-        <label for="pfEnd">Endereço (rua, número, complemento, bairro) *</label>
-        <input id="pfEnd" autocomplete="street-address">
-        <label for="pfCidade">Cidade *</label>
-        <input id="pfCidade" autocomplete="address-level2">
-        </div>
-        <div class="c2">
-          <div><label for="pfEmailC">E-mail de contato *</label><input id="pfEmailC" type="email" autocomplete="email"></div>
-          <div><label for="pfTel">Telefone / WhatsApp *</label><input id="pfTel" inputmode="tel" placeholder="(11) 90000-0000" maxlength="15" autocomplete="tel"></div>
-        </div>
-        <label for="pfTrat">Como o SINDICS deve chamar você</label>
-        <input id="pfTrat" maxlength="40" placeholder="Ex.: Sr. Cardoso, Dra. Ana, Marcos">
-        <p class="dica">Se ficar em branco, uso seu primeiro nome.</p>
-        <div class="pf-bloco" id="pfBlocoAss">
-        <label for="pfAss">Assinatura dos comunicados</label>
-        <input id="pfAss" placeholder="Ex.: Maria Souza — Síndica Profissional">
-        <p class="dica">Usada no rodapé dos comunicados. Se ficar em branco, uso seu nome e “Síndico”.</p>
-        </div>
-      </fieldset>
-      <label class="aceite"><input id="pfAceite" type="checkbox"> <span>Li e aceito a <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade e os Termos de Uso</a> do SINDICS, incluindo o tratamento dos meus dados conforme a LGPD (Lei 13.709/2018).</span></label>
-      <p class="cmsg" id="pfMsg" role="status"></p>
-      <div class="c2b">
-        <button id="pfSalvar" class="primary" type="submit">Salvar cadastro</button>
-        <button id="pfSair" type="button" hidden>Sair da conta</button>
-      </div>
-    </form>
   </section>
-</div>
 
-<div class="cal-wrap" id="lgpdOverlay" hidden>
-  <section class="cal holo lg" role="dialog" aria-labelledby="lgTitulo">
-    <div class="dl-top">
-      <h2 id="lgTitulo">Privacidade e LGPD</h2>
-      <div class="lg-abas" role="tablist">
-        <button id="lgAbaDados" type="button" role="tab" aria-selected="true">Seus dados</button>
-        <button id="lgAbaCond" type="button" role="tab" aria-selected="false">LGPD no condomínio</button>
+  <section class="bloco">
+    <div class="w">
+      <p class="marcador">// para quem</p>
+      <h2>Para quem cuida de condomínio todos os dias.</h2>
+      <p class="intro">Um painel por síndico, com todos os condomínios que ele administra, sem misturar regras nem prazos.</p>
+      <div class="publico">
+        <div class="holo"><h3>Síndico profissional</h3><p>Vários condomínios, uma agenda só. O SINDICS separa regras e prazos de cada prédio e avisa o que vence primeiro.</p></div>
+        <div class="holo"><h3>Síndico morador</h3><p>Sem experiência em legislação? Ele explica a regra em linguagem simples e diz o que a lei exige e quando.</p></div>
+        <div class="holo"><h3>Administradora</h3><p>Padroniza o controle de documentos e comunicados entre os síndicos da carteira.</p></div>
       </div>
-      <button id="lgFechar" type="button">Fechar</button>
     </div>
-    <div class="lg-corpo" id="lgDados" role="tabpanel">
-      <div class="lg-col">
-        <h3>O que o SINDICS guarda sobre você</h3>
-        <dl class="lg-dl" id="lgResumo"></dl>
-        <h3>Como tratamos</h3>
-        <ul class="lg-ul">
-          <li><b>Sua voz não é gravada.</b> O áudio é usado só durante a conversa.</li>
-          <li><b>Transcrição da conversa:</b> apagada automaticamente em 90 dias.</li>
-          <li><b>Registros de acesso:</b> guardados por 6 meses (Marco Civil da Internet, art. 15).</li>
-          <li><b>Moradores:</b> o SINDICS não pede nem guarda dados pessoais de moradores.</li>
-          <li><b>Onde ficam:</b> banco de dados no Brasil (São Paulo). A voz é processada pela ElevenLabs, com transferência internacional nos termos do art. 33 da LGPD.</li>
+  </section>
+
+  <section class="bloco seguro">
+    <div class="w">
+      <p class="marcador">// privacidade</p>
+      <h2>Feito para respeitar a LGPD.</h2>
+      <p class="intro">Condomínio lida com dados de muita gente. O SINDICS foi desenhado para não aumentar esse risco.</p>
+      <ul>
+        <li><b>Sua voz não é gravada</b><span>O áudio é usado só durante a conversa. O texto é apagado em até 90 dias.</span></li>
+        <li><b>Nada de dados de moradores</b><span>O sistema não pede nem guarda nome, CPF ou telefone de moradores. Advertências usam só a unidade.</span></li>
+        <li><b>Dados no Brasil</b><span>O banco de dados fica em São Paulo, e cada síndico só enxerga os próprios condomínios.</span></li>
+        <li><b>Roteiro de LGPD do condomínio</b><span>Doze passos para adequar o prédio, com o aviso de privacidade pronto para o mural. <a href="privacidade.html">Ler a política de privacidade</a></span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="bloco" id="preco">
+    <div class="w">
+      <p class="marcador">// planos</p>
+      <h2>Escolha pelo tamanho da sua carteira.</h2>
+      <p class="intro">Mensalidade fixa conforme a quantidade de condomínios que você administra. Todos os recursos em todos os planos. Assine em dois minutos e receba o acesso no seu e-mail assim que o pagamento for confirmado.</p>
+      <div class="planos">
+        <div class="pl holo">
+          <p class="pl-nome">Essencial</p>
+          <p class="pl-faixa">1 a 5 condomínios</p>
+          <p class="numero">R$ 450<small>/mês</small></p>
+          <p class="pl-txt">Para o síndico que está estruturando a carteira e quer tudo sob controle desde o primeiro prédio.</p>
+          <a class="btn forte js-assinar" data-plano="essencial" href="#preco">Assinar</a>
+        </div>
+        <div class="pl holo destaque">
+          <p class="pl-selo">recomendado</p>
+          <p class="pl-nome">Profissional</p>
+          <p class="pl-faixa">6 a 10 condomínios</p>
+          <p class="numero">R$ 899<small>/mês</small></p>
+          <p class="pl-txt">Para o síndico profissional com equipe, que precisa de operação documentada e relatório mensal de cada prédio.</p>
+          <a class="btn forte js-assinar" data-plano="profissional" href="#preco">Assinar</a>
+        </div>
+        <div class="pl holo">
+          <p class="pl-nome">Sob consulta</p>
+          <p class="pl-faixa">11 ou mais condomínios</p>
+          <p class="numero peq">Proposta<small>personalizada</small></p>
+          <p class="pl-txt">Para administradoras e grandes carteiras. Montamos a proposta de acordo com a sua operação.</p>
+          <a class="btn js-contato" href="#">Fale conosco</a>
+        </div>
+      </div>
+      <div class="inclui-todos holo">
+        <h3>Incluído em todos os planos</h3>
+        <ul>
+          <li>Inteligência condominial por voz, com voz masculina ou feminina</li>
+          <li>Agenda com alarmes e calendário na tela</li>
+          <li>Pasta de Documentação Legal para cada condomínio</li>
+          <li>Leitura do Regulamento Interno (e da Convenção, se quiser)</li>
+          <li>Operação do dia: diário com fotos e confirmação de presença</li>
+          <li>Relatório operacional mensal em PDF</li>
+          <li>Gestores auxiliares, o seu braço direito no dia a dia</li>
+          <li>Comunicados, editais e advertências prontos para imprimir</li>
+          <li>Cálculos de rateio e índices do Banco Central</li>
+          <li>Radar Condominial com as notícias do dia</li>
+          <li>Área de privacidade e roteiro de LGPD do condomínio</li>
+          <li>Computador e celular, instalável como aplicativo</li>
         </ul>
-        <p class="dl-nota"><a href="privacidade.html" target="_blank" rel="noopener">Ler a Política de Privacidade completa</a></p>
-      </div>
-      <div class="lg-col">
-        <h3>Seus direitos (LGPD, art. 18)</h3>
-        <div class="lg-acoes">
-          <button id="lgBaixar" type="button" class="primary">Baixar meus dados</button>
-          <button id="lgCorrigir" type="button">Corrigir meu cadastro</button>
-          <button id="lgExcluir" type="button" class="perigo">Pedir exclusão da conta</button>
-        </div>
-        <p class="cmsg" id="lgMsg" role="status"></p>
-        <form id="lgForm" class="cform" novalidate>
-          <label for="lgTipo">Outra solicitação</label>
-          <select id="lgTipo">
-            <option value="acesso">Saber quais dados vocês têm e com quem compartilham</option>
-            <option value="correcao">Corrigir um dado</option>
-            <option value="revogacao">Revogar um consentimento</option>
-            <option value="outro">Outro assunto de privacidade</option>
-          </select>
-          <label for="lgDetalhe">Detalhes</label>
-          <textarea id="lgDetalhe" rows="3" maxlength="2000"></textarea>
-          <button type="submit">Enviar solicitação</button>
-        </form>
-        <h3>Suas solicitações</h3>
-        <div id="lgLista" class="lg-lista"></div>
-        <p class="dl-nota">Respondemos em até 15 dias (LGPD, art. 19). Canal do encarregado: <a href="mailto:sindicanciaethics@gmail.com">sindicanciaethics@gmail.com</a>.</p>
-      </div>
-    </div>
-    <div class="lg-corpo" id="lgCond" role="tabpanel" hidden>
-      <div class="lg-col lg-larga">
-        <div class="lg-topo">
-          <p class="dica">Roteiro de adequação do condomínio à LGPD. O condomínio é o <b>controlador</b> dos dados de moradores, funcionários e visitantes, e o síndico é quem responde por ele. Marque o que já está feito: fica salvo neste aparelho.</p>
-          <div class="lg-acoes">
-            <select id="lgCondSel" aria-label="Condomínio"></select>
-            <button id="lgAviso" type="button" class="primary">Gerar aviso de privacidade para o mural</button>
-          </div>
-          <p class="lg-prog" id="lgProg"></p>
-        </div>
-        <div id="lgCheck" class="lg-check"></div>
-        <p class="dl-nota">Base: Lei 13.709/2018 (LGPD), Resolução CD/ANPD nº 2/2022 (agentes de pequeno porte) e Resolução CD/ANPD nº 15/2024 (incidentes). Material de orientação, não substitui parecer jurídico.</p>
+        <p class="pl-nota">Pix, boleto ou cartão de crédito. Cobrança mensal automática, sem multa para cancelar.</p>
       </div>
     </div>
   </section>
+
+  <section class="bloco" id="perguntas">
+    <div class="w">
+      <p class="marcador">// perguntas frequentes</p>
+      <h2>Antes de assinar.</h2>
+      <div class="faq">
+        <details><summary>Preciso instalar alguma coisa?</summary><p>Não. O SINDICS abre no navegador, de preferência o Google Chrome. No celular ou no computador, dá para instalar como aplicativo para abrir com um toque.</p></details>
+        <details><summary>Como ele conhece as regras do meu condomínio?</summary><p>Você envia o Regulamento Interno em PDF, inclusive escaneado, e a Convenção se quiser (é opcional). O SINDICS lê os documentos e passa a responder com o artigo correspondente.</p></details>
+        <details><summary>Posso cadastrar mais de um condomínio?</summary><p>Sim. O Essencial atende de 1 a 5 condomínios e o Profissional de 6 a 10. Se a sua carteira crescer, você muda de plano sem perder nada. Acima de 10 condomínios, fazemos uma proposta personalizada. Cada condomínio tem suas próprias regras, documentos e prazos, e o SINDICS nunca mistura as informações entre eles.</p></details>
+        <details><summary>O que é a Operação do dia?</summary><p>É o diário do condomínio: você ou seu gestor registram por voz ou na tela o que foi feito (ronda, manutenção, ocorrência, prestador), com fotos. O SINDICS confere se o registro foi feito no condomínio, guardando só a distância, sem rastrear ninguém. No fim do mês, o relatório com os indicadores sai pronto em PDF para o conselho ou a assembleia.</p></details>
+        <details><summary>Meu condomínio não fica em São Paulo. Funciona?</summary><p>Funciona. A lista de documentos segue a lei federal e as regras de São Paulo; para outras cidades, o SINDICS indica quais prazos confirmar com a regra local.</p></details>
+        <details><summary>As respostas substituem um advogado ou contador?</summary><p>Não. O SINDICS orienta com base na lei e nos documentos do condomínio, e recomenda o jurídico ou a contabilidade quando o caso pede.</p></details>
+        <details><summary>A conversa é gravada?</summary><p>A voz não é gravada. O texto da conversa fica guardado por até 90 dias para suporte e depois é apagado automaticamente.</p></details>
+        <details><summary>Como funciona o pagamento?</summary><p>Você assina aqui na página e paga na página segura do Asaas, por Pix, boleto ou cartão. Assim que o pagamento é confirmado, o acesso chega no seu e-mail. A cobrança se repete todo mês na mesma data.</p></details>
+        <details><summary>E se eu atrasar uma mensalidade?</summary><p>O SINDICS avisa na tela e na abertura da conversa. Com 5 dias de atraso o acesso é suspenso, e volta na hora em que o pagamento é confirmado. Seus dados continuam guardados.</p></details>
+        <details><summary>Como cancelo?</summary><p>Escreva para a nossa equipe pelo e-mail sindicanciaethics@gmail.com. Não há multa.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="fecha">
+    <div class="w">
+      <div class="orbe" aria-hidden="true"></div>
+      <h2>O SINDICS está pronto. Falta você.</h2>
+      <p>Assine agora e receba o acesso no seu e-mail assim que o pagamento for confirmado.</p>
+      <div class="acoes">
+        <a class="btn forte js-assinar" href="#preco">Assinar agora</a>
+        <a class="btn" href="app/">Já sou assinante</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="modal" id="modalAssinar" hidden role="dialog" aria-modal="true" aria-labelledby="maTitulo">
+  <form class="modal-caixa holo" id="formAssinar" novalidate>
+    <button class="fechar" type="button" id="maFechar" aria-label="Fechar">✕</button>
+    <p class="marcador">// assinatura · <span id="maPlano">Plano Essencial · R$ 450/mês</span></p>
+    <h2 id="maTitulo">Assinar o SINDICS</h2>
+    <p class="ma-sub">Depois destes dados você vai para a página segura de pagamento do Asaas. Confirmado o pagamento, o acesso chega no seu e-mail.</p>
+    <div class="ma-planos" role="radiogroup" aria-label="Plano">
+      <label><input type="radio" name="maPlano" value="essencial" checked> <span><b>Essencial</b> · 1 a 5 condomínios · R$ 450/mês</span></label>
+      <label><input type="radio" name="maPlano" value="profissional"> <span><b>Profissional</b> · 6 a 10 condomínios · R$ 899/mês</span></label>
+    </div>
+    <label for="maNome">Nome completo</label>
+    <input id="maNome" autocomplete="name" required>
+    <label for="maEmail">E-mail (será seu login)</label>
+    <input id="maEmail" type="email" autocomplete="email" required>
+    <div class="ma-2">
+      <div><label for="maDoc">CPF ou CNPJ</label><input id="maDoc" inputmode="numeric" maxlength="18" required></div>
+      <div><label for="maTel">WhatsApp</label><input id="maTel" inputmode="tel" maxlength="15" placeholder="(11) 90000-0000" required></div>
+    </div>
+    <label class="ma-aceite"><input id="maAceite" type="checkbox"> <span>Li e aceito a <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade e os Termos de Uso</a>.</span></label>
+    <p class="ma-msg" id="maMsg" role="status"></p>
+    <button class="btn forte" type="submit" id="maEnviar">Ir para o pagamento</button>
+    <p class="ma-nota">Prefere falar com alguém antes? <a class="js-contato" href="#">Fale com a nossa equipe</a>.</p>
+  </form>
 </div>
 
-<div class="pag-banner" id="pagBanner" hidden role="status">
-  <span id="pagBannerTxt"></span>
-  <button id="pagBannerBtn" type="button" class="primary">Pagar agora</button>
-  <button id="pagBannerFechar" type="button" aria-label="Fechar aviso">✕</button>
-</div>
-
-<div class="overlay login" id="bloqueioOverlay" hidden>
-  <strong>ACESSO SUSPENSO</strong>
-  <span id="bloqueioMsg"></span>
-  <div class="bloq-acoes">
-    <button id="bloqueioPagar" class="primary" type="button">Pagar agora</button>
-    <button id="bloqueioRever" type="button">Já paguei</button>
-    <button id="bloqueioSair" type="button">Sair</button>
+<footer>
+  <div class="w">
+    <span>SINDICS · Inteligência Condominial · uma solução Sindicância Ethics</span>
+    <nav aria-label="Rodapé">
+      <a href="privacidade.html">Privacidade</a>
+      <a href="privacidade.html#termos">Termos de uso</a>
+      <a href="mailto:sindicanciaethics@gmail.com">sindicanciaethics@gmail.com</a>
+    </nav>
   </div>
-  <span class="bloq-nota">O pagamento por Pix ou cartão libera o acesso em instantes. Boleto pode levar até 2 dias úteis para compensar.</span>
-</div>
+</footer>
 
-<div class="overlay login" id="confOverlay" hidden role="alertdialog" aria-labelledby="confTitulo" aria-describedby="confTexto">
-  <strong id="confTitulo">CONFIRMAR</strong>
-  <span id="confTexto"></span>
-  <div class="bloq-acoes">
-    <button id="confSim" type="button" class="perigo">Excluir</button>
-    <button id="confNao" type="button" class="primary">Cancelar</button>
-  </div>
-  <span class="bloq-nota" id="confTempo"></span>
-</div>
-
-<div class="overlay" id="tapOverlay" hidden>
-  <strong id="tapTitulo">ATIVAR SINDICS</strong>
-  <span id="tapMsg">Toque em qualquer lugar para ligar som e microfone. Depois disso ele fica em prontidão sozinho.</span>
-</div>
-
-<script src="app.js?v=4.0.0"></script>
+<script src="pagina.js?v=4"></script>
 </body>
 </html>

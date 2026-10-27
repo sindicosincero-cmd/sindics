@@ -10,7 +10,7 @@ const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqamNrdmx1eWRjZWptcnhvbHphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNDc3MDMsImV4cCI6MjEwODYyMzcwM30.7MtMPxBEaTkoNCqI2dt-2iLiugm_fkXVV6-TxdkTHR0";
 const FN_SESSAO = SUPABASE_URL + "/functions/v1/sessao-sindics";
 const FN_EXCLUIR = SUPABASE_URL + "/functions/v1/excluir-condominio";
-const SITE_URL = "https://sindicosincero-cmd.github.io/sindics/";
+const SITE_URL = location.origin + location.pathname.replace(/[^/]*$/, ""); // endereço do aplicativo (ex.: https://sindics.com.br/app/)
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
 let PERFIL = null;
 /* Gestor auxiliar: enxerga e opera só os condomínios que o síndico autorizou */
@@ -427,7 +427,7 @@ async function wake(){
       endSession("Reconectando com a voz padrão…"); hintEl.textContent = "Voz feminina indisponível no momento — usando a voz padrão."; hintEl.classList.add("err");
       setTimeout(wake, 600); return;
     }
-    if (mode === "connecting"){ hintEl.textContent = "O SINDICS recusou a conexão (código " + ev.code + "). Use o endereço oficial: sindicosincero-cmd.github.io/sindics"; hintEl.classList.add("err"); }
+    if (mode === "connecting"){ hintEl.textContent = "O SINDICS recusou a conexão (código " + ev.code + "). Use o endereço oficial: sindics.com.br/app"; hintEl.classList.add("err"); }
     if (inSession()) endSession("Conversa encerrada.");
   };
 }
