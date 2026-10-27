@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "3.8.2";
+  window.SINDICS_V = "3.8.3";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -121,7 +121,9 @@ function tocar(nome){ try{ const m = motor(); SONS[nome](m, m.c.currentTime + .0
 const sndWake = () => tocar("wake");
 const sndSleep = () => tocar("sleep");
 const sndPanel = () => tocar("panel");
-const sndBoot = () => tocar("boot");
+/* Som de ignição: se o navegador ainda não liberou o áudio (página aberta sem toque), toca no primeiro toque. */
+let bootPendente = false;
+const sndBoot = () => { const c = sfx(); if (c.state === "running") tocar("boot"); else bootPendente = true; };
 /* Prévia em arquivo (só para ouvir/testar): renderiza os sons num WAV */
 async function renderSomPrevia(nomes = ["boot", "wake", "sleep"], gap = 1.2){
   const durs = { boot: 5, wake: 2, sleep: 2.5, panel: 1, alarme: 2.6 };
@@ -282,7 +284,10 @@ async function initAudio(){
 }
 /* O navegador escuta sem toque, mas só deixa a página FALAR depois de um toque (exceto como app instalado). */
 const somLiberado = () => !!outCtx && outCtx.state === "running" && (!inCtx || inCtx.state === "running");
-function liberarSom(){ [outCtx, inCtx, sfxCtx].forEach(c => { if (c && c.state !== "running") c.resume().catch(() => {}); }); }
+function liberarSom(){
+  [outCtx, inCtx, sfxCtx].forEach(c => { if (c && c.state !== "running") c.resume().catch(() => {}); });
+  if (bootPendente && sfxCtx){ bootPendente = false; sfxCtx.resume().then(() => { if (!inSession()) tocar("boot"); }).catch(() => {}); }
+}
 let wakePendente = false;
 function mostrarToque(titulo, texto){ $("tapTitulo").textContent = titulo; $("tapMsg").textContent = texto; $("tapOverlay").hidden = false; }
 /* Qualquer toque ou tecla, em qualquer lugar, libera o som — sem botão específico */
