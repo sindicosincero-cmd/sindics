@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "3.9.0";
+  window.SINDICS_V = "3.9.1";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -773,10 +773,10 @@ async function executarComDados(nome, a, user){
       if ($("condDrawer").classList.contains("open")) listarCondominios();
       showPanel({ tipo: "checklist", titulo: `${nomeC} cadastrado`, itens: [
         `CNPJ ${mascaraCnpj(cnpj)}`, `${endereco} — ${cidade}/${uf}`, `${unidades} apartamentos`,
-        "Pendente: Convenção em PDF", "Pendente: Regulamento Interno em PDF",
-        "Envie os PDFs em Condomínios › Editar" ] });
+        "Pendente: Regulamento Interno em PDF", "Convenção: opcional",
+        "Envie o PDF em Condomínios › Editar" ] });
       ["menuBtn","condBtn"].forEach(id => $(id).classList.add("pulsar")); setTimeout(() => ["menuBtn","condBtn"].forEach(id => $(id).classList.remove("pulsar")), 20000);
-      return { ok: true, id: data.id, mensagem: `${nomeC} cadastrado: CNPJ ${mascaraCnpj(cnpj)}, ${endereco}, ${cidade}/${uf}, ${unidades} apartamentos. Pendentes: Convenção e Regulamento Interno em PDF, que o síndico envia no botão Condomínios, opção Editar. Até lá, as respostas sobre regras desse condomínio seguem só a lei geral.` };
+      return { ok: true, id: data.id, mensagem: `${nomeC} cadastrado: CNPJ ${mascaraCnpj(cnpj)}, ${endereco}, ${cidade}/${uf}, ${unidades} apartamentos. Pendente: o Regulamento Interno em PDF, que o síndico envia no botão Condomínios, opção Editar (a Convenção é opcional). Até lá, as respostas sobre regras desse condomínio seguem só a lei geral.` };
     }
     case "condominio_excluir": {
       if (souGestor()) throw new Error("Somente o síndico pode excluir condomínios. Oriente o gestor a falar com o síndico.");
@@ -1745,8 +1745,8 @@ function limparFormCond(){
   ["cCnpj","cNome","cCep","cUnid","cEnd","cCidade","cUf","cConv","cReg"].forEach(id => { $(id).value = ""; $(id).removeAttribute("aria-invalid"); });
   condEditId = null; $("cCancelar").hidden = true; $("cSalvar").textContent = "Salvar condomínio";
   $("condForm").hidden = souGestor(); // gestor só edita condomínios autorizados; não cadastra novos
-  $("cConvObr").hidden = $("cRegObr").hidden = false;
-  $("cDocDica").textContent = "O SINDICS lê os dois documentos e passa a conhecer as regras do condomínio. PDFs escaneados também funcionam, só demoram um pouco mais.";
+  $("cRegObr").hidden = false;
+  $("cDocDica").textContent = "O SINDICS lê o Regulamento Interno e passa a conhecer as regras de convivência do condomínio. A Convenção é opcional: envie quando quiser. PDFs escaneados também funcionam, só demoram um pouco mais.";
   $("cProg").hidden = true;
   $("condFormTitulo").textContent = condAlvo ? `Cadastrar condomínio para ${condAlvo.nome}` : "Cadastrar condomínio"; cMsg("");
 }
@@ -1840,12 +1840,13 @@ async function listarCondominios(){
       $("condForm").hidden = false; condEditId = c.id; $("cCnpj").value = c.cnpj ? mascaraCnpj(c.cnpj) : ""; $("cNome").value = c.nome; $("cCep").value = c.cep ? c.cep.replace(/^(\d{5})(\d{3})$/, "$1-$2") : "";
       $("cUnid").value = c.unidades || ""; $("cEnd").value = c.endereco || ""; $("cCidade").value = (c.cidade || "").replace(/\/[A-Z]{2}$/, ""); $("cUf").value = c.uf || (c.cidade || "").split("/")[1] || "";
       $("condFormTitulo").textContent = "Editar " + c.nome; $("cSalvar").textContent = "Salvar alterações"; $("cCancelar").hidden = false; cMsg(""); $("cCnpj").focus();
-      $("cConvObr").hidden = c.convencao_status !== "pronto" ? false : true; $("cRegObr").hidden = c.regulamento_status !== "pronto" ? false : true;
+      $("cRegObr").hidden = c.regulamento_status !== "pronto" ? false : true;
       $("cDocDica").textContent = "Anexe um PDF só se quiser enviar ou substituir aquele documento. Os que já foram lidos continuam valendo.";
     };
     const st = document.createElement("div"); st.className = "docst";
-    [["convencao", c.convencao_status], ["regulamento", c.regulamento_status]].forEach(([t, s]) => {
-      const sp = document.createElement("span"); sp.className = s; sp.textContent = `${TIPO_NOME[t]}: ${STATUS_TXT[s] || s}`; st.append(sp);
+    [["regulamento", c.regulamento_status || "pendente"], ["convencao", c.convencao_status || "pendente"]].forEach(([t, s]) => {
+      const opc = t === "convencao" && s === "pendente";
+      const sp = document.createElement("span"); sp.className = opc ? "opcional" : s; sp.textContent = `${TIPO_NOME[t]}: ${opc ? "opcional, não enviada" : (STATUS_TXT[s] || s)}`; st.append(sp);
     });
     const msgs = [["convencao", c.convencao_status, c.convencao_msg], ["regulamento", c.regulamento_status, c.regulamento_msg]]
       .filter(([, s, m]) => s === "erro" && m).map(([t, , m]) => { const sm = document.createElement("small"); sm.className = "docmsg"; sm.textContent = `${TIPO_NOME[t]}: ${m}`; return sm; });
@@ -1888,11 +1889,11 @@ $("condForm").addEventListener("submit", async e => {
   marca("cCnpj", cnpjValido(v.cnpj)); marca("cNome", v.nome.length >= 3); marca("cUnid", v.unidades >= 1);
   marca("cEnd", v.endereco.length >= 5); marca("cCidade", v.cidade.length >= 2); marca("cUf", /^[A-Z]{2}$/.test(v.uf));
   const fConv = $("cConv").files[0] || null, fReg = $("cReg").files[0] || null;
-  if (!condEditId){ marca("cConv", !!fConv); marca("cReg", !!fReg); }
-  else { if (!$("cConvObr").hidden) marca("cConv", !!fConv); if (!$("cRegObr").hidden) marca("cReg", !!fReg); }
+  // só o Regulamento Interno é obrigatório; a Convenção é opcional
+  if (!condEditId || !$("cRegObr").hidden) marca("cReg", !!fReg);
   if (erros.length){
     const m = erros[0] === "cCnpj" ? "CNPJ inválido. Confira os números."
-            : (erros[0] === "cConv" || erros[0] === "cReg") ? "Anexe a Convenção e o Regulamento Interno em PDF."
+            : erros[0] === "cReg" ? "Anexe o Regulamento Interno em PDF (a Convenção é opcional)."
             : "Preencha os campos obrigatórios marcados em vermelho.";
     cMsg(m, true); $(erros[0]).focus(); return;
   }
@@ -1915,7 +1916,7 @@ $("condForm").addEventListener("submit", async e => {
   }
   // Lê os PDFs, um de cada vez
   const falhas = [];
-  for (const [tipo, f] of [["convencao", fConv], ["regulamento", fReg]]){
+  for (const [tipo, f] of [["regulamento", fReg], ["convencao", fConv]]){
     if (!f) continue;
     cMsg("");
     try{ await processarDocumento(condId, donoId, tipo, f); }
@@ -2001,7 +2002,7 @@ async function aposLogin(){
   if (!PERFIL.condominios.length && souGestor())
     abrirCondominios(null, "Ainda não há condomínios liberados para você. Peça ao síndico para autorizar em Minha equipe.");
   else if (!PERFIL.condominios.length)
-    abrirCondominios(null, "Bem-vindo ao SINDICS! Cadastre o seu condomínio aqui (CNPJ, nome, endereço, apartamentos, Convenção e Regulamento em PDF) ou feche esta janela e diga “SINDICS” para cadastrar por voz.");
+    abrirCondominios(null, "Bem-vindo ao SINDICS! Cadastre o seu condomínio aqui (CNPJ, nome, endereço, apartamentos e Regulamento Interno em PDF; a Convenção é opcional) ou feche esta janela e diga “SINDICS” para cadastrar por voz.");
   else if (PERFIL.condominios.some(c => !c.cnpj))
     abrirCondominios(null, "Complete o cadastro: informe o CNPJ e o endereço dos condomínios marcados em âmbar.");
 }

@@ -454,6 +454,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   .iconbtn .lbl{display:none}
 }
 @media (prefers-reduced-motion:reduce){ .caption .cursor{animation:none} .drawer{transition:none} }
+  .opc{ display:inline; font-size:inherit; opacity:.65; margin-left:.4em; }
 </style>
 </head>
 <body>
@@ -551,11 +552,11 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
         <div><label for="cCidade">Cidade *</label><input id="cCidade" autocomplete="address-level2" required></div>
         <div><label for="cUf">UF *</label><input id="cUf" maxlength="2" autocomplete="address-level1" required></div>
       </div>
-      <label for="cConv">Convenção de Condomínio (PDF) <span id="cConvObr">*</span></label>
-      <input id="cConv" type="file" accept="application/pdf,.pdf">
       <label for="cReg">Regulamento Interno (PDF) <span id="cRegObr">*</span></label>
       <input id="cReg" type="file" accept="application/pdf,.pdf">
-      <p class="dica" id="cDocDica">O SINDICS lê os dois documentos e passa a conhecer as regras do condomínio. PDFs escaneados também funcionam, só demoram um pouco mais.</p>
+      <label for="cConv">Convenção de Condomínio (PDF) <small class="opc">opcional</small></label>
+      <input id="cConv" type="file" accept="application/pdf,.pdf">
+      <p class="dica" id="cDocDica">O SINDICS lê o Regulamento Interno e passa a conhecer as regras de convivência do condomínio. A Convenção é opcional: envie quando quiser. PDFs escaneados também funcionam, só demoram um pouco mais.</p>
       <div class="prog" id="cProg" hidden><div class="prog-barra"><i id="cProgBar"></i></div><span id="cProgTxt"></span></div>
       <p class="cmsg" id="cMsg" role="status"></p>
       <div class="c2b">
@@ -844,6 +845,6 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   <span id="tapMsg">Toque em qualquer lugar para ligar som e microfone. Depois disso ele fica em prontidão sozinho.</span>
 </div>
 
-<script src="app.js?v=3.9.0"></script>
+<script src="app.js?v=3.9.1"></script>
 </body>
 </html>
