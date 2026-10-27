@@ -148,6 +148,61 @@ main > .center{grid-column:2;grid-row:1} main > #panels{grid-column:3;grid-row:1
 .card .res{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line-strong);font-family:var(--display);font-weight:700;font-size:24px;color:var(--accent);font-variant-numeric:tabular-nums;text-shadow:var(--text-shadow)}
 .card .src{margin-top:8px;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em}
 .empty-panel{font-size:12.5px;color:var(--muted);line-height:1.5}
+.card.alarme{border-color:var(--amber)} .card.alarme::before{background:var(--amber);box-shadow:0 0 10px var(--amber)}
+.card.alarme h3 span{color:var(--amber)} .card.alarme li::before{background:var(--amber)}
+
+/* ---------- Calendário ---------- */
+.cal-wrap{position:fixed;inset:0;z-index:14;display:flex;align-items:center;justify-content:center;
+  padding:max(14px, env(safe-area-inset-top,0px)) max(14px, env(safe-area-inset-right,0px)) max(14px, env(safe-area-inset-bottom,0px)) max(14px, env(safe-area-inset-left,0px));
+  background:var(--overlay-soft);backdrop-filter:blur(3px)}
+.cal{width:min(1040px,100%);height:min(720px,100%);display:flex;flex-direction:column;gap:12px;background:var(--drawer);padding:16px 18px}
+.cal-top{display:flex;align-items:center;gap:8px}
+.cal-top h2{flex:1;margin:0;text-align:center;font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:.2em;text-transform:uppercase}
+.cal-top button{padding:8px 12px;font-size:11px}
+#calPrev,#calNext{font-size:18px;line-height:1;padding:6px 14px;letter-spacing:0}
+.cal-corpo{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px}
+.cal-mes{min-height:0;display:flex;flex-direction:column;gap:6px}
+.cal-sem,.cal-grade{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal-sem span{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;text-align:center}
+.cal-grade{flex:1;min-height:0;grid-auto-rows:minmax(0,1fr)}
+button.cal-d{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:3px;padding:5px 6px;min-height:0;min-width:0;overflow:hidden;text-align:left;
+  font-family:var(--body);text-transform:none;letter-spacing:0;font-weight:400;font-size:12px;color:var(--fg);background:transparent;border:1px solid var(--line)}
+button.cal-d:hover{background:var(--btn-hover)}
+.cal-d .n{font-family:var(--mono);font-size:12px;color:var(--muted);align-self:flex-start;padding:0 4px}
+.cal-d.hoje .n{color:var(--bg);background:var(--cyan)}
+button.cal-d.sel{border-color:var(--cyan);background:var(--btn-hover)}
+.cal-d.vazio{visibility:hidden}
+.cal-d .ev{display:block;font-size:11px;line-height:1.3;padding:1px 4px;border-left:2px solid var(--cyan);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-d .ev.doc{border-left-color:var(--amber)} .cal-d .ev.doc.venc{border-left-color:var(--danger)}
+.cal-d .ev.feito{opacity:.55;text-decoration:line-through}
+.cal-d .mais{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.cal-legenda{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.08em}
+.cal-legenda i{display:inline-block;width:12px;height:3px;margin-right:6px;vertical-align:middle;background:var(--cyan)}
+.cal-legenda i.d{background:var(--amber)} .cal-legenda i.v{background:var(--danger)}
+.cal-dia{min-height:0;overflow-y:auto;border-left:1px solid var(--line);padding-left:16px;display:flex;flex-direction:column;gap:10px}
+.cal-dia h3{margin:0;font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:.06em;color:var(--fg);text-transform:none}
+.cal-item{border:1px solid var(--line);border-left:3px solid var(--cyan);padding:9px 11px;display:flex;flex-direction:column;gap:3px}
+.cal-item.doc{border-left-color:var(--amber)} .cal-item.doc.venc{border-left-color:var(--danger)}
+.cal-item.feito{opacity:.6}
+.cal-item b{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--cyan)}
+.cal-item.doc b{color:var(--amber)}
+.cal-item strong{font-size:14px;font-weight:500;overflow-wrap:anywhere}
+.cal-item small{font-family:var(--mono);font-size:10.5px;color:var(--muted);overflow-wrap:anywhere}
+.cal-vazio{font-size:13px;line-height:1.5;color:var(--muted)}
+@media (max-width:860px){
+  .cal{height:100%;padding:12px}
+  .cal-corpo{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);gap:10px}
+  .cal-grade{grid-auto-rows:48px;flex:none}
+  button.cal-d{padding:3px;gap:2px}
+  .cal-d .ev{font-size:0;height:4px;padding:0;border-left:0;background:var(--cyan)}
+  .cal-d .ev.doc{background:var(--amber)} .cal-d .ev.doc.venc{background:var(--danger)}
+  .cal-d .mais{display:none}
+  .cal-dia{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:10px}
+  .cal-top{gap:6px}
+  .cal-top h2{font-size:14px;letter-spacing:.06em;white-space:nowrap}
+  .cal-top button{padding:7px 8px;font-size:10px;letter-spacing:.1em}
+  #calPrev,#calNext{padding:5px 10px}
+}
 
 footer{display:flex;justify-content:center;align-items:center;gap:10px;padding-top:8px;flex-wrap:wrap}
 button{
@@ -295,6 +350,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
     <div class="menu-btns">
       <button id="wakeBtn" class="primary" type="button">Chamar agora</button>
       <button id="sleepBtn" type="button" hidden>Descansar</button>
+      <button id="calBtn" type="button">Calendário</button>
       <button id="condBtn" type="button">Condomínios</button>
       <button id="logBtn" type="button">Registro</button>
       <button id="mute" type="button" aria-pressed="false">Silenciar mic</button>
@@ -356,6 +412,26 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   </div>
 </aside>
 
+<div class="cal-wrap" id="calOverlay" hidden>
+  <section class="cal holo" role="dialog" aria-labelledby="calTitulo">
+    <div class="cal-top">
+      <button id="calPrev" type="button" aria-label="Mês anterior">‹</button>
+      <h2 id="calTitulo">Calendário</h2>
+      <button id="calNext" type="button" aria-label="Próximo mês">›</button>
+      <button id="calHoje" type="button">Hoje</button>
+      <button id="calFechar" type="button">Fechar</button>
+    </div>
+    <div class="cal-corpo">
+      <div class="cal-mes">
+        <div class="cal-sem" aria-hidden="true"><span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span></div>
+        <div class="cal-grade" id="calGrade"></div>
+        <div class="cal-legenda"><span><i></i>Compromisso</span><span><i class="d"></i>Documento vence</span><span><i class="v"></i>Documento vencido</span></div>
+      </div>
+      <div class="cal-dia" id="calDiaLista" aria-live="polite"></div>
+    </div>
+  </section>
+</div>
+
 <aside class="drawer" id="admDrawer" aria-label="Administração de síndicos">
   <h2>Síndicos cadastrados <button id="closeAdm" type="button">Fechar</button></h2>
   <div class="log" id="admLista"></div>
@@ -405,7 +481,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "3.4.0";
+  window.SINDICS_V = "3.5.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -535,7 +611,7 @@ function addLog(who, text){
   s.textContent = who === "a" ? "SINDICS" : who === "u" ? "VOCÊ" : new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
   p.append(s, document.createTextNode(text)); logEl.append(p); logEl.scrollTop = logEl.scrollHeight;
 }
-const TYPE_TAG = {noticias:"Notícias", calculo:"Cálculo", regra:"Regra", indicador:"Indicador", checklist:"Checklist", texto:"Info"};
+const TYPE_TAG = {noticias:"Notícias", calculo:"Cálculo", regra:"Regra", indicador:"Indicador", checklist:"Checklist", texto:"Info", alarme:"Alarme"};
 function limparTela(){ $("panels").innerHTML = ""; }
 function showPanel(p){
   const box = $("panels");
@@ -782,7 +858,7 @@ wakeBtn.addEventListener("click", fecharMenu);
 document.addEventListener("keydown", e => {
   if (e.target.closest("button,input")) return;
   if (e.code === "Space"){ e.preventDefault(); inSession() ? endSession("Encerrado pelo teclado.") : (mode === "standby" && wake()); }
-  if (e.key === "Escape"){ DRAWERS.forEach(id => $(id).classList.remove("open")); $("menuBtn").setAttribute("aria-expanded","false"); }
+  if (e.key === "Escape"){ DRAWERS.forEach(id => $(id).classList.remove("open")); $("menuBtn").setAttribute("aria-expanded","false"); fecharCalendario(); }
 });
 
 /* ======================= APLICATIVO INSTALÁVEL (voz liberada sem toque) ======================= */
@@ -845,7 +921,8 @@ $("closeAdm").addEventListener("click", () => $("admDrawer").classList.remove("o
 
 /* ======================= AGENDA E DOCUMENTOS (ferramentas de voz) ======================= */
 const TZ = "America/Sao_Paulo";
-const hojeISO = () => new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year:"numeric", month:"2-digit", day:"2-digit" }).format(new Date());
+const isoDia = d => new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year:"numeric", month:"2-digit", day:"2-digit" }).format(d);
+const hojeISO = () => isoDia(new Date());
 const diasAte = d => Math.round((Date.parse(d + "T00:00:00Z") - Date.parse(hojeISO() + "T00:00:00Z")) / 86400000);
 const dataBR = d => d ? d.split("-").reverse().join("/") : "";
 const quando = ts => new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, weekday:"short", day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" }).format(new Date(ts));
@@ -861,6 +938,15 @@ const nomeCondPorId = id => (PERFIL?.condominios || []).find(c => c.id === id)?.
 const exigeData = (v, campo) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(v || "")) throw new Error(`${campo} precisa estar no formato AAAA-MM-DD.`); return v; };
 const comFuso = v => /([+-]\d{2}:?\d{2}|Z)$/.test(v) ? v : v + "-03:00";
 
+const minutosLembrete = v => (v === undefined || v === null || v === "") ? 30 : Math.max(0, Math.min(10080, Math.round(Number(v)) || 0));
+function textoLembrete(m){
+  if (!m) return "Sem alarme";
+  if (m % 1440 === 0) return `Alarme ${m / 1440} dia${m > 1440 ? "s" : ""} antes`;
+  if (m % 60 === 0) return `Alarme ${m / 60} hora${m > 60 ? "s" : ""} antes`;
+  return `Alarme ${m} minutos antes`;
+}
+function aposMudarAgenda(dt){ carregarLembretes(); if (!$("calOverlay").hidden) abrirCalendario(dt ? isoDia(dt) : null); }
+
 async function executarFerramenta(nome, a){
   /* Comandos só de tela: respondem na hora, sem consultar o servidor */
   if (nome === "mostrar_na_tela"){ showPanel(a); return "Painel exibido na tela."; }
@@ -872,12 +958,19 @@ async function executarFerramenta(nome, a){
 function controlarTela(a){
   switch (a.acao){
     case "abrir_menu": abrirMenu(); return "Menu aberto.";
-    case "fechar_menu": DRAWERS.forEach(id => $(id).classList.remove("open")); $("menuBtn").setAttribute("aria-expanded","false"); return "Menu e janelas fechados.";
+    case "fechar_menu": DRAWERS.forEach(id => $(id).classList.remove("open")); $("menuBtn").setAttribute("aria-expanded","false"); fecharCalendario(); return "Menu e janelas fechados.";
     case "tema_claro": aplicarTema("light"); return "Tema claro ativado.";
     case "tema_escuro": aplicarTema("dark"); return "Tema escuro ativado.";
     case "abrir_condominios": abrirCondominios(); return "Janela de condomínios aberta.";
     case "abrir_registro": abrirGaveta("drawer"); return "Registro da conversa aberto.";
     case "limpar_tela": limparTela(); return "Tela limpa.";
+    case "abrir_calendario": {
+      if (!PERFIL) throw new Error("Síndico não está logado.");
+      abrirCalendario(a.data);
+      const [y, m] = (calMes || hojeISO()).split("-").map(Number);
+      return `Calendário de ${MESES[m - 1].toLowerCase()} de ${y} aberto na tela${calDia ? ", com o dia " + dataBR(calDia) + " em destaque" : ""}.`;
+    }
+    case "fechar_calendario": fecharCalendario(); return "Calendário fechado.";
     default: throw new Error("Ação de tela desconhecida.");
   }
 }
@@ -887,18 +980,19 @@ async function executarComDados(nome, a, user){
       const cond = a.condominio ? acharCondominio(a.condominio) : null;
       const ini = new Date(comFuso(a.inicio)); if (isNaN(ini)) throw new Error("Data e hora de início inválidas.");
       const fim = new Date(ini.getTime() + (Number(a.duracao_minutos) || 60) * 60000);
-      const { data, error } = await sb.from("compromissos").insert({ titulo: a.titulo, inicio: ini.toISOString(), fim: fim.toISOString(), condominio_id: cond?.id || null, local: a.local || "", observacoes: a.observacoes || "" }).select("id").single();
+      const lembrete = minutosLembrete(a.lembrete_minutos);
+      const { data, error } = await sb.from("compromissos").insert({ titulo: a.titulo, inicio: ini.toISOString(), fim: fim.toISOString(), condominio_id: cond?.id || null, local: a.local || "", observacoes: a.observacoes || "", lembrete_minutos: lembrete }).select("id").single();
       if (error) throw error;
-      atualizarResumoTela();
-      return { ok: true, id: data.id, mensagem: `Compromisso marcado: ${a.titulo}, ${quando(ini)}${cond ? ", " + cond.nome : ""}.` };
+      atualizarResumoTela(); aposMudarAgenda(ini);
+      return { ok: true, id: data.id, mensagem: `Compromisso marcado: ${a.titulo}, ${quando(ini)}${cond ? ", " + cond.nome : ""}. ${textoLembrete(lembrete)}.` };
     }
     case "agenda_listar": {
       const di = exigeData(a.data_inicio, "data_inicio"), df = exigeData(a.data_fim, "data_fim");
-      let q = sb.from("compromissos").select("id, titulo, inicio, fim, condominio_id, local, status")
+      let q = sb.from("compromissos").select("id, titulo, inicio, fim, condominio_id, local, status, lembrete_minutos")
         .eq("sindico_id", user.id).gte("inicio", new Date(di + "T00:00:00-03:00").toISOString()).lte("inicio", new Date(df + "T23:59:59-03:00").toISOString()).order("inicio");
       if (!a.incluir_cancelados) q = q.neq("status", "cancelado");
       const { data, error } = await q; if (error) throw error;
-      return { total: data.length, compromissos: data.map(c => ({ id: c.id, titulo: c.titulo, quando: quando(c.inicio), condominio: nomeCondPorId(c.condominio_id), local: c.local, status: c.status })) };
+      return { total: data.length, compromissos: data.map(c => ({ id: c.id, titulo: c.titulo, quando: quando(c.inicio), condominio: nomeCondPorId(c.condominio_id), local: c.local, status: c.status, alarme: textoLembrete(c.lembrete_minutos) })) };
     }
     case "agenda_alterar": {
       let patch;
@@ -907,12 +1001,17 @@ async function executarComDados(nome, a, user){
       else if (a.acao === "remarcar"){
         if (!a.novo_inicio) throw new Error("Para remarcar, informe novo_inicio.");
         const ini = new Date(comFuso(a.novo_inicio)); if (isNaN(ini)) throw new Error("Nova data inválida.");
-        patch = { inicio: ini.toISOString(), fim: new Date(ini.getTime() + (Number(a.duracao_minutos) || 60) * 60000).toISOString(), status: "agendado" };
+        patch = { inicio: ini.toISOString(), fim: new Date(ini.getTime() + (Number(a.duracao_minutos) || 60) * 60000).toISOString(), status: "agendado", lembrete_avisado_em: null };
+      } else if (a.acao === "alarme"){
+        if (a.lembrete_minutos == null) throw new Error("Informe lembrete_minutos (0 desliga o alarme).");
+        patch = { lembrete_avisado_em: null };
       } else throw new Error("Ação desconhecida.");
-      const { data, error } = await sb.from("compromissos").update(patch).eq("id", a.id).eq("sindico_id", user.id).select("titulo, inicio").maybeSingle();
+      if (a.lembrete_minutos != null) patch.lembrete_minutos = minutosLembrete(a.lembrete_minutos);
+      const { data, error } = await sb.from("compromissos").update(patch).eq("id", a.id).eq("sindico_id", user.id).select("titulo, inicio, lembrete_minutos").maybeSingle();
       if (error) throw error; if (!data) throw new Error("Compromisso não encontrado.");
-      atualizarResumoTela();
-      return { ok: true, mensagem: `${data.titulo}: ${a.acao === "remarcar" ? "remarcado para " + quando(data.inicio) : a.acao === "cancelar" ? "cancelado" : "concluído"}.` };
+      atualizarResumoTela(); aposMudarAgenda(new Date(data.inicio));
+      const feito = a.acao === "remarcar" ? "remarcado para " + quando(data.inicio) : a.acao === "cancelar" ? "cancelado" : a.acao === "concluir" ? "concluído" : "alarme ajustado";
+      return { ok: true, mensagem: `${data.titulo}: ${feito}.${a.acao === "cancelar" || a.acao === "concluir" ? "" : " " + textoLembrete(data.lembrete_minutos) + "."}` };
     }
     case "documento_cadastrar": {
       const cond = acharCondominio(a.condominio);
@@ -1026,7 +1125,156 @@ async function atualizarResumoTela(){
   };
   sec("Documentos em alerta", alerta.slice(0, 5).map(d => [`${d.documento}${d.condominio_id ? " · " + nomeCondPorId(d.condominio_id) : ""} — ${d.f < 0 ? "vencido há " + (-d.f) + "d" : d.f === 0 ? "vence hoje" : "vence em " + d.f + "d"}`, d.f < 0 ? "crit" : d.f <= 15 ? "warn" : ""]), "Nenhum documento no prazo de alerta.");
   sec("Agenda de hoje", (comps || []).map(c => [`${new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, hour:"2-digit", minute:"2-digit" }).format(new Date(c.inicio))} · ${c.titulo}`, ""]), "Nada marcado para hoje.");
+  if (!$("calOverlay").hidden) renderCalendario();
 }
+
+/* ======================= ALARMES DOS COMPROMISSOS ======================= */
+/* Cada compromisso tem "avisar X minutos antes" (padrão 30). Com o SINDICS aberto (aba, app instalado
+   ou em segundo plano), o alarme toca, aparece na tela e vira notificação do sistema. */
+let lembretes = [];
+async function carregarLembretes(){
+  if (!PERFIL || !sb) return;
+  const { data: { user } } = await sb.auth.getUser(); if (!user) return;
+  const agora = Date.now();
+  const { data } = await sb.from("compromissos").select("id, titulo, inicio, condominio_id, local, lembrete_minutos")
+    .eq("sindico_id", user.id).eq("status", "agendado").is("lembrete_avisado_em", null).gt("lembrete_minutos", 0)
+    .gte("inicio", new Date(agora - 10 * 60000).toISOString()).lte("inicio", new Date(agora + 8 * 86400000).toISOString()).order("inicio");
+  lembretes = data || [];
+  verificarLembretes();
+}
+function verificarLembretes(){
+  const agora = Date.now();
+  for (const c of [...lembretes]){
+    const ini = Date.parse(c.inicio);
+    if (agora >= ini - c.lembrete_minutos * 60000 && agora <= ini + 10 * 60000){
+      lembretes = lembretes.filter(x => x.id !== c.id);
+      dispararAlarme(c);
+      sb.from("compromissos").update({ lembrete_avisado_em: new Date().toISOString() }).eq("id", c.id).then(() => {}, () => {});
+    }
+  }
+}
+function faltaTexto(min){
+  if (min <= 0) return "Começando agora";
+  if (min < 60) return `Em ${min} min`;
+  if (min < 1440){ const h = Math.floor(min / 60), m = min % 60; return `Em ${h}h${m ? String(m).padStart(2, "0") : ""}`; }
+  const d = Math.round(min / 1440); return d === 1 ? "Amanhã" : `Em ${d} dias`;
+}
+const sndAlarme = () => [0, .55, 1.1].forEach(t => tone([880, 1175, 1568], .22, .07, "triangle", t));
+function dispararAlarme(c){
+  const falta = faltaTexto(Math.round((Date.parse(c.inicio) - Date.now()) / 60000));
+  const cond = nomeCondPorId(c.condominio_id);
+  showPanel({ tipo: "alarme", titulo: `${falta}: ${c.titulo}`, itens: [cap1(quando(c.inicio)), cond, c.local].filter(Boolean) });
+  sndAlarme(); core.pulse = 1.4;
+  addLog("s", `Alarme: ${c.titulo} (${falta.toLowerCase()})`);
+  notificar(`SINDICS · ${falta}`, `${c.titulo} — ${quando(c.inicio)}${cond ? " · " + cond : ""}`, c.id);
+  /* em conversa: avisa o SINDICS para ele mencionar ao síndico */
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({ type: "contextual_update", text: `ALARME DE AGENDA: "${c.titulo}" ${falta.toLowerCase()} (${quando(c.inicio)}${cond ? ", " + cond : ""}). Avise o síndico em uma frase assim que possível.` }));
+}
+const cap1 = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+function notificar(titulo, corpo, tag){
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  const op = { body: corpo, icon: "icon-192.png", badge: "icon-192.png", tag: "sindics-" + tag, requireInteraction: true };
+  if (navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.ready.then(r => r.showNotification(titulo, op)).catch(() => { try{ new Notification(titulo, op); }catch(_){} });
+  else { try{ new Notification(titulo, op); }catch(_){} }
+}
+/* Permissão de notificação: pedida no primeiro toque na tela (o navegador exige um gesto) */
+addEventListener("pointerdown", () => { if ("Notification" in window && Notification.permission === "default" && PERFIL) Notification.requestPermission().catch(() => {}); }, { once: true, capture: true });
+setInterval(verificarLembretes, 20000);
+setInterval(carregarLembretes, 5 * 60000);
+
+/* ======================= CALENDÁRIO ======================= */
+const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const SEMANA_LONGA = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
+let calMes = null, calDia = null, calDados = { comps: [], docs: [] };
+const pad2 = n => String(n).padStart(2, "0");
+const horaSP = ts => new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" }).format(new Date(ts));
+function abrirCalendario(data){
+  const d = (typeof data === "string" && /^\d{4}-\d{2}(-\d{2})?$/.test(data)) ? data : (calDia || hojeISO());
+  calMes = d.slice(0, 7);
+  calDia = d.length === 10 ? d : (hojeISO().startsWith(calMes) ? hojeISO() : calMes + "-01");
+  fecharMenu(); $("calOverlay").hidden = false; renderCalendario();
+}
+function fecharCalendario(){ $("calOverlay").hidden = true; }
+function mudarMes(delta){
+  let [y, m] = calMes.split("-").map(Number); m += delta;
+  if (m < 1){ m = 12; y--; } if (m > 12){ m = 1; y++; }
+  calMes = `${y}-${pad2(m)}`; calDia = hojeISO().startsWith(calMes) ? hojeISO() : calMes + "-01"; renderCalendario();
+}
+async function renderCalendario(){
+  const [y, m] = calMes.split("-").map(Number);
+  const diasMes = new Date(Date.UTC(y, m, 0)).getUTCDate(), offset = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+  $("calTitulo").textContent = `${MESES[m - 1]} ${y}`;
+  const mesPedido = calMes;
+  try{
+    const { data: { user } } = await sb.auth.getUser();
+    if (user){
+      const [rc, rd] = await Promise.all([
+        sb.from("compromissos").select("id, titulo, inicio, fim, condominio_id, local, status, lembrete_minutos").eq("sindico_id", user.id).neq("status", "cancelado")
+          .gte("inicio", new Date(`${calMes}-01T00:00:00-03:00`).toISOString()).lte("inicio", new Date(`${calMes}-${pad2(diasMes)}T23:59:59-03:00`).toISOString()).order("inicio"),
+        sb.from("documentos_legais").select("id, documento, condominio_id, data_vencimento, alertar_dias_antes").eq("sindico_id", user.id)
+          .gte("data_vencimento", `${calMes}-01`).lte("data_vencimento", `${calMes}-${pad2(diasMes)}`).order("data_vencimento")
+      ]);
+      if (mesPedido !== calMes) return;   // usuário já trocou de mês
+      calDados = { comps: rc.data || [], docs: rd.data || [] };
+    }
+  }catch(_){ calDados = { comps: [], docs: [] }; }
+  const porDia = {};
+  calDados.comps.forEach(c => { (porDia[isoDia(new Date(c.inicio))] ||= []).push({ tipo: "c", c }); });
+  calDados.docs.forEach(d => { (porDia[d.data_vencimento] ||= []).push({ tipo: "d", d }); });
+  const chave = e => e.tipo === "d" ? "0" : "1" + e.c.inicio;   // vencimentos primeiro, depois por horário
+  Object.values(porDia).forEach(l => l.sort((a, b) => chave(a) < chave(b) ? -1 : 1));
+  const grade = $("calGrade"); grade.innerHTML = "";
+  for (let i = 0; i < offset; i++){ const v = document.createElement("div"); v.className = "cal-d vazio"; grade.append(v); }
+  const hoje = hojeISO();
+  for (let dia = 1; dia <= diasMes; dia++){
+    const iso = `${calMes}-${pad2(dia)}`, evs = porDia[iso] || [];
+    const b = document.createElement("button"); b.type = "button"; b.className = "cal-d" + (iso === hoje ? " hoje" : "") + (iso === calDia ? " sel" : "");
+    const nc = evs.filter(e => e.tipo === "c").length, nd = evs.length - nc;
+    b.setAttribute("aria-label", `${dia} de ${MESES[m - 1].toLowerCase()}${nc ? `, ${nc} compromisso${nc > 1 ? "s" : ""}` : ""}${nd ? `, ${nd} vencimento${nd > 1 ? "s" : ""}` : ""}`);
+    if (iso === calDia) b.setAttribute("aria-current", "date");
+    const n = document.createElement("span"); n.className = "n"; n.textContent = dia; b.append(n);
+    evs.slice(0, 3).forEach(e => {
+      const s = document.createElement("span");
+      if (e.tipo === "c"){ s.className = "ev" + (e.c.status === "concluido" ? " feito" : ""); s.textContent = `${horaSP(e.c.inicio)} ${e.c.titulo}`; }
+      else { s.className = "ev doc" + (e.d.data_vencimento < hoje ? " venc" : ""); s.textContent = `Vence: ${e.d.documento}`; }
+      s.title = s.textContent; b.append(s);
+    });
+    if (evs.length > 3){ const mm = document.createElement("span"); mm.className = "mais"; mm.textContent = `+${evs.length - 3}`; b.append(mm); }
+    b.onclick = () => { calDia = iso; grade.querySelectorAll(".sel").forEach(x => { x.classList.remove("sel"); x.removeAttribute("aria-current"); }); b.classList.add("sel"); b.setAttribute("aria-current", "date"); renderDia(porDia); };
+    grade.append(b);
+  }
+  while (grade.children.length % 7){ const v = document.createElement("div"); v.className = "cal-d vazio"; grade.append(v); }
+  renderDia(porDia);
+}
+function renderDia(porDia){
+  const box = $("calDiaLista"); box.innerHTML = "";
+  if (!calDia) return;
+  const [y, m, d] = calDia.split("-").map(Number);
+  const h = document.createElement("h3"); h.textContent = `${SEMANA_LONGA[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]}, ${d} de ${MESES[m - 1].toLowerCase()}`; box.append(h);
+  const evs = porDia[calDia] || [], hoje = hojeISO();
+  if (!evs.length){ const p = document.createElement("p"); p.className = "cal-vazio"; p.textContent = "Nada marcado neste dia. Diga “SINDICS, marca …” para agendar."; box.append(p); return; }
+  evs.forEach(e => {
+    const it = document.createElement("div"), b = document.createElement("b"), s = document.createElement("strong"), sm = document.createElement("small");
+    if (e.tipo === "c"){
+      const c = e.c; it.className = "cal-item" + (c.status === "concluido" ? " feito" : "");
+      b.textContent = `${horaSP(c.inicio)}${c.fim ? " – " + horaSP(c.fim) : ""}${c.status === "concluido" ? " · concluído" : ""}`;
+      s.textContent = c.titulo;
+      sm.textContent = [nomeCondPorId(c.condominio_id), c.local, textoLembrete(c.lembrete_minutos)].filter(Boolean).join(" · ");
+    } else {
+      const dd = e.d, venc = dd.data_vencimento < hoje; it.className = "cal-item doc" + (venc ? " venc" : "");
+      b.textContent = venc ? "Documento vencido" : "Documento vence";
+      s.textContent = dd.documento;
+      sm.textContent = [nomeCondPorId(dd.condominio_id), `aviso ${dd.alertar_dias_antes} dias antes`].filter(Boolean).join(" · ");
+    }
+    it.append(b, s, sm); box.append(it);
+  });
+}
+$("calBtn").addEventListener("click", () => abrirCalendario());
+$("calFechar").addEventListener("click", fecharCalendario);
+$("calPrev").addEventListener("click", () => mudarMes(-1));
+$("calNext").addEventListener("click", () => mudarMes(1));
+$("calHoje").addEventListener("click", () => abrirCalendario(hojeISO()));
+$("calOverlay").addEventListener("click", e => { if (e.target.id === "calOverlay") fecharCalendario(); });
 
 /* ======================= ADMINISTRAÇÃO (aprovar síndicos) ======================= */
 async function carregarAdmin(){
@@ -1293,7 +1541,7 @@ async function aposLogin(){
   $("admBtn").hidden = p.papel !== "admin";
   $("loginOverlay").hidden = true; msg("");
   try{ history.replaceState(null, "", location.pathname); }catch(_){}
-  atualizarResumoTela();
+  atualizarResumoTela(); carregarLembretes();
   if (!iniciado){ iniciado = true; start(); }
   if (!PERFIL.condominios.length)
     abrirCondominios(null, "Bem-vindo ao SINDICS! Cadastre o seu condomínio aqui (CNPJ, nome, endereço, apartamentos, Convenção e Regulamento em PDF) ou feche esta janela e diga “SINDICS” para cadastrar por voz.");
