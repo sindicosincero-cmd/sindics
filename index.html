@@ -189,8 +189,82 @@ button.cal-d.sel{border-color:var(--cyan);background:var(--btn-hover)}
 .cal-item strong{font-size:14px;font-weight:500;overflow-wrap:anywhere}
 .cal-item small{font-family:var(--mono);font-size:10.5px;color:var(--muted);overflow-wrap:anywhere}
 .cal-vazio{font-size:13px;line-height:1.5;color:var(--muted)}
+/* ---------- Pasta de Documentação Legal ---------- */
+.dl-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.dl-top h2{flex:1;margin:0;font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:.2em;text-transform:uppercase}
+.dl-top select{font-family:var(--body);font-size:14px;padding:7px 10px;background:var(--btn-bg);color:var(--fg);border:1px solid var(--line-strong);max-width:100%}
+.dl-top button{padding:8px 12px;font-size:11px}
+.dl-resumo{display:flex;gap:8px;flex-wrap:wrap}
+.dl-resumo span{font-family:var(--mono);font-size:11px;letter-spacing:.06em;padding:5px 9px;border:1px solid var(--line-strong);color:var(--muted)}
+.dl-resumo .vencido{color:var(--danger);border-color:var(--danger)} .dl-resumo .vencendo{color:var(--amber);border-color:var(--amber)}
+.dl-resumo .emdia{color:var(--ok);border-color:var(--ok)} .dl-resumo .falta{color:var(--fg);border-color:var(--fg)}
+.dl-lista{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding-right:4px}
+.dl-grupo{margin:8px 0 0;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
+.dl-item{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:start;border:1px solid var(--line);border-left:3px solid var(--line-strong);padding:10px 12px}
+.dl-item.vencido{border-left-color:var(--danger)} .dl-item.vencendo{border-left-color:var(--amber)} .dl-item.emdia{border-left-color:var(--ok)}
+.dl-item.falta{border-left-color:var(--fg)} .dl-item.naoaplica{opacity:.55}
+.dl-pill{grid-row:span 2;font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:3px 7px;border:1px solid currentColor;white-space:nowrap;color:var(--muted)}
+.dl-item.vencido .dl-pill{color:var(--danger)} .dl-item.vencendo .dl-pill{color:var(--amber)} .dl-item.emdia .dl-pill{color:var(--ok)} .dl-item.falta .dl-pill{color:var(--fg)}
+.dl-item strong{font-size:14px;font-weight:500;overflow-wrap:anywhere}
+.dl-item small{grid-column:2;font-family:var(--mono);font-size:10.5px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere}
+.dl-item .dl-quando{grid-column:2;font-size:12.5px;color:var(--fg)}
+.dl-item button{grid-column:3;grid-row:1 / span 2;align-self:center;padding:6px 9px;font-size:10px;letter-spacing:.1em}
+.dl-nota{margin:0;font-size:11.5px;line-height:1.5;color:var(--muted)}
+
+/* ---------- Radar Condominial (edição do dia) ---------- */
+.rd{width:min(1100px,100%)}
+.rd-cab{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:3px double var(--line-strong);padding-bottom:10px}
+.rd-cab h2{margin:0;font-family:var(--display);font-weight:700;font-size:clamp(22px,4vw,38px);letter-spacing:.18em;text-transform:uppercase;line-height:1}
+.rd-cab p{margin:6px 0 0;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.rd-cab .acoes{display:flex;gap:8px} .rd-cab button{padding:8px 12px;font-size:11px}
+.rd-corpo{flex:1;min-height:0;overflow-y:auto;columns:2 340px;column-gap:28px;padding-top:6px}
+.rd-sec{break-inside:avoid;margin:0 0 18px}
+.rd-sec h3{margin:0 0 8px;font-family:var(--mono);font-weight:500;font-size:10.5px;letter-spacing:.18em;color:var(--accent);text-transform:uppercase;border-top:1px solid var(--line-strong);padding-top:8px}
+.rd-art{display:block;margin:0 0 12px;color:var(--fg);text-decoration:none}
+.rd-art strong{display:block;font-family:var(--display);font-weight:600;font-size:17px;line-height:1.3;letter-spacing:.01em}
+.rd-art.manchete strong{font-size:clamp(20px,2.4vw,26px)}
+.rd-art small{display:block;margin-top:4px;font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.rd-art:hover strong,.rd-art:focus-visible strong{text-decoration:underline;text-underline-offset:3px}
+.rd-nota{margin:0;font-size:11px;color:var(--muted)}
+
+/* ---------- Comunicado em tela inteira (folha de papel) ---------- */
+.com-wrap{position:fixed;inset:0;z-index:16;display:flex;flex-direction:column;align-items:center;gap:10px;overflow-y:auto;
+  padding:max(12px, env(safe-area-inset-top,0px)) max(12px, env(safe-area-inset-right,0px)) max(16px, env(safe-area-inset-bottom,0px)) max(12px, env(safe-area-inset-left,0px));
+  background:rgba(4,7,13,.9);backdrop-filter:blur(6px)}
+.com-barra{position:sticky;top:0;z-index:2;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:min(860px,100%);padding:6px 0}
+.com-barra button{padding:9px 14px;font-size:11px;background:#0b1422;color:#d9e6f5;border-color:rgba(63,208,255,.5)}
+.com-barra button.primary{color:#3fd0ff}
+.com-folha{width:min(860px,100%);min-height:calc(100% - 60px);background:#fffefb;color:#1b1d21;box-shadow:0 20px 60px rgba(0,0,0,.45);
+  padding:clamp(22px,6vw,64px) clamp(20px,7vw,72px);font-family:Georgia,"Times New Roman",serif;font-size:clamp(15px,1.6vw,17px);line-height:1.7}
+.com-folha header{display:block;border-bottom:2px solid #1b1d21;padding-bottom:12px;margin-bottom:22px}
+.com-folha .com-cond{font-family:var(--body);font-weight:600;font-size:clamp(16px,2vw,20px);letter-spacing:.04em;text-transform:uppercase;margin:0}
+.com-folha .dados{font-family:var(--body);font-size:12.5px;color:#4a4f57;margin:4px 0 0;line-height:1.5}
+.com-folha .tipo{font-family:var(--body);font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:#4a4f57;text-align:center;margin:0}
+.com-folha h1{font-family:var(--body);font-weight:700;font-size:clamp(20px,2.6vw,26px);text-align:center;margin:6px 0 22px;line-height:1.3}
+.com-folha .meta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px;color:#4a4f57;margin-bottom:16px}
+.com-folha .corpo p{margin:0 0 1em;text-align:justify;hyphens:auto}
+.com-folha .corpo[contenteditable="true"]:focus{outline:2px dashed #3fd0ff;outline-offset:8px}
+.com-folha .ass{margin-top:48px;text-align:center}
+.com-folha .ass .linha{width:min(320px,80%);margin:0 auto 6px;border-top:1px solid #1b1d21}
+.com-folha .ass strong{display:block;font-family:var(--body);font-size:14px}
+.com-folha .ass small{display:block;font-family:var(--body);font-size:12px;color:#4a4f57}
+.com-dica{font-family:var(--mono);font-size:11px;color:#9fb3c8;text-align:center;margin:0}
+@media print{
+  @page{margin:18mm 16mm}
+  body.imprimindo{background:#fff!important;overflow:visible!important}
+  body.imprimindo > *:not(#comOverlay){display:none!important}
+  body.imprimindo #comOverlay{position:static;inset:auto;overflow:visible;background:none;backdrop-filter:none;padding:0;display:block}
+  body.imprimindo .com-barra, body.imprimindo .com-dica{display:none!important}
+  body.imprimindo .com-folha{width:auto;min-height:0;box-shadow:none;padding:0;font-size:12.5pt}
+}
+
 @media (max-width:860px){
   .cal{height:100%;padding:12px}
+  .dl-item{grid-template-columns:minmax(0,1fr) auto}
+  .dl-pill{grid-row:auto;grid-column:1;justify-self:start}
+  .dl-item small,.dl-item .dl-quando,.dl-item strong{grid-column:1 / -1}
+  .dl-item button{grid-column:2;grid-row:1}
+  .rd-corpo{columns:1}
   .cal-corpo{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr);gap:10px}
   .cal-grade{grid-auto-rows:48px;flex:none}
   button.cal-d{padding:3px;gap:2px}
@@ -351,6 +425,8 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
       <button id="wakeBtn" class="primary" type="button">Chamar agora</button>
       <button id="sleepBtn" type="button" hidden>Descansar</button>
       <button id="calBtn" type="button">Calendário</button>
+      <button id="docBtn" type="button">Documentação legal</button>
+      <button id="radarBtn" type="button">Radar condominial</button>
       <button id="condBtn" type="button">Condomínios</button>
       <button id="logBtn" type="button">Registro</button>
       <button id="mute" type="button" aria-pressed="false">Silenciar mic</button>
@@ -432,6 +508,47 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   </section>
 </div>
 
+<div class="cal-wrap" id="docOverlay" hidden>
+  <section class="cal holo" role="dialog" aria-labelledby="dlTitulo">
+    <div class="dl-top">
+      <h2 id="dlTitulo">Documentação legal</h2>
+      <select id="dlCond" aria-label="Condomínio"></select>
+      <button id="dlFechar" type="button">Fechar</button>
+    </div>
+    <div class="dl-resumo" id="dlResumo" aria-live="polite"></div>
+    <div class="dl-lista" id="dlLista"></div>
+    <p class="dl-nota">Lista padrão do SINDICS: lei federal, normas ABNT e regras do Estado e da cidade de São Paulo. Em outros estados e cidades, confirme as regras locais. Para cadastrar, diga: “SINDICS, o AVCB do Fit Casa vence em 10 de março de 2028”.</p>
+  </section>
+</div>
+
+<div class="cal-wrap" id="radarOverlay" hidden>
+  <section class="cal holo rd" role="dialog" aria-labelledby="rdTitulo">
+    <div class="rd-cab">
+      <div><h2 id="rdTitulo">Radar Condominial</h2><p id="rdData">—</p></div>
+      <div class="acoes"><button id="rdAtualizar" type="button">Atualizar</button><button id="rdFechar" type="button">Fechar</button></div>
+    </div>
+    <div class="rd-corpo" id="rdCorpo"></div>
+    <p class="rd-nota">Notícias públicas do setor condominial reunidas automaticamente (Google Notícias). Toque numa manchete para ler a matéria completa no veículo.</p>
+  </section>
+</div>
+
+<div class="com-wrap" id="comOverlay" hidden role="dialog" aria-labelledby="comTitulo">
+  <div class="com-barra">
+    <button id="comCopiar" type="button" class="primary">Copiar texto</button>
+    <button id="comImprimir" type="button">Imprimir / salvar PDF</button>
+    <button id="comFechar" type="button">Fechar</button>
+  </div>
+  <article class="com-folha" id="comFolha">
+    <header><p class="com-cond" id="comCond">—</p><p class="dados" id="comDados"></p></header>
+    <p class="tipo" id="comTipo">Comunicado</p>
+    <h1 id="comTitulo">—</h1>
+    <div class="meta"><span id="comPara"></span><span id="comData"></span></div>
+    <div class="corpo" id="comCorpo" contenteditable="true" spellcheck="true"></div>
+    <div class="ass"><div class="linha"></div><strong id="comAss">—</strong><small id="comAssCargo">Síndico</small></div>
+  </article>
+  <p class="com-dica">Você pode clicar no texto e ajustar antes de imprimir. Para mudar por voz: “SINDICS, troca o segundo parágrafo…”.</p>
+</div>
+
 <aside class="drawer" id="admDrawer" aria-label="Administração de síndicos">
   <h2>Síndicos cadastrados <button id="closeAdm" type="button">Fechar</button></h2>
   <div class="log" id="admLista"></div>
@@ -481,7 +598,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "3.5.0";
+  window.SINDICS_V = "3.6.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -858,7 +975,7 @@ wakeBtn.addEventListener("click", fecharMenu);
 document.addEventListener("keydown", e => {
   if (e.target.closest("button,input")) return;
   if (e.code === "Space"){ e.preventDefault(); inSession() ? endSession("Encerrado pelo teclado.") : (mode === "standby" && wake()); }
-  if (e.key === "Escape"){ DRAWERS.forEach(id => $(id).classList.remove("open")); $("menuBtn").setAttribute("aria-expanded","false"); fecharCalendario(); }
+  if (e.key === "Escape"){ DRAWERS.forEach(id => $(id).classList.remove("open")); $("menuBtn").setAttribute("aria-expanded","false"); fecharCalendario(); fecharDocumentacao(); fecharRadar(); fecharComunicado(); }
 });
 
 /* ======================= APLICATIVO INSTALÁVEL (voz liberada sem toque) ======================= */
@@ -958,7 +1075,7 @@ async function executarFerramenta(nome, a){
 function controlarTela(a){
   switch (a.acao){
     case "abrir_menu": abrirMenu(); return "Menu aberto.";
-    case "fechar_menu": DRAWERS.forEach(id => $(id).classList.remove("open")); $("menuBtn").setAttribute("aria-expanded","false"); fecharCalendario(); return "Menu e janelas fechados.";
+    case "fechar_menu": DRAWERS.forEach(id => $(id).classList.remove("open")); $("menuBtn").setAttribute("aria-expanded","false"); fecharCalendario(); fecharDocumentacao(); fecharRadar(); return "Menu e janelas fechados.";
     case "tema_claro": aplicarTema("light"); return "Tema claro ativado.";
     case "tema_escuro": aplicarTema("dark"); return "Tema escuro ativado.";
     case "abrir_condominios": abrirCondominios(); return "Janela de condomínios aberta.";
@@ -971,6 +1088,13 @@ function controlarTela(a){
       return `Calendário de ${MESES[m - 1].toLowerCase()} de ${y} aberto na tela${calDia ? ", com o dia " + dataBR(calDia) + " em destaque" : ""}.`;
     }
     case "fechar_calendario": fecharCalendario(); return "Calendário fechado.";
+    case "abrir_documentacao": return abrirDocumentacao(a.condominio).then(() => "Pasta de Documentação Legal aberta na tela.");
+    case "fechar_documentacao": fecharDocumentacao(); return "Pasta de Documentação Legal fechada.";
+    case "abrir_radar": return abrirRadar().then(ed => `Radar Condominial aberto na tela com ${ed.itens.length} notícias.`);
+    case "fechar_radar": fecharRadar(); return "Radar fechado.";
+    case "imprimir_comunicado": if ($("comOverlay").hidden) throw new Error("Não há comunicado aberto na tela."); setTimeout(imprimirComunicado, 300); return "Janela de impressão aberta (dá para escolher Salvar como PDF).";
+    case "copiar_comunicado": if ($("comOverlay").hidden) throw new Error("Não há comunicado aberto na tela."); return copiarComunicado().then(() => $("comCopiar").textContent.includes("✓") ? "Texto copiado." : "O navegador não deixou copiar por voz; peça para tocar em Copiar texto.");
+    case "fechar_comunicado": fecharComunicado(); return "Comunicado fechado.";
     default: throw new Error("Ação de tela desconhecida.");
   }
 }
@@ -1015,20 +1139,68 @@ async function executarComDados(nome, a, user){
     }
     case "documento_cadastrar": {
       const cond = acharCondominio(a.condominio);
-      const venc = exigeData(a.data_vencimento, "data_vencimento");
+      const cat = await carregarCatalogo();
+      const codigo = (a.codigo && cat.some(k => k.codigo === a.codigo)) ? a.codigo : codigoDoDocumento(a.documento || "");
+      const k = codigo ? cat.find(x => x.codigo === codigo) : null;
       const ren = a.data_renovacao ? exigeData(a.data_renovacao, "data_renovacao") : null;
-      const dias = Math.max(0, Math.min(365, Number(a.alertar_dias_antes) || 30));
-      const { data, error } = await sb.from("documentos_legais").insert({ documento: a.documento, condominio_id: cond.id, data_renovacao: ren, data_vencimento: venc, alertar_dias_antes: dias, observacoes: a.observacoes || "" }).select("id").single();
-      if (error) throw error;
-      atualizarResumoTela();
+      let venc = a.data_vencimento ? exigeData(a.data_vencimento, "data_vencimento") : null, calculado = false;
+      if (!venc && ren && k){
+        const { data: cd } = await sb.from("condominios").select("uf").eq("id", cond.id).maybeSingle();
+        const meses = validadeMeses(k, cd?.uf);
+        if (meses){ venc = somaMeses(ren, meses); calculado = true; }
+      }
+      if (!venc) throw new Error(k ? `Para ${k.nome}, a validade depende do próprio documento: pergunte a data de vencimento.` : "Informe a data de vencimento (AAAA-MM-DD).");
+      const dias = Math.max(0, Math.min(365, Number(a.alertar_dias_antes) || k?.alerta_dias || 30));
+      const registro = { documento: k ? k.nome : a.documento, condominio_id: cond.id, data_renovacao: ren, data_vencimento: venc, alertar_dias_antes: dias, observacoes: a.observacoes || "", catalogo_codigo: codigo, situacao: "ativo", ultimo_alerta_email: null };
+      let res;
+      const existente = codigo ? (await sb.from("documentos_legais").select("id").eq("condominio_id", cond.id).eq("catalogo_codigo", codigo).maybeSingle()).data : null;
+      if (existente) res = await sb.from("documentos_legais").update(registro).eq("id", existente.id).select("id").single();
+      else res = await sb.from("documentos_legais").insert(registro).select("id").single();
+      if (res.error) throw res.error;
+      atualizarResumoTela(); if (!$("docOverlay").hidden) renderDocumentacao();
       const f = diasAte(venc);
-      return { ok: true, id: data.id, mensagem: `${a.documento} do ${cond.nome} cadastrado. Vence em ${dataBR(venc)} (${f < 0 ? "já vencido" : "faltam " + f + " dias"}). Aviso ${dias} dias antes.` };
+      return { ok: true, id: res.data.id, mensagem: `${registro.documento} do ${cond.nome} ${existente ? "atualizado" : "cadastrado"}. Vence em ${dataBR(venc)}${calculado ? " (calculado pela validade padrão a partir da renovação)" : ""} (${f < 0 ? "já vencido" : "faltam " + f + " dias"}). Aviso ${dias} dias antes.${k ? " Base legal: " + k.base_legal : ""}` };
+    }
+    case "documentacao_legal": {
+      const cond = a.condominio ? acharCondominio(a.condominio) : (PERFIL?.condominios || [])[0];
+      if (!cond) throw new Error("Nenhum condomínio cadastrado.");
+      if (a.acao === "nao_se_aplica" || a.acao === "aplica_se"){
+        const codigo = a.codigo || codigoDoDocumento(a.documento || "");
+        if (!codigo) throw new Error("Não identifiquei o documento. Diga o nome como está na pasta (ex.: RIA dos elevadores, PMOC, PGR).");
+        await marcarAplicacao(cond.id, codigo, a.acao === "nao_se_aplica");
+        if (!$("docOverlay").hidden) renderDocumentacao();
+        return { ok: true, mensagem: `${(await carregarCatalogo()).find(k => k.codigo === codigo)?.nome || codigo}: marcado como ${a.acao === "nao_se_aplica" ? "não se aplica" : "aplicável"} ao ${cond.nome}.` };
+      }
+      dlCondId = cond.id;
+      if (a.mostrar !== false) await abrirDocumentacao(cond.nome);
+      const { itens } = await statusDocumentacao(cond.id);
+      const resumo = st => itens.filter(i => i.st === st).map(i => ({ codigo: i.k.codigo, documento: i.k.nome, vence_em: i.doc?.data_vencimento ? dataBR(i.doc.data_vencimento) : undefined, dias: i.f, condicao: i.k.condicao || undefined, base_legal: i.k.base_legal }));
+      return { condominio: cond.nome, na_tela: a.mostrar !== false, vencidos: resumo("vencido"), vencendo: resumo("vencendo"), obrigatorios_sem_cadastro: resumo("falta"),
+        confirmar_se_aplica_ou_recomendados: resumo("confirmar").map(({ codigo, documento, condicao }) => ({ codigo, documento, condicao })), em_dia: itens.filter(i => i.st === "emdia").length, nao_se_aplicam: itens.filter(i => i.st === "naoaplica").length };
+    }
+    case "radar_condominial": {
+      const ed = await abrirRadar(!!a.atualizar);
+      return { data: ed.data, total: ed.itens.length, aviso: ed.aviso, noticias: ed.itens.map(i => ({ tema: i.tema, titulo: i.titulo, fonte: i.fonte, quando: haQuanto(i.publicado) })) };
+    }
+    case "noticias_buscar": {
+      const consulta = String(a.consulta || "").trim(); if (!consulta) throw new Error("Diga o assunto da busca (ex.: Selic, economia, São Paulo).");
+      const { data: { session } } = await sb.auth.getSession(); if (!session) throw new Error("Sessão expirada.");
+      const r = await fetch(FN_RADAR, { method: "POST", headers: { "Authorization": "Bearer " + session.access_token, "apikey": SUPABASE_ANON, "Content-Type": "application/json" }, body: JSON.stringify({ consulta }) });
+      const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.erro || "Não consegui buscar notícias agora.");
+      const itens = (j.itens || []).slice(0, 6);
+      if (itens.length) showPanel({ tipo: "noticias", titulo: "Notícias: " + consulta, itens: itens.map(i => `${i.titulo} — ${i.fonte}`), fonte: "Google Notícias" });
+      return { consulta, total: itens.length, noticias: itens.map(i => ({ titulo: i.titulo, fonte: i.fonte, quando: haQuanto(i.publicado) })) };
+    }
+    case "comunicado_exibir": {
+      if (!a.corpo || String(a.corpo).trim().length < 20) throw new Error("Escreva o texto completo do comunicado em 'corpo'.");
+      await mostrarComunicado(a);
+      return "Comunicado aberto em tela inteira, com cabeçalho do condomínio e assinatura. O síndico pode ajustar o texto na tela, copiar ou imprimir/salvar em PDF.";
     }
     case "documentos_listar": {
-      let q = sb.from("documentos_legais").select("id, documento, condominio_id, data_renovacao, data_vencimento, alertar_dias_antes, observacoes").eq("sindico_id", user.id).order("data_vencimento");
+      let q = sb.from("documentos_legais").select("id, documento, condominio_id, data_renovacao, data_vencimento, alertar_dias_antes, observacoes, situacao").eq("sindico_id", user.id).neq("situacao", "nao_aplica").order("data_vencimento");
       if (a.condominio) q = q.eq("condominio_id", acharCondominio(a.condominio).id);
       const { data, error } = await q; if (error) throw error;
-      let itens = data.map(d => ({ id: d.id, documento: d.documento, condominio: nomeCondPorId(d.condominio_id), renovado_em: dataBR(d.data_renovacao), vence_em: dataBR(d.data_vencimento), dias_para_vencer: diasAte(d.data_vencimento), aviso_dias_antes: d.alertar_dias_antes, em_alerta: diasAte(d.data_vencimento) <= d.alertar_dias_antes, observacoes: d.observacoes }));
+      let itens = data.filter(d => d.data_vencimento).map(d => ({ id: d.id, documento: d.documento, condominio: nomeCondPorId(d.condominio_id), renovado_em: dataBR(d.data_renovacao), vence_em: dataBR(d.data_vencimento), dias_para_vencer: diasAte(d.data_vencimento), aviso_dias_antes: d.alertar_dias_antes, em_alerta: diasAte(d.data_vencimento) <= d.alertar_dias_antes, observacoes: d.observacoes }));
       if (a.somente_em_alerta) itens = itens.filter(i => i.em_alerta);
       return { total: itens.length, documentos: itens };
     }
@@ -1040,9 +1212,17 @@ async function executarComDados(nome, a, user){
       }
       const patch = {};
       if (a.acao === "renovar"){
-        patch.data_vencimento = exigeData(a.nova_data_vencimento, "nova_data_vencimento");
         patch.data_renovacao = a.nova_data_renovacao ? exigeData(a.nova_data_renovacao, "nova_data_renovacao") : hojeISO();
-        patch.ultimo_alerta_email = null;
+        if (a.nova_data_vencimento) patch.data_vencimento = exigeData(a.nova_data_vencimento, "nova_data_vencimento");
+        else {
+          const { data: atual } = await sb.from("documentos_legais").select("catalogo_codigo, condominio_id").eq("id", a.id).maybeSingle();
+          const k = atual?.catalogo_codigo ? (await carregarCatalogo()).find(x => x.codigo === atual.catalogo_codigo) : null;
+          const { data: cd } = atual ? await sb.from("condominios").select("uf").eq("id", atual.condominio_id).maybeSingle() : { data: null };
+          const meses = k ? validadeMeses(k, cd?.uf) : null;
+          if (!meses) throw new Error("Informe a nova data de vencimento (a validade deste documento depende do próprio documento).");
+          patch.data_vencimento = somaMeses(patch.data_renovacao, meses);
+        }
+        patch.ultimo_alerta_email = null; patch.situacao = "ativo";
       }
       if (a.alertar_dias_antes != null) patch.alertar_dias_antes = Math.max(0, Math.min(365, Number(a.alertar_dias_antes)));
       if (!Object.keys(patch).length) throw new Error("Nada para alterar.");
@@ -1275,6 +1455,227 @@ $("calPrev").addEventListener("click", () => mudarMes(-1));
 $("calNext").addEventListener("click", () => mudarMes(1));
 $("calHoje").addEventListener("click", () => abrirCalendario(hojeISO()));
 $("calOverlay").addEventListener("click", e => { if (e.target.id === "calOverlay") fecharCalendario(); });
+
+/* ======================= DOCUMENTAÇÃO LEGAL (catálogo padrão para todos os condomínios) ======================= */
+let CATALOGO = null;
+async function carregarCatalogo(){
+  if (CATALOGO) return CATALOGO;
+  const { data, error } = await sb.from("documentos_catalogo").select("*").order("ordem");
+  if (error) throw new Error("Não consegui carregar a lista de documentos obrigatórios.");
+  return (CATALOGO = data || []);
+}
+/* Reconhece o documento pelo nome falado */
+const APELIDOS = [
+  ["extintores_hidrostatico", /hidrost/], ["extintores", /extint/], ["mangueiras", /mangueir|hidrante/], ["brigada", /brigad/],
+  ["avcb", /avcb|clcb|auto de vistoria|licenca (do )?corpo de bombeiros|bombeiros?$/], ["seguro_predial", /seguro/],
+  ["spda", /spda|para.?raio/], ["laudo_eletrico", /eletric/], ["elevadores_ria", /\bria\b|inspecao anual.*elevador|relatorio de inspecao/],
+  ["elevadores_contrato", /elevador/], ["potabilidade", /potabil|analise (da )?agua/], ["caixa_dagua", /caixa|reservatori/],
+  ["dedetizacao", /dedetiz|praga|desratiz/], ["pmoc", /pmoc|ar.?condicionado|climatiz/], ["pgr", /\bpgr\b|ppra|gerenciamento de riscos/],
+  ["pcmso", /pcmso/], ["certificado_digital", /certificado digital|e.?cnpj/], ["inspecao_predial", /inspecao predial|autovistoria/],
+  ["gas", /\bgas\b|estanqueidade/],
+];
+function codigoDoDocumento(texto){ const t = norm(texto); const a = APELIDOS.find(([, re]) => re.test(t)); return a ? a[0] : null; }
+function validadeMeses(k, uf){ const porUf = k.validade_por_uf || {}; return (uf && porUf[uf] != null) ? porUf[uf] : k.validade_meses; }
+function somaMeses(iso, meses){ const [y, m, d] = iso.split("-").map(Number); const dt = new Date(Date.UTC(y, m - 1 + meses, d)); if (dt.getUTCDate() !== d) dt.setUTCDate(0); return dt.toISOString().slice(0, 10); }
+function situacaoDoc(k, doc){
+  if (doc && doc.situacao === "nao_aplica") return { st: "naoaplica", rotulo: "Não se aplica" };
+  if (!doc || !doc.data_vencimento) return k.condicao || k.exigencia === "recomendado" ? { st: "confirmar", rotulo: k.exigencia === "recomendado" ? "Recomendado" : "Confirmar" } : { st: "falta", rotulo: "Sem cadastro" };
+  const f = diasAte(doc.data_vencimento), alerta = doc.alertar_dias_antes ?? k.alerta_dias;
+  if (f < 0) return { st: "vencido", rotulo: "Vencido", f };
+  if (f <= alerta) return { st: "vencendo", rotulo: "Vencendo", f };
+  return { st: "emdia", rotulo: "Em dia", f };
+}
+async function statusDocumentacao(condId){
+  const { data: { user } } = await sb.auth.getUser(); if (!user) throw new Error("Sessão expirada.");
+  const [cat, { data: cond }, { data: docs }] = await Promise.all([
+    carregarCatalogo(),
+    sb.from("condominios").select("id, nome, uf, cidade").eq("id", condId).maybeSingle(),
+    sb.from("documentos_legais").select("id, documento, catalogo_codigo, data_renovacao, data_vencimento, alertar_dias_antes, situacao").eq("condominio_id", condId)
+  ]);
+  const porCodigo = new Map((docs || []).filter(d => d.catalogo_codigo).map(d => [d.catalogo_codigo, d]));
+  const itens = cat.map(k => {
+    const doc = porCodigo.get(k.codigo) || null, s = situacaoDoc(k, doc), meses = validadeMeses(k, cond?.uf);
+    return { k, doc, ...s, meses };
+  });
+  const extras = (docs || []).filter(d => !d.catalogo_codigo && d.data_vencimento);   // documentos fora da lista padrão
+  return { cond, itens, extras };
+}
+const ORDEM_ST = { vencido: 0, vencendo: 1, falta: 2, confirmar: 3, emdia: 4, naoaplica: 5 };
+let dlCondId = null;
+async function abrirDocumentacao(nomeCond){
+  const cs = PERFIL?.condominios || [];
+  if (!cs.length) throw new Error("Nenhum condomínio cadastrado ainda.");
+  const alvo = nomeCond ? acharCondominio(nomeCond) : (cs.find(c => c.id === dlCondId) || cs[0]);
+  dlCondId = alvo.id;
+  const sel = $("dlCond"); sel.innerHTML = "";
+  cs.forEach(c => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.nome; if (c.id === dlCondId) o.selected = true; sel.append(o); });
+  sel.hidden = cs.length < 2;
+  fecharMenu(); $("docOverlay").hidden = false;
+  return renderDocumentacao();
+}
+async function renderDocumentacao(){
+  const lista = $("dlLista"); lista.innerHTML = "<p class='dl-nota'>Carregando…</p>";
+  const { cond, itens, extras } = await statusDocumentacao(dlCondId);
+  $("dlTitulo").textContent = "Documentação legal" + ((PERFIL?.condominios || []).length < 2 && cond ? " · " + cond.nome : "");
+  const conta = st => itens.filter(i => i.st === st).length;
+  $("dlResumo").innerHTML = "";
+  [["vencido", "vencidos"], ["vencendo", "vencendo"], ["falta", "sem cadastro"], ["emdia", "em dia"]].forEach(([st, txt]) => {
+    const s = document.createElement("span"); s.className = st; s.textContent = `${conta(st)} ${txt}`; $("dlResumo").append(s);
+  });
+  lista.innerHTML = "";
+  const grupos = [["Atenção", i => ["vencido", "vencendo"].includes(i.st)], ["Obrigatórios sem cadastro", i => i.st === "falta"],
+    ["Confirme se se aplica / recomendados", i => i.st === "confirmar"], ["Em dia", i => i.st === "emdia"], ["Não se aplicam a este condomínio", i => i.st === "naoaplica"]];
+  grupos.forEach(([titulo, filtro]) => {
+    const g = itens.filter(filtro).sort((a, b) => (ORDEM_ST[a.st] - ORDEM_ST[b.st]) || (a.f ?? 0) - (b.f ?? 0) || a.k.ordem - b.k.ordem);
+    if (!g.length) return;
+    const h = document.createElement("p"); h.className = "dl-grupo"; h.textContent = titulo; lista.append(h);
+    g.forEach(i => {
+      const d = document.createElement("div"); d.className = "dl-item " + i.st;
+      const pill = document.createElement("span"); pill.className = "dl-pill"; pill.textContent = i.rotulo;
+      const nome = document.createElement("strong"); nome.textContent = i.k.nome;
+      const quando = document.createElement("span"); quando.className = "dl-quando";
+      if (i.doc && i.doc.data_vencimento){
+        quando.textContent = `Vence em ${dataBR(i.doc.data_vencimento)} · ${i.f < 0 ? "vencido há " + (-i.f) + " dias" : i.f === 0 ? "vence hoje" : "faltam " + i.f + " dias"}${i.doc.data_renovacao ? " · renovado em " + dataBR(i.doc.data_renovacao) : ""}`;
+      } else if (i.st !== "naoaplica"){
+        quando.textContent = (i.meses ? `Validade: ${i.meses % 12 === 0 ? (i.meses / 12) + (i.meses === 12 ? " ano" : " anos") : i.meses + " meses"}` : "Validade: a data do próprio documento") + (i.k.condicao ? ` · ${i.k.condicao}` : "");
+      }
+      const base = document.createElement("small"); base.textContent = i.k.base_legal;
+      d.append(pill, nome);
+      if (quando.textContent) d.append(quando);
+      d.append(base);
+      if (i.k.condicao || i.k.exigencia === "recomendado" || i.st === "naoaplica"){
+        const b = document.createElement("button"); b.type = "button";
+        b.textContent = i.st === "naoaplica" ? "Aplica-se" : "Não se aplica";
+        b.onclick = async () => { b.disabled = true; try{ await marcarAplicacao(dlCondId, i.k.codigo, i.st !== "naoaplica"); await renderDocumentacao(); }catch(e){ b.disabled = false; b.textContent = "Erro"; b.title = e.message; } };
+        if (i.doc && i.doc.data_vencimento) b.hidden = true;
+        d.append(b);
+      }
+      lista.append(d);
+    });
+  });
+  if (extras.length){
+    const h = document.createElement("p"); h.className = "dl-grupo"; h.textContent = "Outros documentos cadastrados"; lista.append(h);
+    extras.forEach(x => {
+      const k = { nome: x.documento, base_legal: "Cadastrado pelo síndico", alerta_dias: x.alertar_dias_antes }; const s = situacaoDoc(k, x);
+      const d = document.createElement("div"); d.className = "dl-item " + s.st;
+      d.innerHTML = "<span class='dl-pill'></span><strong></strong><span class='dl-quando'></span>";
+      d.children[0].textContent = s.rotulo; d.children[1].textContent = x.documento;
+      d.children[2].textContent = `Vence em ${dataBR(x.data_vencimento)} · ${s.f < 0 ? "vencido há " + (-s.f) + " dias" : "faltam " + s.f + " dias"}`;
+      lista.append(d);
+    });
+  }
+  return { cond, itens };
+}
+async function marcarAplicacao(condId, codigo, naoAplica){
+  if (naoAplica){
+    const { data: ex } = await sb.from("documentos_legais").select("id, data_vencimento").eq("condominio_id", condId).eq("catalogo_codigo", codigo).maybeSingle();
+    if (ex && ex.data_vencimento) throw new Error("Este documento já tem vencimento cadastrado.");
+    const k = (await carregarCatalogo()).find(x => x.codigo === codigo);
+    if (ex) { const { error } = await sb.from("documentos_legais").update({ situacao: "nao_aplica" }).eq("id", ex.id); if (error) throw error; }
+    else { const { error } = await sb.from("documentos_legais").insert({ condominio_id: condId, catalogo_codigo: codigo, documento: k?.nome || codigo, situacao: "nao_aplica", data_vencimento: null }); if (error) throw error; }
+  } else {
+    const { error } = await sb.from("documentos_legais").delete().eq("condominio_id", condId).eq("catalogo_codigo", codigo).eq("situacao", "nao_aplica"); if (error) throw error;
+  }
+  atualizarResumoTela();
+}
+function fecharDocumentacao(){ $("docOverlay").hidden = true; }
+$("docBtn").addEventListener("click", () => abrirDocumentacao().catch(e => { hintEl.textContent = e.message; }));
+$("dlFechar").addEventListener("click", fecharDocumentacao);
+$("dlCond").addEventListener("change", e => { dlCondId = e.target.value; renderDocumentacao(); });
+$("docOverlay").addEventListener("click", e => { if (e.target.id === "docOverlay") fecharDocumentacao(); });
+
+/* ======================= RADAR CONDOMINIAL ======================= */
+const FN_RADAR = SUPABASE_URL + "/functions/v1/radar-condominial";
+const SEMANA_EXT = ["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];
+function haQuanto(iso){
+  if (!iso) return ""; const min = Math.round((Date.now() - Date.parse(iso)) / 60000);
+  if (min < 60) return `há ${Math.max(1, min)} min`; const h = Math.round(min / 60); if (h < 24) return `há ${h}h`; const d = Math.round(h / 24); return d === 1 ? "ontem" : `há ${d} dias`;
+}
+async function buscarRadar(atualizar = false){
+  const { data: { session } } = await sb.auth.getSession(); if (!session) throw new Error("Sessão expirada.");
+  const r = await fetch(FN_RADAR, { method: "POST", headers: { "Authorization": "Bearer " + session.access_token, "apikey": SUPABASE_ANON, "Content-Type": "application/json" }, body: JSON.stringify({ atualizar }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.erro || "Não consegui buscar o Radar agora (erro " + r.status + ").");
+  return j;
+}
+function renderRadar(ed){
+  const [y, m, d] = ed.data.split("-").map(Number);
+  const dia = new Date(Date.UTC(y, m - 1, d));
+  $("rdData").textContent = `${cap1(SEMANA_EXT[dia.getUTCDay()])}, ${d} de ${MESES[m - 1].toLowerCase()} de ${y} · ${ed.itens.length} notícias · atualizado ${horaSP(ed.gerado_em)}`;
+  const corpo = $("rdCorpo"); corpo.innerHTML = "";
+  if (!ed.itens.length){ corpo.innerHTML = "<p class='cal-vazio'>Nenhuma notícia relevante do setor nas últimas 48 horas.</p>"; return; }
+  const temas = [...new Set(ed.itens.map(i => i.tema))];
+  temas.forEach((tema, ti) => {
+    const sec = document.createElement("section"); sec.className = "rd-sec";
+    const h = document.createElement("h3"); h.textContent = tema; sec.append(h);
+    ed.itens.filter(i => i.tema === tema).forEach((i, k) => {
+      const a = document.createElement("a"); a.className = "rd-art" + (ti === 0 && k === 0 ? " manchete" : ""); a.href = i.link; a.target = "_blank"; a.rel = "noopener noreferrer";
+      const s = document.createElement("strong"); s.textContent = i.titulo;
+      const sm = document.createElement("small"); sm.textContent = [i.fonte, haQuanto(i.publicado)].filter(Boolean).join(" · ");
+      a.append(s, sm); sec.append(a);
+    });
+    corpo.append(sec);
+  });
+}
+async function abrirRadar(atualizar = false){
+  fecharMenu(); $("radarOverlay").hidden = false;
+  $("rdCorpo").innerHTML = "<p class='cal-vazio'>Buscando as notícias do setor…</p>";
+  try{ const ed = await buscarRadar(atualizar); renderRadar(ed); return ed; }
+  catch(e){ $("rdCorpo").innerHTML = ""; const p = document.createElement("p"); p.className = "cal-vazio"; p.textContent = e.message; $("rdCorpo").append(p); throw e; }
+}
+function fecharRadar(){ $("radarOverlay").hidden = true; }
+$("radarBtn").addEventListener("click", () => abrirRadar().catch(() => {}));
+$("rdFechar").addEventListener("click", fecharRadar);
+$("rdAtualizar").addEventListener("click", () => abrirRadar(true).catch(() => {}));
+$("radarOverlay").addEventListener("click", e => { if (e.target.id === "radarOverlay") fecharRadar(); });
+
+/* ======================= COMUNICADO EM TELA INTEIRA ======================= */
+const TIPOS_COM = { comunicado:"Comunicado", circular:"Circular", aviso:"Aviso", advertencia:"Advertência", notificacao:"Notificação", multa:"Notificação de multa", edital:"Edital de convocação", convocacao:"Convocação", ata:"Ata", outro:"Documento" };
+const dataExtenso = iso => { const [y, m, d] = iso.split("-").map(Number); return `${d} de ${MESES[m - 1].toLowerCase()} de ${y}`; };
+async function mostrarComunicado(a){
+  let cond = null;
+  if (a.condominio){
+    const c = acharCondominio(a.condominio);
+    const { data } = await sb.from("condominios").select("nome, cnpj, endereco, cidade, cep").eq("id", c.id).maybeSingle();
+    cond = data || c;
+  } else if ((PERFIL?.condominios || []).length === 1){
+    const { data } = await sb.from("condominios").select("nome, cnpj, endereco, cidade, cep").eq("id", PERFIL.condominios[0].id).maybeSingle();
+    cond = data;
+  }
+  $("comCond").textContent = cond ? "Condomínio " + cond.nome.replace(/^condom[ií]nio\s+/i, "") : "Condomínio";
+  $("comDados").textContent = cond ? [cond.cnpj ? "CNPJ " + mascaraCnpj(cond.cnpj) : "", [cond.endereco, cond.cidade].filter(Boolean).join(" – "), cond.cep ? "CEP " + cond.cep.replace(/^(\d{5})(\d{3})$/, "$1-$2") : ""].filter(Boolean).join(" · ") : "";
+  $("comTipo").textContent = TIPOS_COM[a.tipo] || a.tipo || "Comunicado";
+  $("comTitulo").textContent = a.titulo || "";
+  $("comPara").textContent = a.destinatario ? "Para: " + a.destinatario : "";
+  const cidade = (cond?.cidade || "").split("/")[0];
+  const dia = /^\d{4}-\d{2}-\d{2}$/.test(a.data || "") ? a.data : hojeISO();
+  $("comData").textContent = (cidade ? cidade + ", " : "") + dataExtenso(dia);
+  const corpo = $("comCorpo"); corpo.innerHTML = "";
+  String(a.corpo || "").replace(/\r/g, "").split(/\n\s*\n|\n(?=\S)/).map(s => s.trim()).filter(Boolean)
+    .forEach(par => { const p = document.createElement("p"); p.textContent = par; corpo.append(p); });
+  const ass = PERFIL?.assinatura || PERFIL?.nome || "Síndico";
+  const [nomeAss, cargo] = ass.split(/\s+[—–-]\s+/);
+  $("comAss").textContent = nomeAss; $("comAssCargo").textContent = cargo || "Síndico";
+  DRAWERS.forEach(id => $(id).classList.remove("open")); fecharCalendario(); fecharDocumentacao(); fecharRadar();
+  $("comOverlay").hidden = false; $("comOverlay").scrollTop = 0;
+}
+function textoComunicado(){
+  const linhas = [$("comCond").textContent, $("comDados").textContent, "", $("comTipo").textContent.toUpperCase(), $("comTitulo").textContent, "",
+    [$("comPara").textContent, $("comData").textContent].filter(Boolean).join(" — "), "",
+    ...[...$("comCorpo").querySelectorAll("p")].map(p => p.innerText.trim() + "\n"), "", $("comAss").textContent, $("comAssCargo").textContent];
+  return linhas.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+async function copiarComunicado(){
+  try{ await navigator.clipboard.writeText(textoComunicado()); $("comCopiar").textContent = "Copiado ✓"; }
+  catch(_){ $("comCopiar").textContent = "Não foi possível copiar"; }
+  setTimeout(() => { $("comCopiar").textContent = "Copiar texto"; }, 2500);
+}
+function imprimirComunicado(){ document.body.classList.add("imprimindo"); window.print(); }
+addEventListener("afterprint", () => document.body.classList.remove("imprimindo"));
+function fecharComunicado(){ $("comOverlay").hidden = true; }
+$("comCopiar").addEventListener("click", copiarComunicado);
+$("comImprimir").addEventListener("click", imprimirComunicado);
+$("comFechar").addEventListener("click", fecharComunicado);
 
 /* ======================= ADMINISTRAÇÃO (aprovar síndicos) ======================= */
 async function carregarAdmin(){
