@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "3.9.1";
+  window.SINDICS_V = "4.0.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -179,7 +179,7 @@ function aplicarTema(t){
 }
 
 /* ======================= MENU (recolhido; abre ao tocar ou por voz) ======================= */
-const DRAWERS = ["menuDrawer","drawer","condDrawer","admDrawer","equipeDrawer"];
+const DRAWERS = ["menuDrawer","drawer","condDrawer","admDrawer","equipeDrawer","opDrawer"];
 function abrirMenu(){ DRAWERS.forEach(id => $(id).classList.remove("open")); $("menuDrawer").classList.add("open"); $("menuBtn").setAttribute("aria-expanded","true"); $("menuBtn").classList.remove("pulsar"); }
 function fecharMenu(){ $("menuDrawer").classList.remove("open"); $("menuBtn").setAttribute("aria-expanded","false"); }
 function abrirGaveta(id){ fecharMenu(); $(id).classList.add("open"); }
@@ -593,6 +593,8 @@ function controlarTela(a){
     case "fechar_comunicado": fecharComunicado(); return "Comunicado fechado.";
     case "abrir_lgpd": return abrirLgpd(a.aba === "condominio" ? "condominio" : "dados").then(() => a.aba === "condominio" ? "Roteiro de LGPD do condomínio aberto na tela." : "Área de Privacidade e LGPD aberta: dados do síndico, download, correção e pedidos.");
     case "fechar_lgpd": fecharLgpd(); return "Área de privacidade fechada.";
+    case "abrir_operacao": if (!PERFIL) throw new Error("Usuário não está logado."); return abrirOperacao(a.condominio).then(() => "Operação do dia aberta na tela: novo registro, pendências e registros de hoje.");
+    case "imprimir_relatorio": if ($("relOverlay").hidden) throw new Error("Não há relatório aberto na tela."); setTimeout(() => $("relImprimir").click(), 300); return "Janela de impressão aberta: escolha Salvar como PDF.";
     case "abrir_cadastro": if (!PERFIL) throw new Error("Síndico não está logado."); abrirPerfil("editar", PERFIL); return "Cadastro do síndico aberto na tela para conferir e corrigir.";
     default: throw new Error("Ação de tela desconhecida.");
   }
@@ -742,6 +744,40 @@ async function executarComDados(nome, a, user){
       atualizarResumoTela();
       return { ok: true, mensagem: `${data.documento}: vence em ${dataBR(data.data_vencimento)}, aviso ${data.alertar_dias_antes} dias antes.` };
     }
+    case "operacao_registrar": {
+      const cond = a.condominio ? acharCondominio(a.condominio) : ((PERFIL?.condominios || []).length === 1 ? PERFIL.condominios[0] : null);
+      if (!cond) throw new Error("Diga em qual condomínio foi. Condomínios disponíveis: " + (PERFIL?.condominios || []).map(c => c.nome).join(", ") + ".");
+      if (a.resolver_pendencia_id){
+        const r = await registrarOperacao({ cond, tipo: a.tipo || "outro", descricao: "Solução: " + (a.descricao || ""), referencia_id: a.resolver_pendencia_id, origem: "voz" });
+        if (!$("opDrawer").classList.contains("open")) abrirOperacao(cond.nome); else listarOperacao();
+        return { ok: true, mensagem: `Pendência marcada como resolvida no ${cond.nome}, ${localInfo(r).t}.` };
+      }
+      const r = await registrarOperacao({ cond, tipo: a.tipo, descricao: a.descricao, unidade: a.unidade, situacao: a.situacao, origem: "voz" });
+      abrirOperacao(cond.nome);
+      return { ok: true, mensagem: `Registrado no ${cond.nome} às ${horaBR(r.ocorrido_em)} (${TIPOS_OP[a.tipo] || "Outro"}, ${r.situacao}). Localização: ${localInfo(r).t}. Fotos podem ser anexadas na tela.`, sem_localizacao: r.local_status === "sem_localizacao" };
+    }
+    case "operacao_consultar": {
+      const ids = a.condominio ? [acharCondominio(a.condominio).id] : (PERFIL?.condominios || []).map(c => c.id);
+      if (!ids.length) return { total: 0, mensagem: "Nenhum condomínio disponível." };
+      const mes = a.periodo === "mes";
+      const ini = mes ? new Date(hojeISO().slice(0, 7) + "-01T00:00:00-03:00") : new Date(hojeISO() + "T00:00:00-03:00");
+      const [{ data: regs, error }, { data: pend }] = await Promise.all([
+        sb.from("registros_operacionais").select("tipo, descricao, unidade, situacao, ocorrido_em, autor_nome, local_status, distancia_m, condominio_id").in("condominio_id", ids).gte("ocorrido_em", ini.toISOString()).order("ocorrido_em"),
+        sb.from("registros_operacionais").select("id, tipo, descricao, unidade, ocorrido_em, condominio_id").in("condominio_id", ids).eq("situacao", "pendente").order("ocorrido_em"),
+      ]);
+      if (error) throw error;
+      abrirOperacao(a.condominio);
+      return { periodo: mes ? "mês atual" : "hoje", total: regs.length,
+        registros: regs.slice(-15).map(r => ({ quando: dataHoraBR(r.ocorrido_em), condominio: nomeCondPorId(r.condominio_id), tipo: TIPOS_OP[r.tipo], descricao: r.descricao, unidade: r.unidade, situacao: r.situacao, autor: r.autor_nome, local: localInfo(r).t })),
+        pendencias_abertas: (pend || []).map(p => ({ id: p.id, desde: dataBR(isoDia(new Date(p.ocorrido_em))), condominio: nomeCondPorId(p.condominio_id), tipo: TIPOS_OP[p.tipo], descricao: p.descricao, unidade: p.unidade })) };
+    }
+    case "relatorio_operacional": {
+      const cond = a.condominio ? acharCondominio(a.condominio) : ((PERFIL?.condominios || []).length === 1 ? PERFIL.condominios[0] : null);
+      if (!cond) throw new Error("Diga de qual condomínio é o relatório.");
+      const mes = /^\d{4}-\d{2}$/.test(a.mes || "") ? a.mes : hojeISO().slice(0, 7);
+      const r = await gerarRelatorio(cond.id, mes);
+      return { ...r, mensagem: "Relatório aberto na tela. Para baixar em PDF, toque em Baixar PDF e escolha Salvar como PDF." };
+    }
     case "condominios_listar": {
       const { data, error } = await filtroCond(sb.from("condominios").select("nome, cnpj, endereco, cidade, unidades, convencao_status, regulamento_status"), user.id).order("nome");
       if (error) throw error;
@@ -782,7 +818,7 @@ async function executarComDados(nome, a, user){
       if (souGestor()) throw new Error("Somente o síndico pode excluir condomínios. Oriente o gestor a falar com o síndico.");
       if (a.confirmado !== true) throw new Error("Exclusão não confirmada. Avise o que será apagado e peça para o síndico dizer 'confirmo a exclusão'.");
       const cond = acharCondominio(a.condominio);
-      const ok = await confirmarNaTela("EXCLUIR CONDOMÍNIO", `Apagar o cadastro do ${cond.nome}, com Convenção, Regulamento, PDFs e prazos de documentos legais? A agenda é mantida. Não dá para desfazer.`, "Excluir condomínio");
+      const ok = await confirmarNaTela("EXCLUIR CONDOMÍNIO", `Apagar o cadastro do ${cond.nome}, com Regulamento, Convenção, PDFs, prazos de documentos legais e o diário operacional (baixe o relatório antes, se precisar)? A agenda é mantida. Não dá para desfazer.`, "Excluir condomínio");
       if (!ok) return { ok: false, mensagem: "O síndico não confirmou na tela. Nada foi apagado." };
       const { data: { session } } = await sb.auth.getSession(); if (!session) throw new Error("Sessão expirada.");
       const r = await fetch(FN_EXCLUIR, { method: "POST", headers: { "Authorization": "Bearer " + session.access_token, "apikey": SUPABASE_ANON, "Content-Type": "application/json" }, body: JSON.stringify({ condominio_id: cond.id, confirmado: true }) });
@@ -1220,7 +1256,7 @@ function reiniciarComNovaVoz(){
 }
 
 /* ======================= CADASTRO DO SÍNDICO ======================= */
-const TERMOS_V = "2026-10-26";
+const TERMOS_V = "2026-10-27";
 let perfilModo = "criar";       // criar | completar | editar
 let perfilDepois = null;         // o que fazer depois de salvar
 const pfMsg = (t, err) => { $("pfMsg").textContent = t || ""; $("pfMsg").style.color = err ? "var(--danger)" : "var(--ok)"; };
@@ -1500,6 +1536,286 @@ $("lgAviso").addEventListener("click", async () => {
   try{ await mostrarComunicado({ tipo: "aviso", titulo: "Aviso de Privacidade — Proteção de Dados (LGPD)", destinatario: "Moradores, funcionários e visitantes", condominio: c?.nome, corpo: textoAvisoPrivacidade() }); }
   catch(e){ hintEl.textContent = e.message; hintEl.classList.add("err"); }
 });
+
+/* ======================= OPERAÇÃO DO DIA (diário operacional + relatório) ======================= */
+const TIPOS_OP = { vistoria:"Vistoria / ronda", manutencao:"Manutenção", ocorrencia:"Ocorrência", atendimento:"Atendimento a morador", prestador:"Prestador / fornecedor", limpeza:"Limpeza", seguranca:"Segurança", administrativo:"Administrativo", outro:"Outro" };
+const MAX_FOTOS = 3;
+let opFotosSel = [];
+const opMsg = (t, err) => { $("opMsg").textContent = t || ""; $("opMsg").style.color = err ? "var(--danger)" : "var(--ok)"; };
+const distTxt = m => m == null ? "" : m < 1000 ? `${m} m` : `${(m / 1000).toFixed(1).replace(".", ",")} km`;
+function localInfo(r){
+  switch (r.local_status){
+    case "no_condominio": return { t: "no condomínio", c: "ok" };
+    case "fora": return { t: `fora do condomínio (a ${distTxt(r.distancia_m)})`, c: "ruim" };
+    case "impreciso": return { t: "localização imprecisa", c: "alerta" };
+    case "condominio_sem_local": return { t: "condomínio sem localização definida", c: "alerta" };
+    default: return { t: "sem localização", c: "alerta" };
+  }
+}
+const horaBR = ts => new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, hour: "2-digit", minute: "2-digit" }).format(new Date(ts));
+const dataHoraBR = ts => new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(ts));
+
+/* Localização: pedida só no momento do registro. Sem permissão, o registro segue "sem localização". */
+function pegarLocalizacao(timeout = 12000){
+  return new Promise(res => {
+    if (!navigator.geolocation) return res(null);
+    let feito = false; const fim = v => { if (!feito){ feito = true; res(v); } };
+    setTimeout(() => fim(null), timeout + 1500);
+    navigator.geolocation.getCurrentPosition(p => fim({ lat: p.coords.latitude, lng: p.coords.longitude, acc: Math.round(p.coords.accuracy || 0) }), () => fim(null), { enableHighAccuracy: true, timeout, maximumAge: 60000 });
+  });
+}
+async function definirLocalAqui(c){
+  const pos = await pegarLocalizacao(15000);
+  if (!pos) throw new Error("Não consegui sua localização. Libere a permissão de localização no navegador e tente de novo.");
+  if (pos.acc > 300) throw new Error(`Localização imprecisa (±${distTxt(pos.acc)}). Tente no celular, ao ar livre, ou use "Pelo endereço".`);
+  const { error } = await sb.from("condominios").update({ lat: pos.lat, lng: pos.lng }).eq("id", c.id);
+  if (error) throw error;
+}
+async function definirLocalPorEndereco(c){
+  const cidade = (c.cidade || "").replace(/\/[A-Z]{2}$/, ""), uf = c.uf || (c.cidade || "").split("/")[1] || "";
+  const end = String(c.endereco || "").replace(/,?\s*n[ºo°]\s*/i, ", ");
+  const tentativas = [ `${end}, ${cidade}, ${uf}, Brasil`, c.cep ? `${c.cep}, Brasil` : "" ].filter(Boolean);
+  for (const q of tentativas){
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=br&accept-language=pt-BR&q=${encodeURIComponent(q)}`);
+    if (!r.ok) continue;
+    const j = await r.json().catch(() => []);
+    if (j[0]){
+      const { error } = await sb.from("condominios").update({ lat: Number(j[0].lat), lng: Number(j[0].lon) }).eq("id", c.id);
+      if (error) throw error; return true;
+    }
+  }
+  throw new Error('Não achei o endereço no mapa. Use "Estou no condomínio agora" quando estiver lá.');
+}
+
+/* Fotos: reduzidas no aparelho (máx. 1600 px, JPEG) antes de subir */
+function reduzirFoto(file){
+  return new Promise((res, rej) => {
+    if (!/^image\//.test(file.type)) return rej(new Error("Envie só imagens."));
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const cv = document.createElement("canvas"); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+      cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height); URL.revokeObjectURL(url);
+      cv.toBlob(b => b ? res(b) : rej(new Error("Não consegui preparar a foto.")), "image/jpeg", 0.82);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("Foto inválida.")); };
+    img.src = url;
+  });
+}
+const novoId = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+
+async function registrarOperacao({ cond, tipo, descricao, unidade = "", situacao = "resolvido", fotos = [], referencia_id = null, origem = "tela" }, aviso = () => {}){
+  if (!TIPOS_OP[tipo]) tipo = "outro";
+  descricao = String(descricao || "").trim();
+  if (descricao.length < 3) throw new Error("Descreva o que foi feito ou o que aconteceu.");
+  aviso("Conferindo sua localização…");
+  const pos = await pegarLocalizacao();
+  const caminhos = [];
+  for (const [i, f] of fotos.slice(0, MAX_FOTOS).entries()){
+    aviso(`Enviando foto ${i + 1} de ${Math.min(fotos.length, MAX_FOTOS)}…`);
+    const blob = await reduzirFoto(f);
+    const caminho = `${cond.sindico_id}/${cond.id}/${hojeISO()}-${novoId()}.jpg`;
+    const up = await sb.storage.from("operacao-fotos").upload(caminho, blob, { contentType: "image/jpeg", upsert: false });
+    if (up.error) throw new Error("Não consegui enviar a foto: " + up.error.message);
+    caminhos.push(caminho);
+  }
+  aviso("Registrando…");
+  const linha = { condominio_id: cond.id, sindico_id: cond.sindico_id, tipo, descricao, unidade: String(unidade || "").trim() || null, situacao: situacao === "pendente" ? "pendente" : "resolvido",
+                  fotos: caminhos, referencia_id, origem, lat_temp: pos?.lat ?? null, lng_temp: pos?.lng ?? null, precisao_m: pos?.acc ?? null };
+  const { data, error } = await sb.from("registros_operacionais").insert(linha).select("id, local_status, distancia_m, situacao, ocorrido_em").single();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+function encherSelectConds(sel, comTodos = false){
+  const atual = sel.value; sel.innerHTML = "";
+  (PERFIL?.condominios || []).forEach(c => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.nome; sel.append(o); });
+  if (atual && [...sel.options].some(o => o.value === atual)) sel.value = atual;
+}
+async function abrirOperacao(condNome){
+  if (!PERFIL) return;
+  if (!$("opTipo").options.length) Object.entries(TIPOS_OP).forEach(([k, v]) => { const o = document.createElement("option"); o.value = k; o.textContent = v; $("opTipo").append(o); });
+  encherSelectConds($("opCond")); encherSelectConds($("opRelCond"));
+  if (condNome){ try{ const c = acharCondominio(condNome); $("opCond").value = $("opRelCond").value = c.id; }catch(_){} }
+  if (!$("opRelMes").value) $("opRelMes").value = hojeISO().slice(0, 7);
+  const sem = !(PERFIL.condominios || []).length;
+  $("opForm").hidden = sem; opMsg(sem ? "Nenhum condomínio disponível para registrar." : "", sem);
+  abrirGaveta("opDrawer"); await listarOperacao();
+}
+function itemOperacao(r, comResolver){
+  const d = document.createElement("div"); d.className = "op-item";
+  const top = document.createElement("div"); top.className = "op-top";
+  const tg = document.createElement("span"); tg.className = "op-tag"; tg.textContent = TIPOS_OP[r.tipo] || r.tipo;
+  const sit = document.createElement("span"); sit.className = "op-tag " + (r.situacao === "pendente" ? "alerta" : "ok"); sit.textContent = r.situacao === "pendente" ? "pendente" : "resolvido";
+  const li = localInfo(r), lc = document.createElement("span"); lc.className = "op-tag " + li.c; lc.textContent = li.t;
+  top.append(tg, sit, lc);
+  const p = document.createElement("p"); p.textContent = r.descricao + (r.unidade ? ` (unid. ${r.unidade})` : "");
+  const m = document.createElement("small"); m.textContent = `${dataHoraBR(r.ocorrido_em)} · ${nomeCondPorId(r.condominio_id)} · ${r.autor_nome} (${r.autor_papel})${r.fotos?.length ? ` · ${r.fotos.length} foto(s)` : ""}`;
+  d.append(top, p, m);
+  if (comResolver){
+    const ac = document.createElement("div"); ac.className = "eq-acoes";
+    const b = document.createElement("button"); b.type = "button"; b.className = "primary"; b.textContent = "Registrar solução";
+    b.onclick = () => {
+      ac.hidden = true;
+      const f = document.createElement("div"); f.className = "op-resolver";
+      const ta = document.createElement("textarea"); ta.rows = 2; ta.placeholder = "O que foi feito para resolver?"; ta.maxLength = 2000;
+      const fi = document.createElement("input"); fi.type = "file"; fi.accept = "image/*"; fi.multiple = true;
+      const st = document.createElement("small");
+      const ok = document.createElement("button"); ok.type = "button"; ok.className = "primary"; ok.textContent = "Marcar como resolvido";
+      ok.onclick = async () => {
+        ok.disabled = true;
+        try{
+          const cond = (PERFIL.condominios || []).find(c => c.id === r.condominio_id);
+          const res = await registrarOperacao({ cond, tipo: r.tipo, descricao: "Solução: " + ta.value.trim(), fotos: [...fi.files], referencia_id: r.id }, t => st.textContent = t);
+          st.textContent = "Resolvido ✓ " + localInfo(res).t; setTimeout(listarOperacao, 800);
+        }catch(err){ st.textContent = err.message; st.style.color = "var(--danger)"; ok.disabled = false; }
+      };
+      f.append(ta, fi, ok, st); d.append(f); ta.focus();
+    };
+    ac.append(b); d.append(ac);
+  }
+  return d;
+}
+async function listarOperacao(){
+  const ids = (PERFIL?.condominios || []).map(c => c.id); if (!ids.length){ $("opPend").innerHTML = $("opHoje").innerHTML = ""; return; }
+  const inicio = new Date(hojeISO() + "T00:00:00-03:00").toISOString();
+  const [{ data: pend }, { data: hoje }] = await Promise.all([
+    sb.from("registros_operacionais").select("*").in("condominio_id", ids).eq("situacao", "pendente").order("ocorrido_em", { ascending: false }).limit(30),
+    sb.from("registros_operacionais").select("*").in("condominio_id", ids).gte("ocorrido_em", inicio).order("ocorrido_em", { ascending: false }).limit(50),
+  ]);
+  const encher = (box, lista, resolver, vazio) => {
+    box.innerHTML = "";
+    if (!(lista || []).length){ const p = document.createElement("p"); p.className = "op-vazio"; p.textContent = vazio; box.append(p); return; }
+    lista.forEach(r => box.append(itemOperacao(r, resolver)));
+  };
+  encher($("opPend"), pend, true, "Nenhuma pendência aberta.");
+  encher($("opHoje"), hoje, false, "Nada registrado hoje ainda.");
+}
+$("opFotos").addEventListener("change", e => {
+  opFotosSel = [...e.target.files].slice(0, MAX_FOTOS);
+  if (e.target.files.length > MAX_FOTOS) opMsg(`Só as ${MAX_FOTOS} primeiras fotos serão usadas.`, true);
+  const prev = $("opFotosPrev"); prev.innerHTML = "";
+  opFotosSel.forEach(f => { const i = document.createElement("img"); i.alt = ""; i.src = URL.createObjectURL(f); i.onload = () => URL.revokeObjectURL(i.src); prev.append(i); });
+});
+$("opForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const cond = (PERFIL?.condominios || []).find(c => c.id === $("opCond").value);
+  if (!cond){ opMsg("Escolha o condomínio.", true); return; }
+  if ($("opDesc").value.trim().length < 3){ opMsg("Descreva o que foi feito ou o que aconteceu.", true); $("opDesc").focus(); return; }
+  $("opEnviar").disabled = true;
+  try{
+    const r = await registrarOperacao({ cond, tipo: $("opTipo").value, descricao: $("opDesc").value, unidade: $("opUnid").value, situacao: $("opSit").value, fotos: opFotosSel }, t => opMsg(t));
+    const li = localInfo(r);
+    opMsg(`Registrado às ${horaBR(r.ocorrido_em)} · ${li.t}${r.local_status === "sem_localizacao" ? " (permita a localização no navegador para comprovar presença)" : ""}.`, li.c === "ruim");
+    $("opDesc").value = $("opUnid").value = ""; $("opSit").value = "resolvido"; $("opFotos").value = ""; opFotosSel = []; $("opFotosPrev").innerHTML = "";
+    await listarOperacao();
+  }catch(err){ opMsg(err.message, true); }
+  $("opEnviar").disabled = false;
+});
+$("opBtn").addEventListener("click", () => abrirOperacao());
+$("closeOp").addEventListener("click", () => $("opDrawer").classList.remove("open"));
+
+/* Relatório mensal (abre como folha; "Salvar como PDF" na impressão) */
+const MESES_NOME = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+function el(tag, cls, txt){ const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+function duracaoTxt(ms){ const h = ms / 3600000; return h < 1 ? `${Math.max(1, Math.round(h * 60))} min` : h < 48 ? `${h.toFixed(1).replace(".", ",")} h` : `${Math.round(h / 24)} dias`; }
+async function gerarRelatorio(condId, mes){
+  const cond = (PERFIL?.condominios || []).find(c => c.id === condId); if (!cond) throw new Error("Escolha o condomínio.");
+  if (!/^\d{4}-\d{2}$/.test(mes || "")) throw new Error("Escolha o mês.");
+  const [y, m] = mes.split("-").map(Number);
+  const ini = new Date(`${mes}-01T00:00:00-03:00`), fim = new Date(`${m === 12 ? y + 1 : y}-${String(m === 12 ? 1 : m + 1).padStart(2, "0")}-01T00:00:00-03:00`);
+  const [{ data: regs, error }, { data: comps }, { data: docs }, { data: abertas }, { data: cinfo }] = await Promise.all([
+    sb.from("registros_operacionais").select("*").eq("condominio_id", condId).gte("ocorrido_em", ini.toISOString()).lt("ocorrido_em", fim.toISOString()).order("ocorrido_em"),
+    sb.from("compromissos").select("titulo, inicio, status").eq("condominio_id", condId).gte("inicio", ini.toISOString()).lt("inicio", fim.toISOString()),
+    sb.from("documentos_legais").select("documento, data_renovacao, data_vencimento").eq("condominio_id", condId).gte("data_renovacao", mes + "-01").lt("data_renovacao", fim.toISOString().slice(0, 10)),
+    sb.from("registros_operacionais").select("id, descricao, tipo, ocorrido_em, unidade").eq("condominio_id", condId).eq("situacao", "pendente").lt("ocorrido_em", fim.toISOString()).order("ocorrido_em"),
+    sb.from("condominios").select("nome, cnpj, endereco, cidade").eq("id", condId).maybeSingle(),
+  ]);
+  if (error) throw error;
+  const R = regs || [], C = cinfo || cond;
+  const solucoes = R.filter(r => r.referencia_id);
+  const principais = R.filter(r => !r.referencia_id);
+  // tempo de resolução: pendências resolvidas dentro do mês
+  const { data: resolvidas } = await sb.from("registros_operacionais").select("ocorrido_em, resolvido_em").eq("condominio_id", condId).gte("resolvido_em", ini.toISOString()).lt("resolvido_em", fim.toISOString());
+  const tempos = (resolvidas || []).map(r => Date.parse(r.resolvido_em) - Date.parse(r.ocorrido_em)).filter(x => x >= 0);
+  const medio = tempos.length ? tempos.reduce((a, b) => a + b, 0) / tempos.length : null;
+  const diaSP = ts => isoDia(new Date(ts));
+  const diasAtivos = new Set(R.map(r => diaSP(r.ocorrido_em))).size;
+  const diasPresenca = new Set(R.filter(r => r.local_status === "no_condominio").map(r => diaSP(r.ocorrido_em))).size;
+  const comLocal = R.filter(r => r.local_status === "no_condominio" || r.local_status === "fora");
+  const pctNoLocal = comLocal.length ? Math.round(100 * comLocal.filter(r => r.local_status === "no_condominio").length / comLocal.length) : null;
+  const compConcl = (comps || []).filter(c => c.status === "concluido").length;
+
+  const f = $("relFolha"); f.innerHTML = "";
+  const cab = el("header"); cab.append(el("p", "com-cond", C.nome), el("p", "dados", [C.cnpj ? "CNPJ " + mascaraCnpj(C.cnpj) : "", [C.endereco, C.cidade].filter(Boolean).join(" — ")].filter(Boolean).join(" · ")));
+  f.append(cab, el("p", "tipo", "Relatório operacional"), el("h1", null, `${MESES_NOME[m - 1][0].toUpperCase() + MESES_NOME[m - 1].slice(1)} de ${y}`),
+    el("p", "rel-sub", `Período: 01/${String(m).padStart(2, "0")}/${y} a ${new Date(fim - 86400000).toLocaleDateString("pt-BR", { timeZone: TZ })} · Gerado em ${new Date().toLocaleString("pt-BR", { timeZone: TZ, dateStyle: "short", timeStyle: "short" })} pelo SINDICS`));
+
+  f.append(el("h3", null, "Indicadores do mês"));
+  const k = el("div", "rel-kpis");
+  [[principais.length, "registros de operação"], [diasAtivos, "dias com atividade"], [diasPresenca, "dias com presença confirmada no local"],
+   [principais.filter(r => r.tipo === "ocorrencia").length, "ocorrências"], [solucoes.length + "", "pendências resolvidas"], [(abertas || []).length, "pendências em aberto no fim do período"],
+   [medio != null ? duracaoTxt(medio) : "—", "tempo médio para resolver"], [compConcl + " de " + (comps || []).length, "compromissos da agenda concluídos"]]
+    .forEach(([v, t]) => { const d = el("div", "rel-kpi"); d.append(el("b", null, String(v)), el("span", null, t)); k.append(d); });
+  f.append(k);
+  if (pctNoLocal != null) f.append(el("p", "rel-sub", `${pctNoLocal}% dos registros com localização foram feitos no condomínio.`));
+
+  const porTipo = {}; principais.forEach(r => porTipo[r.tipo] = (porTipo[r.tipo] || 0) + 1);
+  if (principais.length){
+    const b = el("div", "rel-bloco"); b.append(el("h3", null, "Registros por tipo"));
+    const bars = el("div", "rel-barras"); const max = Math.max(...Object.values(porTipo));
+    Object.entries(porTipo).sort((a, b) => b[1] - a[1]).forEach(([t, n]) => { const l = el("div", "rel-barra"); const i = el("i"); i.style.width = (100 * n / max) + "%"; const w = el("div"); w.append(i); l.append(el("span", null, TIPOS_OP[t] || t), w, el("em", null, String(n))); bars.append(l); });
+    b.append(bars); f.append(b);
+    const porAutor = {}; R.forEach(r => { const kk = `${r.autor_nome} (${r.autor_papel})`; porAutor[kk] = (porAutor[kk] || 0) + 1; });
+    const b2 = el("div", "rel-bloco"); b2.append(el("h3", null, "Registros por responsável"));
+    const bars2 = el("div", "rel-barras"); const max2 = Math.max(...Object.values(porAutor));
+    Object.entries(porAutor).sort((a, b) => b[1] - a[1]).forEach(([t, n]) => { const l = el("div", "rel-barra"); const i = el("i"); i.style.width = (100 * n / max2) + "%"; const w = el("div"); w.append(i); l.append(el("span", null, t), w, el("em", null, String(n))); bars2.append(l); });
+    b2.append(bars2); f.append(b2);
+  }
+  if ((docs || []).length){
+    f.append(el("h3", null, "Documentos legais renovados no mês"));
+    const ul = el("ul"); docs.forEach(d => ul.append(el("li", null, `${d.documento}: renovado em ${dataBR(d.data_renovacao)}, vence em ${dataBR(d.data_vencimento)}`))); f.append(ul);
+  }
+  if ((abertas || []).length){
+    f.append(el("h3", null, "Pendências em aberto"));
+    const ul = el("ul"); abertas.forEach(a => ul.append(el("li", "rel-pend", `${dataBR(diaSP(a.ocorrido_em))} · ${TIPOS_OP[a.tipo] || a.tipo}: ${a.descricao}${a.unidade ? " (unid. " + a.unidade + ")" : ""}`))); f.append(ul);
+  }
+
+  f.append(el("h3", null, "Linha do tempo"));
+  if (!R.length) f.append(el("p", null, "Nenhum registro operacional neste mês."));
+  // fotos: baixadas como arquivo local (não ficam links públicos no PDF)
+  const fotoUrl = {};
+  const todas = R.flatMap(r => r.fotos || []);
+  await Promise.all(todas.map(async cam => { const { data } = await sb.storage.from("operacao-fotos").download(cam); if (data) fotoUrl[cam] = URL.createObjectURL(data); }));
+  R.forEach(r => {
+    const it = el("div", "rel-item");
+    const q = el("div", "q"); q.append(el("div", null, new Date(r.ocorrido_em).toLocaleDateString("pt-BR", { timeZone: TZ, weekday: "short", day: "2-digit", month: "2-digit" })), el("div", null, horaBR(r.ocorrido_em)));
+    const c = el("div");
+    c.append(el("div", "t", `${r.referencia_id ? "Solução de pendência" : (TIPOS_OP[r.tipo] || r.tipo)}${r.unidade ? " · unid. " + r.unidade : ""}`), el("div", null, r.descricao));
+    const li = localInfo(r);
+    const meta = el("div", "m"); meta.append(`${r.autor_nome} (${r.autor_papel}) · `);
+    const loc = el("span", r.local_status === "fora" ? "rel-fora" : null, li.t); meta.append(loc);
+    if (r.situacao === "pendente") meta.append(" · ", el("span", "rel-pend", "pendente"));
+    else if (r.resolvido_em && !r.referencia_id) meta.append(` · resolvido em ${dataHoraBR(r.resolvido_em)}${r.resolvido_por_nome ? " por " + r.resolvido_por_nome : ""}`);
+    if (r.origem === "voz") meta.append(" · registrado por voz");
+    c.append(meta);
+    if ((r.fotos || []).length){ const fts = el("div", "fts"); r.fotos.forEach(cam => { if (fotoUrl[cam]){ const im = el("img"); im.alt = "Foto do registro"; im.src = fotoUrl[cam]; fts.append(im); } }); c.append(fts); }
+    it.append(q, c); f.append(it);
+  });
+  f.append(el("p", "rel-nota", "Registros feitos no SINDICS não podem ser editados nem apagados; correções e soluções entram como novos registros. A localização é conferida no momento do registro e o SINDICS guarda apenas a distância até o condomínio, não as coordenadas. Unidades são citadas sem nome de morador (LGPD)."));
+  const ass = el("div", "ass"); ass.append(el("div", "linha"), el("strong", null, PERFIL?.assinatura || PERFIL?.nome || ""), el("small", null, "Síndico responsável")); f.append(ass);
+  $("relOverlay").hidden = false; $("relOverlay").scrollTop = 0;
+  return { condominio: C.nome, mes: `${MESES_NOME[m - 1]} de ${y}`, registros: principais.length, ocorrencias: principais.filter(r => r.tipo === "ocorrencia").length, dias_com_presenca: diasPresenca, pendencias_abertas: (abertas || []).length, pendencias_resolvidas: solucoes.length };
+}
+function fecharRelatorio(){ $("relOverlay").hidden = true; $("relFolha").querySelectorAll("img").forEach(i => URL.revokeObjectURL(i.src)); }
+$("opRelBtn").addEventListener("click", async () => {
+  $("opRelBtn").disabled = true;
+  try{ await gerarRelatorio($("opRelCond").value, $("opRelMes").value); }catch(err){ opMsg(err.message, true); }
+  $("opRelBtn").disabled = false;
+});
+$("relFechar").addEventListener("click", fecharRelatorio);
+$("relImprimir").addEventListener("click", () => { document.body.classList.add("imprimindo-rel"); window.print(); });
+addEventListener("afterprint", () => document.body.classList.remove("imprimindo-rel"));
 
 /* ======================= MINHA EQUIPE (gestores auxiliares) ======================= */
 const FN_EQUIPE = SUPABASE_URL + "/functions/v1/equipe";
@@ -1824,7 +2140,7 @@ async function processarDocumento(condId, donoId, tipo, file){
 async function listarCondominios(){
   const { data: { user } } = await sb.auth.getUser(); if (!user) return [];
   const dono = condAlvo ? condAlvo.id : user.id;
-  const qL = sb.from("condominios").select("id, nome, cnpj, endereco, cidade, uf, cep, unidades, convencao_status, regulamento_status, convencao_msg, regulamento_msg");
+  const qL = sb.from("condominios").select("id, sindico_id, nome, cnpj, endereco, cidade, uf, cep, unidades, convencao_status, regulamento_status, convencao_msg, regulamento_msg, lat, lng, local_definido_em");
   const { data, error } = await (condAlvo ? qL.eq("sindico_id", dono) : filtroCond(qL, user.id)).order("nome");
   const box = $("condLista"); box.innerHTML = "";
   if (error){ box.textContent = "Erro ao carregar: " + error.message; return []; }
@@ -1850,7 +2166,17 @@ async function listarCondominios(){
     });
     const msgs = [["convencao", c.convencao_status, c.convencao_msg], ["regulamento", c.regulamento_status, c.regulamento_msg]]
       .filter(([, s, m]) => s === "erro" && m).map(([t, , m]) => { const sm = document.createElement("small"); sm.className = "docmsg"; sm.textContent = `${TIPO_NOME[t]}: ${m}`; return sm; });
-    d.append(n, l1, l2, l3, st, ...msgs, b); box.append(d);
+    const loc = document.createElement("div"); loc.className = "cond-local";
+    const lt = document.createElement("small"); lt.textContent = c.lat != null ? "Localização definida ✓ (confere a presença nos registros)" : "Localização não definida: os registros não conferem presença";
+    loc.append(lt);
+    if (!souGestor() && !condAlvo){
+      const bE = document.createElement("button"); bE.type = "button"; bE.textContent = "Pelo endereço";
+      bE.onclick = async () => { bE.disabled = true; try{ await definirLocalPorEndereco(c); lt.textContent = "Localização definida pelo endereço ✓"; recarregarCondominiosPerfil(); }catch(err){ lt.textContent = err.message; } bE.disabled = false; };
+      const bA = document.createElement("button"); bA.type = "button"; bA.textContent = "Estou no condomínio agora";
+      bA.onclick = async () => { bA.disabled = true; try{ await definirLocalAqui(c); lt.textContent = "Localização definida pela sua posição atual ✓"; recarregarCondominiosPerfil(); }catch(err){ lt.textContent = err.message; } bA.disabled = false; };
+      loc.append(bE, bA);
+    }
+    d.append(n, l1, l2, l3, st, ...msgs, loc, b); box.append(d);
   });
   return data;
 }
@@ -1931,13 +2257,17 @@ $("condForm").addEventListener("submit", async e => {
   }
   const msgFinal = $("cMsg").textContent, corFinal = $("cMsg").style.color;
   limparFormCond(); $("cMsg").textContent = msgFinal; $("cMsg").style.color = corFinal;
+  if (!condAlvo && condId){
+    const { data: cg } = await sb.from("condominios").select("id, sindico_id, nome, endereco, cidade, uf, cep, lat").eq("id", condId).maybeSingle();
+    if (cg && cg.lat == null && cg.sindico_id === user.id) await definirLocalPorEndereco(cg).catch(() => {});
+  }
   await listarCondominios();
   if (!condAlvo) await recarregarCondominiosPerfil();
   if (condAlvo && $("admDrawer").classList.contains("open")) carregarAdmin();
 });
 async function recarregarCondominiosPerfil(){
   const { data: { user } } = await sb.auth.getUser(); if (!user || !PERFIL) return;
-  const { data: cs } = await filtroCond(sb.from("condominios").select("id, nome, cidade, unidades, cnpj"), user.id).order("nome");
+  const { data: cs } = await filtroCond(sb.from("condominios").select("id, sindico_id, nome, cidade, unidades, cnpj, endereco, uf, lat, lng"), user.id).order("nome");
   PERFIL.condominios = cs || []; preencherCabecalho(PERFIL);
   if (PERFIL.condominios.length) $("condAviso").hidden = true;
 }
@@ -1987,7 +2317,7 @@ async function aposLogin(){
     }
     if (s.tem && s.status === "atrasada") mostrarAvisoAtraso(s);
   }
-  const { data: cs } = await filtroCond(sb.from("condominios").select("id, nome, cidade, unidades, cnpj"), user.id).order("nome");
+  const { data: cs } = await filtroCond(sb.from("condominios").select("id, sindico_id, nome, cidade, unidades, cnpj, endereco, uf, lat, lng"), user.id).order("nome");
   PERFIL = { ...p, condominios: cs || [] }; preencherCabecalho(PERFIL); rotuloVoz();
   $("admBtn").hidden = p.papel !== "admin";
   $("equipeBtn").hidden = p.papel === "gestor";

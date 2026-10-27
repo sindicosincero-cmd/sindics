@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https://hjjckvluydcejmrxolza.supabase.co wss://hjjckvluydcejmrxolza.supabase.co https://api.elevenlabs.io wss://api.elevenlabs.io https://*.elevenlabs.io wss://*.elevenlabs.io https://api.bcb.gov.br https://viacep.com.br https://cdn.jsdelivr.net https://tessdata.projectnaptha.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https://hjjckvluydcejmrxolza.supabase.co wss://hjjckvluydcejmrxolza.supabase.co https://api.elevenlabs.io wss://api.elevenlabs.io https://*.elevenlabs.io wss://*.elevenlabs.io https://api.bcb.gov.br https://viacep.com.br https://nominatim.openstreetmap.org https://cdn.jsdelivr.net https://tessdata.projectnaptha.com; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SINDICS</title>
@@ -278,6 +278,46 @@ button.perigo:hover{background:var(--danger);color:var(--bg)}
 .eq-acoes{display:flex;gap:6px;flex-wrap:wrap}
 .eq-acoes button{padding:6px 10px;font-size:10px}
 .eq-sub{margin-top:6px}
+#opDrawer textarea{width:100%;resize:vertical;font:inherit;background:transparent;color:var(--fg);border:1px solid var(--line-strong);padding:9px 10px}
+#opDrawer select{width:100%}
+.op-sec{margin:18px 0 8px}
+.op-lista{display:flex;flex-direction:column;gap:8px}
+.op-item{border:1px solid var(--line);padding:10px 12px;display:flex;flex-direction:column;gap:5px}
+.op-item .op-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.op-item p{margin:0;font-size:13.5px;line-height:1.45;overflow-wrap:anywhere}
+.op-item small{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.op-tag{font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:2px 7px;border:1px solid var(--line-strong);color:var(--muted);text-transform:uppercase}
+.op-tag.ok{color:var(--ok);border-color:var(--ok)} .op-tag.alerta{color:var(--amber);border-color:var(--amber)} .op-tag.ruim{color:var(--danger);border-color:var(--danger)}
+.op-item .eq-acoes{margin-top:2px}
+.op-resolver{display:flex;flex-direction:column;gap:6px}
+.op-fotos{display:flex;gap:6px;flex-wrap:wrap}
+.op-fotos img{width:64px;height:64px;object-fit:cover;border:1px solid var(--line)}
+.op-rel{margin-top:18px}
+.op-vazio{font-size:13px;color:var(--muted);margin:0}
+.cond-local{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px}
+.cond-local small{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.cond-local button{padding:5px 9px;font-size:10px}
+.com-folha.rel-folha{font-family:var(--body);font-size:13.5px;line-height:1.5}
+.rel-folha h1{font-size:22px;margin:4px 0 2px;text-align:left}
+.rel-folha .rel-sub{color:#4a4f57;margin:0 0 18px;font-size:12.5px}
+.rel-folha h3{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#4a4f57;margin:22px 0 8px;border-bottom:1px solid #d8dbe0;padding-bottom:4px}
+.rel-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.rel-kpi{border:1px solid #d8dbe0;padding:10px}
+.rel-kpi b{display:block;font-size:22px;line-height:1.1}
+.rel-kpi span{font-size:11.5px;color:#4a4f57}
+.rel-barras{display:flex;flex-direction:column;gap:5px}
+.rel-barra{display:grid;grid-template-columns:150px minmax(0,1fr) 40px;gap:8px;align-items:center;font-size:12.5px}
+.rel-barra i{display:block;height:10px;background:#1b6fa8}
+.rel-barra em{font-style:normal;text-align:right}
+.rel-item{border-bottom:1px solid #e6e8eb;padding:8px 0;display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px}
+.rel-item .q{font-size:12px;color:#4a4f57}
+.rel-item .t{font-weight:600}
+.rel-item .m{font-size:11.5px;color:#4a4f57}
+.rel-item .fts{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.rel-item .fts img{width:150px;height:110px;object-fit:cover;border:1px solid #d8dbe0}
+.rel-pend{color:#a35a00;font-weight:600} .rel-fora{color:#b3261e}
+.rel-nota{font-size:11px;color:#4a4f57;margin-top:20px}
+@media (max-width:860px){ .rel-kpis{grid-template-columns:repeat(2,minmax(0,1fr))} .rel-barra{grid-template-columns:100px minmax(0,1fr) 34px} .rel-item{grid-template-columns:1fr} }
 .adm-lgpd{border:1px solid var(--amber);padding:10px 12px;display:flex;flex-direction:column;gap:6px}
 .adm-lgpd h4{margin:0;font-family:var(--mono);font-weight:500;font-size:10.5px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase}
 
@@ -323,6 +363,16 @@ button.perigo:hover{background:var(--danger);color:var(--bg)}
   @page{margin:18mm 16mm}
   body.imprimindo{background:#fff!important;overflow:visible!important}
   body.imprimindo > *:not(#comOverlay){display:none!important}
+  body.imprimindo-rel{background:#fff!important;overflow:visible!important}
+  body.imprimindo-rel > *:not(#relOverlay){display:none!important}
+  body.imprimindo-rel #relOverlay{position:static;inset:auto;overflow:visible;background:none;backdrop-filter:none;padding:0;display:block}
+  body.imprimindo-rel .com-barra, body.imprimindo-rel .com-dica{display:none!important}
+  body.imprimindo-rel .rel-folha{width:auto;min-height:0;box-shadow:none;padding:0;font-size:10.5pt}
+  .rel-item, .rel-kpis, .rel-bloco{break-inside:avoid}
+  body.imprimindo-rel .rel-folha{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.imprimindo-rel .rel-kpis{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  body.imprimindo-rel .rel-item{grid-template-columns:90px minmax(0,1fr)!important}
+  body.imprimindo-rel .rel-barra{grid-template-columns:170px minmax(0,1fr) 34px!important}
   body.imprimindo #comOverlay{position:static;inset:auto;overflow:visible;background:none;backdrop-filter:none;padding:0;display:block}
   body.imprimindo .com-barra, body.imprimindo .com-dica{display:none!important}
   body.imprimindo .com-folha{width:auto;min-height:0;box-shadow:none;padding:0;font-size:12.5pt}
@@ -499,6 +549,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
     <div class="menu-btns">
       <button id="wakeBtn" class="primary" type="button">Chamar agora</button>
       <button id="sleepBtn" type="button" hidden>Descansar</button>
+      <button id="opBtn" type="button">Operação do dia</button>
       <button id="calBtn" type="button">Calendário</button>
       <button id="docBtn" type="button">Documentação legal</button>
       <button id="radarBtn" type="button">Radar condominial</button>
@@ -611,6 +662,15 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   </section>
 </div>
 
+<div class="com-wrap" id="relOverlay" hidden role="dialog" aria-label="Relatório operacional">
+  <div class="com-barra">
+    <button id="relImprimir" type="button" class="primary">Baixar PDF / imprimir</button>
+    <button id="relFechar" type="button">Fechar</button>
+  </div>
+  <article class="com-folha rel-folha" id="relFolha"></article>
+  <p class="com-dica">Na janela de impressão, escolha “Salvar como PDF” para baixar o relatório.</p>
+</div>
+
 <div class="com-wrap" id="comOverlay" hidden role="dialog" aria-labelledby="comTitulo">
   <div class="com-barra">
     <button id="comCopiar" type="button" class="primary">Copiar texto</button>
@@ -645,6 +705,43 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
       <p class="cmsg" id="eqMsg" role="status"></p>
       <button id="eqEnviar" class="primary" type="submit">Enviar convite</button>
     </form>
+  </div>
+</aside>
+
+<aside class="drawer" id="opDrawer" aria-label="Operação do dia">
+  <h2>Operação do dia <button id="closeOp" type="button">Fechar</button></h2>
+  <div class="log">
+    <form id="opForm" class="cform" novalidate>
+      <p class="rs-t">Novo registro</p>
+      <label for="opCond">Condomínio *</label>
+      <select id="opCond"></select>
+      <label for="opTipo">Tipo *</label>
+      <select id="opTipo"></select>
+      <label for="opDesc">O que foi feito ou aconteceu *</label>
+      <textarea id="opDesc" rows="3" maxlength="2000" placeholder="Ex.: Ronda na garagem; lâmpada do hall do bloco B trocada."></textarea>
+      <div class="c2">
+        <div><label for="opUnid">Unidade (opcional)</label><input id="opUnid" maxlength="40" placeholder="Ex.: 52-B"></div>
+        <div><label for="opSit">Situação *</label><select id="opSit"><option value="resolvido">Resolvido</option><option value="pendente">Pendente</option></select></div>
+      </div>
+      <label for="opFotos">Fotos (até 3)</label>
+      <input id="opFotos" type="file" accept="image/*" multiple>
+      <div class="op-fotos" id="opFotosPrev"></div>
+      <p class="dica">Use só o número da unidade, nunca o nome de morador, e evite fotografar pessoas (LGPD). Ao registrar, o SINDICS confere sua localização: guarda apenas a distância até o condomínio, não as coordenadas.</p>
+      <p class="cmsg" id="opMsg" role="status"></p>
+      <button id="opEnviar" class="primary" type="submit">Registrar</button>
+    </form>
+    <p class="rs-t op-sec">Pendências abertas</p>
+    <div id="opPend" class="op-lista"></div>
+    <p class="rs-t op-sec">Registros de hoje</p>
+    <div id="opHoje" class="op-lista"></div>
+    <div class="cform op-rel">
+      <p class="rs-t">Relatório operacional do mês</p>
+      <div class="c2">
+        <div><label for="opRelCond">Condomínio</label><select id="opRelCond"></select></div>
+        <div><label for="opRelMes">Mês</label><input id="opRelMes" type="month"></div>
+      </div>
+      <button id="opRelBtn" type="button" class="primary">Gerar relatório</button>
+    </div>
   </div>
 </aside>
 
@@ -845,6 +942,6 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   <span id="tapMsg">Toque em qualquer lugar para ligar som e microfone. Depois disso ele fica em prontidão sozinho.</span>
 </div>
 
-<script src="app.js?v=3.9.1"></script>
+<script src="app.js?v=4.0.0"></script>
 </body>
 </html>
