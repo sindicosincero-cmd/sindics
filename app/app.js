@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "4.0.0";
+  window.SINDICS_V = "4.1.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -29,7 +29,7 @@ function preencherCabecalho(p){
 }
 const WAKE_RE = /\b(s[ií]ndi(cs|ks|x|ques|quis|cos?)|sin\s?dics|syndics?)\b/i;
 const SLEEP_RE = /(pode descansar|pode desligar|pode encerrar|encerr(ar|a|e)( (a )?conversa| por hoje| aqui)?\b|desligar sindics|desliga|at[eé] mais|at[eé] amanh[ãa]|at[eé] logo|tchau|boa noite,? sindics|obrigad[oa],? sindics|[eé] s[oó] isso|por hoje [eé] s[oó])/i;
-const IDLE_MS = 30000;
+const IDLE_MS = 60000;
 /* Legenda das respostas do SINDICS na tela. false = só voz (as falas continuam no Registro). */
 const SHOW_CAPTION = false;
 const TOOL_LABEL = { indicadores_economicos:"Consultando Banco Central", noticias_brasil:"Buscando notícias", knowledge_base:"Consultando documentos do condomínio", knowledge_base_rag:"Consultando documentos do condomínio", mostrar_na_tela:"Montando painel" };
@@ -162,6 +162,7 @@ const temaClaro = () => document.documentElement.dataset.theme === "light";
 let MODE_HEX = temaClaro() ? MODE_HEX_CLARO : MODE_HEX_ESCURO;
 function setMode(m){
   if (mode === m) return; mode = m;
+  document.body.dataset.modo = m;
   stateEl.textContent = MODE_LABEL[m];
   document.documentElement.style.setProperty("--accent", MODE_HEX[m]);
 }
@@ -342,7 +343,7 @@ function standby(note){
 }
 function resetIdle(){
   clearTimeout(idleTimer);
-  idleTimer = setTimeout(() => { if (outCtx && playHead > outCtx.currentTime){ resetIdle(); return; } endSession("Sem conversa por 30 segundos. Voltei à prontidão."); }, IDLE_MS);
+  idleTimer = setTimeout(() => { if (outCtx && playHead > outCtx.currentTime){ resetIdle(); return; } endSession("Sem conversa por 1 minuto. Voltei à prontidão."); }, IDLE_MS);
 }
 async function wake(){
   if (inSession()) return;
@@ -365,10 +366,7 @@ async function wake(){
   try{
     const { data: { session } } = await sb.auth.getSession();
     if (!session){ endSession("Sessão expirada."); mostrarLogin("Sua sessão expirou. Entre novamente."); return; }
-    const [r] = await Promise.all([
-      fetch(FN_SESSAO, { method:"POST", headers:{ "Authorization":"Bearer " + session.access_token, "apikey": SUPABASE_ANON, "Content-Type":"application/json" }, body:"{}" }),
-      bootLines(["Credenciais", "Base condominial", "Banco Central", "Canal de voz"], 110)
-    ]);
+    const r = await fetch(FN_SESSAO, { method:"POST", headers:{ "Authorization":"Bearer " + session.access_token, "apikey": SUPABASE_ANON, "Content-Type":"application/json" }, body:"{}" });
     acesso = await r.json().catch(() => ({}));
     if (r.status === 402){ endSession("Acesso suspenso por assinatura."); mostrarBloqueio(acesso.erro || "Acesso suspenso por falta de pagamento."); return; }
     if (!r.ok || !acesso.signed_url) throw new Error(acesso.erro || ("Servidor respondeu " + r.status));
@@ -450,8 +448,12 @@ async function bootLines(lines, gap=160){
   setTimeout(() => anim(bootEl, {opacity:[1,0]}, {duration:.6}).then(() => { bootEl.innerHTML = ""; bootEl.style.opacity = 1; }), 900);
 }
 async function bootSequence(){
-  core.boot = 0; sndBoot();
-  await bootLines(["Núcleo SINDICS", "Reconhecimento de voz", "Base condominial", "Indicadores · Banco Central", "Módulo de notícias", "Síntese de voz"]);
+  core.boot = 0; sndBoot(); document.body.dataset.modo = mode;
+  montarBoasVindas();
+  const b = $("boas"); b.hidden = false;
+  const partes = [$("boasData"), $("boasOla"), $("boasChips"), $("boasFalar")];
+  partes.forEach((el, i) => anim(el, {opacity:[0,1], transform:["translateY(8px)","translateY(0)"]}, {duration:.6, delay:.15 + i*.12}));
+  await new Promise(r => setTimeout(r, reduce ? 0 : 700));
   const mb = $("menuBtn"); mb.style.opacity = 0; anim(mb, {opacity:[0,.62]}, {duration:.6, delay:.2}).then(() => { mb.style.opacity = ""; });
 }
 
@@ -857,7 +859,33 @@ async function atualizarResumoTela(){
   sec("Documentos em alerta", alerta.slice(0, 5).map(d => [`${d.documento}${d.condominio_id ? " · " + nomeCondPorId(d.condominio_id) : ""} — ${d.f < 0 ? "vencido há " + (-d.f) + "d" : d.f === 0 ? "vence hoje" : "vence em " + d.f + "d"}`, d.f < 0 ? "crit" : d.f <= 15 ? "warn" : ""]), "Nenhum documento no prazo de alerta.");
   sec("Agenda de hoje", (comps || []).map(c => [`${new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, hour:"2-digit", minute:"2-digit" }).format(new Date(c.inicio))} · ${c.titulo}`, ""]), "Nada marcado para hoje.");
   if (!$("calOverlay").hidden) renderCalendario();
+  montarBoasVindas({ alerta, comps: comps || [] });
 }
+
+/* ======================= APRESENTAÇÃO INICIAL ======================= */
+let RESUMO_BV = null;
+function saudacaoAgora(){ const h = +new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, hour:"2-digit", hourCycle:"h23" }).format(new Date()); return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"; }
+function montarBoasVindas(resumo){
+  if (resumo) RESUMO_BV = resumo;
+  const nome = (PERFIL?.tratamento || "").trim() || (PERFIL?.nome || "").trim().split(/\s+/)[0] || "";
+  $("boasOla").textContent = saudacaoAgora() + (nome ? ", " + nome : "") + ".";
+  const d = new Intl.DateTimeFormat("pt-BR", { timeZone: TZ, weekday:"long", day:"numeric", month:"long" }).format(new Date());
+  $("boasData").textContent = d;
+  const ul = $("boasChips"); ul.innerHTML = "";
+  const chip = (txt, cls) => { const li = document.createElement("li"); li.textContent = txt; if (cls) li.className = cls; ul.append(li); };
+  const cs = PERFIL?.condominios || [];
+  if (cs.length) chip(cs.length === 1 ? cs[0].nome : cs.length + " condomínios");
+  else chip(souGestor() ? "Aguardando liberação do síndico" : "Nenhum condomínio cadastrado", "warn");
+  if (RESUMO_BV){
+    const c = RESUMO_BV.comps.length;
+    chip(c ? (c === 1 ? "1 compromisso hoje" : c + " compromissos hoje") : "Agenda livre hoje", c ? "" : "ok");
+    const a = RESUMO_BV.alerta, venc = a.filter(x => x.f < 0).length;
+    if (!cs.length) return;
+    if (!a.length) chip("Documentos em dia", "ok");
+    else chip(venc ? (venc === 1 ? "1 documento vencido" : venc + " documentos vencidos") : (a.length === 1 ? "1 documento vencendo" : a.length + " documentos vencendo"), venc ? "crit" : "warn");
+  }
+}
+$("boasFalar").addEventListener("click", () => { if (mode === "standby") wake(); });
 
 /* ======================= ALARMES DOS COMPROMISSOS ======================= */
 /* Cada compromisso tem "avisar X minutos antes" (padrão 30). Com o SINDICS aberto (aba, app instalado

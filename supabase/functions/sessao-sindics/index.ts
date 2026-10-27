@@ -188,33 +188,25 @@ Deno.serve(async (req: Request) => {
 
   let abertura: string;
   if (!condominios.length && ehGestor) {
-    abertura = `${saudacao}, ${nome}. SINDICS online. Ainda não há condomínios liberados para você. Peça ao síndico para autorizar em Minha equipe.`;
+    abertura = `${saudacao}, ${nome}. Ainda não há condomínios liberados para você. Peça ao síndico para autorizar em Minha equipe.`;
   } else if (!condominios.length) {
     abertura = primeiroAcesso
-      ? `${saudacao}, ${nome}. Eu sou o SINDICS, a sua inteligência condominial. ` +
-        `Posso cuidar da sua agenda, controlar o vencimento dos documentos legais, tirar dúvidas sobre as regras do regulamento interno, ` +
-        `fazer cálculos de orçamento e te manter atualizado. Para começar, vamos cadastrar o seu condomínio? Pode ser por voz, agora mesmo.`
-      : `${saudacao}, ${nome}. SINDICS online. Você ainda não tem condomínio cadastrado. Quer cadastrar agora, por voz?`;
+      ? `${saudacao}, ${nome}. Eu sou o SINDICS, sua inteligência condominial. Vamos começar cadastrando o seu condomínio? Pode ser por voz, agora mesmo.`
+      : `${saudacao}, ${nome}. Você ainda não tem condomínio cadastrado. Quer cadastrar agora, por voz?`;
   } else if (primeiroAcesso) {
-    abertura = `${saudacao}, ${nome}. Eu sou o SINDICS, a sua inteligência condominial. ` +
-      `Posso cuidar da sua agenda, controlar o vencimento dos documentos legais dos seus condomínios, ` +
-      `tirar dúvidas sobre as regras de convivência do regulamento, fazer cálculos de orçamento e te manter atualizado sobre economia e notícias. ` +
-      `É só falar comigo naturalmente. Para começar, quer cadastrar os documentos do seu condomínio ou marcar um compromisso?`;
+    abertura = `${saudacao}, ${nome}. Eu sou o SINDICS, sua inteligência condominial. É só falar comigo naturalmente, e pode me interromper quando quiser. Por onde começamos?`;
   } else if (!pontos.length) {
-    abertura = hora >= 18
-      ? `${saudacao}, ${nome}. SINDICS online. Amanhã está livre e os documentos estão em dia. Posso ajudar com algo antes de encerrar o dia?`
-      : `${saudacao}, ${nome}. SINDICS online. ${hojeComps.length ? "Documentos em dia." : "Agenda livre e documentos em dia."} Por onde começamos?`;
+    abertura = `${saudacao}, ${nome}. Tudo em dia por aqui. Em que posso ajudar?`;
   } else if (pontos.length === 1 && !extras) {
-    abertura = `${saudacao}, ${nome}. SINDICS online. Um ponto de atenção: ${pontos[0]}. Quer que eu detalhe?`;
+    abertura = `${saudacao}, ${nome}. Um ponto de atenção: ${pontos[0]}. Em que posso ajudar?`;
   } else {
-    abertura = `${saudacao}, ${nome}. SINDICS online. ${cap(n(pontos.length))} pontos de atenção: ${pontos[0]}, e ${pontos[1]}${extras ? `. Há mais ${n(extras)} documento${extras > 1 ? "s" : ""} no prazo de aviso` : ""}. Quer que eu detalhe?`;
+    abertura = `${saudacao}, ${nome}. ${cap(n(pontos.length))} pontos de atenção: ${pontos[0]}, e ${pontos[1]}${extras ? `. Há mais ${n(extras)} documento${extras > 1 ? "s" : ""} no prazo de aviso` : ""}. Em que posso ajudar?`;
   }
 
   if (avisoAssinatura) abertura = abertura.replace(/^([^.]*\.)/, `$1 ${avisoAssinatura}`);
 
   if (oferecerRadar && condominios.length && !primeiroAcesso && !avisoAssinatura) {
-    abertura = abertura.replace(/ (Quer que eu detalhe\?|Por onde começamos\?|Posso ajudar com algo antes de encerrar o dia\?)$/, (_m, q) =>
-      q.startsWith("Quer que eu detalhe") ? " Quer que eu detalhe, ou prefere começar pelo Radar Condominial de hoje?" : " Quer ouvir o Radar Condominial de hoje?");
+    abertura = abertura.replace(/ Em que posso ajudar\?$/, " O Radar Condominial de hoje já está pronto, se quiser ouvir.");
   }
 
   // ---- Acesso temporário na ElevenLabs ----
