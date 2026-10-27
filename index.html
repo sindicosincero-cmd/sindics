@@ -92,6 +92,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px
 }
 header{display:flex;justify-content:space-between;align-items:center;gap:16px;position:relative;z-index:6}
 .brand h1{font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:.34em;margin:0;opacity:.85}
+.brand .tagline{margin:3px 0 0;font-family:var(--mono);font-size:9.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted);opacity:.85}
 /* Botão de menu: a única coisa além do núcleo na tela */
 .iconbtn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:10px 12px;opacity:.62;transition:opacity .2s,background .2s,color .2s}
 .iconbtn:hover,.iconbtn:focus-visible,.iconbtn[aria-expanded="true"]{opacity:1}
@@ -450,7 +451,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
 
 <div class="app">
   <header>
-    <div class="brand"><h1>SINDICS</h1></div>
+    <div class="brand"><h1>SINDICS</h1><p class="tagline">Inteligência Condominial</p></div>
     <button id="menuBtn" class="iconbtn" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="menuDrawer">
       <span class="lbl">Menu</span><span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>
     </button>
@@ -475,7 +476,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
 <aside class="drawer" id="menuDrawer" aria-label="Menu do SINDICS">
   <h2>Menu <button id="closeMenu" type="button">Fechar</button></h2>
   <div class="log">
-    <p class="menu-quem" id="hdrSindico">Assistente do Síndico</p>
+    <p class="menu-quem" id="hdrSindico">Inteligência Condominial</p>
     <div class="status">
       <div><b id="hdrCondLabel">Condomínio</b><i id="hdrCond">—</i></div>
       <div><b>Empresa</b><i id="hdrEmpresa">—</i></div>
@@ -627,7 +628,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
 
 <div class="overlay login" id="loginOverlay" hidden>
   <strong>SINDICS</strong>
-  <span id="loginSub">Assistente do Síndico · acesso restrito</span>
+  <span id="loginSub">Inteligência Condominial · acesso restrito</span>
   <button id="googleBtn" class="google" type="button">
     <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
     Entrar com Google
@@ -803,6 +804,6 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   <span id="tapMsg">Toque em qualquer lugar para ligar som e microfone. Depois disso ele fica em prontidão sozinho.</span>
 </div>
 
-<script src="app.js?v=3.8.3"></script>
+<script src="app.js?v=3.8.4"></script>
 </body>
 </html>

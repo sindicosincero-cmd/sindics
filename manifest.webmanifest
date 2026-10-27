@@ -1,7 +1,7 @@
 {
-  "name": "SINDICS — Assistente do Síndico",
+  "name": "SINDICS — Inteligência Condominial",
   "short_name": "SINDICS",
-  "description": "Assistente de voz para síndicos: agenda, documentos legais, regras do condomínio e cálculos.",
+  "description": "Inteligência condominial por voz para síndicos: agenda, documentos legais, regras do condomínio e cálculos.",
   "lang": "pt-BR",
   "start_url": "./",
   "scope": "./",

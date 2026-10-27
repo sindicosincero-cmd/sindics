@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "3.8.3";
+  window.SINDICS_V = "3.8.4";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -15,7 +15,7 @@ const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE
 let PERFIL = null;
 
 function preencherCabecalho(p){
-  document.getElementById("hdrSindico").textContent = "Assistente do Síndico · " + (p.assinatura ? p.assinatura.split("—")[0].trim() : p.nome);
+  document.getElementById("hdrSindico").textContent = "Inteligência Condominial · " + (p.assinatura ? p.assinatura.split("—")[0].trim() : p.nome);
   document.getElementById("hdrEmpresa").textContent = p.empresa || "—";
   const cs = p.condominios || [];
   document.getElementById("hdrCondLabel").textContent = cs.length > 1 ? "Condomínios" : "Condomínio";
