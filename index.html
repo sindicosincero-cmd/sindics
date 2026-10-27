@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SINDICS</title>
 <meta name="theme-color" content="#04070d">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script>
+/* Tema salvo (escuro padrão, claro opcional) aplicado antes de desenhar a tela */
+try{ if (localStorage.getItem("sindics-tema") === "light"){ document.documentElement.dataset.theme = "light"; document.querySelector('meta[name="theme-color"]').content = "#e9eff5"; } }catch(_){}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -29,18 +37,53 @@
   --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
   --accent:var(--cyan);
+  --drawer:#060b14;
+  --overlay:rgba(4,7,13,.9);
+  --overlay-soft:rgba(4,7,13,.4);
+  --btn-bg:rgba(4,7,13,.6);
+  --btn-hover:rgba(63,208,255,.12);
+  --warn-fg:#ffd9a0;
+  --crit-fg:#ffc3c9;
+  --text-shadow:0 0 18px rgba(0,0,0,.9);
+  --vignette:rgba(0,0,0,.65);
+  --scan-opacity:1;
   color-scheme:dark;
+}
+/* Tema claro (opção): mesmo layout, cores de alto contraste sobre fundo claro */
+:root[data-theme="light"]{
+  --bg:#e9eff5;
+  --panel:rgba(255,255,255,.8);
+  --line:rgba(10,110,160,.2);
+  --line-strong:rgba(10,110,160,.45);
+  --fg:#0f1c2b;
+  --muted:#4f6279;
+  --cyan:#0477ab;
+  --amber:#a35c00;
+  --violet:#5a45d1;
+  --ok:#0b8452;
+  --danger:#c62839;
+  --drawer:#f6f9fc;
+  --overlay:rgba(233,239,245,.93);
+  --overlay-soft:rgba(233,239,245,.55);
+  --btn-bg:rgba(255,255,255,.75);
+  --btn-hover:rgba(4,119,171,.1);
+  --warn-fg:#6e4300;
+  --crit-fg:#9b1c2c;
+  --text-shadow:none;
+  --vignette:rgba(140,160,185,.35);
+  --scan-opacity:0;
+  color-scheme:light;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-#condBtn.pulsar{animation:pulsar 1.2s ease-in-out infinite;border-color:var(--accent,#5ad1ff)}
-@keyframes pulsar{0%,100%{box-shadow:0 0 0 0 rgba(90,209,255,.55)}50%{box-shadow:0 0 0 8px rgba(90,209,255,0)}}
-@media (prefers-reduced-motion:reduce){#condBtn.pulsar{animation:none;outline:2px solid #5ad1ff}}
+.pulsar{animation:pulsar 1.2s ease-in-out infinite;border-color:var(--cyan)!important}
+@keyframes pulsar{0%,100%{box-shadow:0 0 0 0 rgba(63,208,255,.55)}50%{box-shadow:0 0 0 8px rgba(63,208,255,0)}}
+@media (prefers-reduced-motion:reduce){.pulsar{animation:none;outline:2px solid var(--cyan)}}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;overflow:hidden}
 #gl{position:fixed;inset:0;width:100%;height:100%;display:block}
-.scan{position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px);mix-blend-mode:overlay}
-.vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%, transparent 40%, rgba(0,0,0,.65) 100%)}
+.scan{position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px);mix-blend-mode:overlay;opacity:var(--scan-opacity)}
+.vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%, transparent 40%, var(--vignette) 100%)}
 
 .app{
   position:relative;height:100%;display:grid;grid-template-rows:auto 1fr auto;
@@ -48,21 +91,32 @@ body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px
   padding-right:max(18px, env(safe-area-inset-right, 0px));
   padding-block:max(14px, env(safe-area-inset-top,0px)) max(14px, env(safe-area-inset-bottom,0px));
 }
-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
-.brand h1{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.34em;margin:0}
-.brand span{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;margin-top:3px}
-.status{display:flex;gap:22px;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.12em;flex-wrap:wrap}
-.status div{display:flex;flex-direction:column;gap:3px}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;position:relative;z-index:6}
+.brand h1{font-family:var(--display);font-weight:700;font-size:22px;letter-spacing:.34em;margin:0;opacity:.85}
+/* Botão de menu: a única coisa além do núcleo na tela */
+.iconbtn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:10px 12px;opacity:.62;transition:opacity .2s,background .2s,color .2s}
+.iconbtn:hover,.iconbtn:focus-visible,.iconbtn[aria-expanded="true"]{opacity:1}
+.iconbtn .bars{display:inline-flex;flex-direction:column;gap:4px}
+.iconbtn .bars i{display:block;width:18px;height:2px;background:currentColor}
+.iconbtn .lbl{font-size:11px}
+.status{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.12em}
+.status div{display:flex;flex-direction:column;gap:3px;min-width:0;overflow-wrap:anywhere}
+.menu-quem{margin:0;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+.menu-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.menu-btns button{width:100%;padding:11px 10px;font-size:11px;letter-spacing:.14em}
+.menu-sec{margin:6px 0 0;font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase}
+.drawer .holo{flex-shrink:0}
 .status b{color:var(--muted);font-weight:400}
 .status i{font-style:normal;color:var(--fg)}
 .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:6px;box-shadow:0 0 8px var(--ok)}
 
-main{min-height:0;display:grid;grid-template-columns:240px 1fr minmax(0,340px);gap:22px;align-items:center}
+main{min-height:0;display:grid;grid-template-columns:minmax(0,340px) 1fr minmax(0,340px);gap:22px;align-items:center}
+main > .center{grid-column:2;grid-row:1} main > #panels{grid-column:3;grid-row:1}
 .col{min-height:0;max-height:100%;display:flex;flex-direction:column;gap:12px;overflow:hidden}
 .center{position:relative;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:4vh;pointer-events:none}
 .state{font-family:var(--display);font-weight:600;letter-spacing:.45em;font-size:12.5px;text-transform:uppercase;color:var(--accent);transition:color .5s}
 .tool{min-height:1.4em;margin-top:6px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--violet);text-transform:uppercase}
-.caption{min-height:3.2em;max-width:60ch;text-align:center;margin-top:8px;font-size:clamp(17px,2vw,21px);line-height:1.45;text-wrap:balance;text-shadow:0 0 18px rgba(0,0,0,.9)}
+.caption{min-height:3.2em;max-width:60ch;text-align:center;margin-top:8px;font-size:clamp(17px,2vw,21px);line-height:1.45;text-wrap:balance;text-shadow:var(--text-shadow)}
 .caption .cursor{display:inline-block;width:.5ch;height:1em;background:var(--accent);margin-left:2px;vertical-align:-.15em;animation:blink 1s steps(2) infinite}
 @keyframes blink{to{opacity:0}}
 .you{min-height:1.5em;margin-top:6px;font-family:var(--mono);font-size:12.5px;color:var(--amber);text-align:center;max-width:70ch}
@@ -75,6 +129,8 @@ main{min-height:0;display:grid;grid-template-columns:240px 1fr minmax(0,340px);g
 .holo::before{content:"";position:absolute;left:0;top:0;width:28px;height:2px;background:var(--accent);box-shadow:0 0 10px var(--accent)}
 .holo h3{margin:0 0 8px;font-family:var(--mono);font-weight:500;font-size:10.5px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;display:flex;justify-content:space-between;gap:8px}
 .holo h3 em{font-style:normal;color:var(--accent)}
+.holo h3 .x{margin-left:auto;padding:0 4px;border:0;background:none;font-family:var(--mono);font-size:15px;line-height:1;letter-spacing:0;color:var(--muted)}
+.holo h3 .x:hover{background:none;color:var(--fg)}
 
 .ind{display:grid;grid-template-columns:1fr auto;align-items:baseline;gap:2px 10px;padding:7px 0;border-top:1px solid var(--line)}
 .ind:first-of-type{border-top:0}
@@ -89,26 +145,27 @@ main{min-height:0;display:grid;grid-template-columns:240px 1fr minmax(0,340px);g
 .card li{font-size:13.5px;line-height:1.4;padding-left:14px;position:relative;overflow-wrap:anywhere}
 .card li::before{content:"";position:absolute;left:0;top:.55em;width:6px;height:1px;background:var(--accent)}
 .card.calculo li{font-family:var(--mono);font-size:12.5px}
-.card .res{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line-strong);font-family:var(--display);font-weight:700;font-size:24px;color:var(--accent);font-variant-numeric:tabular-nums;text-shadow:0 0 14px rgba(63,208,255,.4)}
+.card .res{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line-strong);font-family:var(--display);font-weight:700;font-size:24px;color:var(--accent);font-variant-numeric:tabular-nums;text-shadow:var(--text-shadow)}
 .card .src{margin-top:8px;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.06em}
 .empty-panel{font-size:12.5px;color:var(--muted);line-height:1.5}
 
 footer{display:flex;justify-content:center;align-items:center;gap:10px;padding-top:8px;flex-wrap:wrap}
 button{
   font-family:var(--display);font-weight:600;letter-spacing:.22em;text-transform:uppercase;font-size:12px;
-  padding:11px 18px;border:1px solid var(--line-strong);background:rgba(4,7,13,.6);color:var(--muted);cursor:pointer;border-radius:0;
+  padding:11px 18px;border:1px solid var(--line-strong);background:var(--btn-bg);color:var(--muted);cursor:pointer;border-radius:0;
   transition:background .2s,color .2s,border-color .2s;
 }
-button:hover{background:rgba(63,208,255,.12);color:var(--fg)}
+button:hover{background:var(--btn-hover);color:var(--fg)}
 button.primary{border-color:var(--cyan);color:var(--cyan)}
 button.primary:hover{background:var(--cyan);color:var(--bg)}
 button[aria-pressed="true"]{color:var(--amber);border-color:var(--amber)}
 button:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
-.hint{width:100%;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.06em}
+.hint{width:100%;min-height:1.4em;text-align:center;font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.06em;transition:opacity .8s}
+.hint.apagada{opacity:0}
 .hint.err{color:var(--danger)}
 
 /* drawer do registro */
-.drawer{position:fixed;top:0;right:0;bottom:0;width:min(380px,92vw);background:rgba(6,11,20,.96);border-left:1px solid var(--line);z-index:15;display:flex;flex-direction:column;transform:translateX(105%);transition:transform .45s cubic-bezier(.2,.9,.2,1);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(380px,92vw);background:var(--drawer);border-left:1px solid var(--line);z-index:15;display:flex;flex-direction:column;transform:translateX(105%);transition:transform .45s cubic-bezier(.2,.9,.2,1);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-right:env(safe-area-inset-right,0px)}
 .drawer.open{transform:none}
 .drawer h2{margin:0;padding:16px;border-bottom:1px solid var(--line);font-family:var(--mono);font-weight:500;font-size:11px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;display:flex;justify-content:space-between;align-items:center}
 .drawer h2 button{padding:6px 10px;font-size:10px}
@@ -118,13 +175,13 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:3px}
 .log .a small{color:var(--cyan)} .log .u small{color:var(--amber)} .log .s{color:var(--muted);font-size:12px} .log .s small{color:var(--muted)}
 
 /* boot e bloqueio */
-.overlay{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:rgba(4,7,13,.9);backdrop-filter:blur(6px);text-align:center;
+.overlay{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:var(--overlay);backdrop-filter:blur(6px);text-align:center;
   padding-left:max(18px, env(safe-area-inset-left, 0px));padding-right:max(18px, env(safe-area-inset-right, 0px))}
 .overlay strong{font-family:var(--display);font-size:clamp(22px,4vw,34px);letter-spacing:.32em;color:var(--cyan)}
 .overlay span{font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.06em;max-width:46ch;line-height:1.6}
 .overlay input{font-family:var(--mono);font-size:16px;letter-spacing:.2em;text-align:center;padding:12px 14px;width:min(280px,80vw);background:transparent;border:1px solid var(--line-strong);color:var(--fg)}
 .overlay input:focus{outline:2px solid var(--cyan);outline-offset:2px}
-.login{z-index:40;background:rgba(4,7,13,.82)}
+.login{z-index:40;background:var(--overlay)}
 .lform{display:flex;flex-direction:column;gap:8px;width:min(320px,86vw);text-align:left}
 .lform label{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-top:6px}
 .lform input{width:100%;text-align:left;letter-spacing:.02em;font-size:16px}
@@ -139,7 +196,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
 .rs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
 .rs li{font-size:12.5px;line-height:1.35;padding-left:12px;position:relative;overflow-wrap:anywhere}
 .rs li::before{content:"";position:absolute;left:0;top:.45em;width:6px;height:6px;border-radius:50%;background:var(--cyan)}
-.rs li.warn::before{background:var(--amber)} .rs li.crit::before{background:var(--danger)} .rs li.crit{color:#ffc3c9}
+.rs li.warn::before{background:var(--amber)} .rs li.crit::before{background:var(--danger)} .rs li.crit{color:var(--crit-fg)}
 .rs li.ok{color:var(--muted)} .rs li.ok::before{background:var(--ok)}
 .adm{border:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:6px}
 .adm-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -160,7 +217,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
 .c2 > div{display:flex;flex-direction:column;gap:6px;min-width:0}
 .c2b{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 .cmsg{min-height:1.3em;margin:4px 0 0;font-size:12.5px}
-.cond-aviso{margin:0;padding:10px 12px;border:1px solid var(--amber);color:#ffd9a0;font-size:13px;line-height:1.5}
+.cond-aviso{margin:0;padding:10px 12px;border:1px solid var(--amber);color:var(--warn-fg);font-size:13px;line-height:1.5}
 .cond{border:1px solid var(--line);padding:10px 12px;display:flex;flex-direction:column;gap:3px;margin-bottom:8px}
 .cond strong{font-family:var(--display);font-size:14px;letter-spacing:.04em}
 .cond small{font-family:var(--mono);font-size:10.5px;color:var(--muted);overflow-wrap:anywhere}
@@ -176,23 +233,22 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
 .docst{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
 .docst span{font-family:var(--mono);font-size:10px;letter-spacing:.06em;padding:3px 7px;border:1px solid var(--line-strong);color:var(--muted)}
 .docst .pronto{color:var(--ok);border-color:var(--ok)} .docst .erro{color:var(--danger);border-color:var(--danger)} .docst .processando,.docst .enviado{color:var(--violet);border-color:var(--violet)}
-.cond .docmsg{color:#ffc3c9}
-#tapOverlay{background:rgba(4,7,13,.4);backdrop-filter:none;cursor:pointer;justify-content:flex-end;padding-bottom:calc(22vh + env(safe-area-inset-bottom,0px))}
+.cond .docmsg{color:var(--crit-fg)}
+#tapOverlay{background:var(--overlay-soft);backdrop-filter:none;cursor:pointer;justify-content:flex-end;padding-bottom:calc(22vh + env(safe-area-inset-bottom,0px))}
 #tapOverlay strong{animation:breathe 2.4s ease-in-out infinite}
 @keyframes breathe{50%{opacity:.45}}
 @media (prefers-reduced-motion:reduce){#tapOverlay strong{animation:none}}
 #bootlog{position:fixed;left:max(18px, env(safe-area-inset-left, 0px));bottom:calc(90px + env(safe-area-inset-bottom,0px));z-index:12;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--cyan);line-height:1.8;pointer-events:none;text-transform:uppercase}
 #bootlog .ok{color:var(--ok)} #bootlog .warn{color:var(--amber)}
 
-@media (max-width:1100px){ main{grid-template-columns:200px 1fr minmax(0,300px)} }
+@media (max-width:1100px){ main{grid-template-columns:minmax(0,300px) 1fr minmax(0,300px)} }
 @media (max-width:860px){
   main{grid-template-columns:1fr;grid-template-rows:1fr auto;align-items:end}
-  #indCol{display:none}
-  #panels{position:fixed;left:max(14px, env(safe-area-inset-left, 0px));right:max(14px, env(safe-area-inset-right, 0px));top:calc(78px + env(safe-area-inset-top,0px));max-height:38vh;z-index:5}
-  #panels .empty-panel{display:none}
+  main > .center{grid-column:1}
+  #panels{position:fixed;left:max(14px, env(safe-area-inset-left, 0px));right:max(14px, env(safe-area-inset-right, 0px));top:calc(70px + env(safe-area-inset-top,0px));max-height:38vh;z-index:5}
   #panels .holo:not(:first-child){display:none}
-  .status .hide-sm{display:none}
   .center{padding-bottom:2vh}
+  .iconbtn .lbl{display:none}
 }
 @media (prefers-reduced-motion:reduce){ .caption .cursor{animation:none} .drawer{transition:none} }
 </style>
@@ -204,34 +260,13 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
 
 <div class="app">
   <header>
-    <div class="brand">
-      <h1>SINDICS</h1>
-      <span id="hdrSindico">Assistente do Síndico</span>
-    </div>
-    <div class="status">
-      <div><b id="hdrCondLabel">Condomínio</b><i id="hdrCond">—</i></div>
-      <div class="hide-sm"><b>Empresa</b><i id="hdrEmpresa">—</i></div>
-      <div class="hide-sm"><b>Sistemas</b><i><span class="dot" id="netDot"></span><span id="netTxt">Online</span></i></div>
-      <div><b>Horário</b><i id="clock">--:--</i></div>
-    </div>
+    <div class="brand"><h1>SINDICS</h1></div>
+    <button id="menuBtn" class="iconbtn" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="menuDrawer">
+      <span class="lbl">Menu</span><span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>
+    </button>
   </header>
 
   <main>
-    <section class="col" id="indCol" aria-label="Indicadores econômicos">
-      <div class="holo" id="indPanel">
-        <h3>Indicadores <em>BCB</em></h3>
-        <div class="ind"><span>Selic meta</span><strong id="i-selic">—</strong><small id="d-selic">carregando…</small></div>
-        <div class="ind"><span>IPCA 12m</span><strong id="i-ipca">—</strong><small id="d-ipca">carregando…</small></div>
-        <div class="ind"><span>IGP-M 12m</span><strong id="i-igpm">—</strong><small id="d-igpm">carregando…</small></div>
-        <div class="ind"><span>Dólar</span><strong id="i-usd">—</strong><small id="d-usd">carregando…</small>
-          <svg class="spark" id="sp-usd" viewBox="0 0 200 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
-      </div>
-      <div class="holo" id="resumoDia" aria-live="polite">
-        <h3><span>Hoje</span><em>—</em></h3>
-        <p class="rs-t">Carregando vencimentos e agenda…</p>
-      </div>
-    </section>
-
     <section class="center">
       <div class="state" id="state">Inicializando</div>
       <div class="tool" id="tool"></div>
@@ -239,26 +274,51 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
       <div class="you" id="you"></div>
     </section>
 
-    <section class="col" id="panels" aria-label="Painéis do SINDICS">
-      <div class="holo empty-panel" id="emptyPanel">
-        <h3>Painel <em>aguardando</em></h3>
-        Quando o SINDICS trouxer notícias, contas ou artigos do condomínio, os detalhes aparecem aqui.
-      </div>
-    </section>
+    <section class="col" id="panels" aria-label="Painéis do SINDICS"></section>
   </main>
 
   <footer>
-    <button id="wakeBtn" class="primary" type="button">Chamar agora</button>
-    <button id="sleepBtn" type="button" hidden>Descansar</button>
-    <button id="mute" type="button" aria-pressed="false">Silenciar mic</button>
-    <button id="sfxBtn" type="button" aria-pressed="false">Som ambiente</button>
-    <button id="logBtn" type="button">Registro</button>
-    <button id="condBtn" type="button">Condomínios</button>
-    <button id="admBtn" type="button" hidden>Síndicos</button>
-    <button id="logoutBtn" type="button">Sair</button>
-    <div class="hint" id="hint">Diga “SINDICS” para chamar · “pode descansar” para encerrar · barra de espaço também funciona</div>
+    <div class="hint" id="hint">Diga “SINDICS” para chamar</div>
   </footer>
 </div>
+
+<aside class="drawer" id="menuDrawer" aria-label="Menu do SINDICS">
+  <h2>Menu <button id="closeMenu" type="button">Fechar</button></h2>
+  <div class="log">
+    <p class="menu-quem" id="hdrSindico">Assistente do Síndico</p>
+    <div class="status">
+      <div><b id="hdrCondLabel">Condomínio</b><i id="hdrCond">—</i></div>
+      <div><b>Empresa</b><i id="hdrEmpresa">—</i></div>
+      <div><b>Sistemas</b><i><span class="dot" id="netDot"></span><span id="netTxt">Online</span></i></div>
+      <div><b>Horário</b><i id="clock">--:--</i></div>
+    </div>
+    <div class="menu-btns">
+      <button id="wakeBtn" class="primary" type="button">Chamar agora</button>
+      <button id="sleepBtn" type="button" hidden>Descansar</button>
+      <button id="condBtn" type="button">Condomínios</button>
+      <button id="logBtn" type="button">Registro</button>
+      <button id="mute" type="button" aria-pressed="false">Silenciar mic</button>
+      <button id="sfxBtn" type="button" aria-pressed="false">Som ambiente</button>
+      <button id="themeBtn" type="button">Tema claro</button>
+      <button id="installBtn" type="button" hidden>Instalar app</button>
+      <button id="admBtn" type="button" hidden>Síndicos</button>
+      <button id="logoutBtn" type="button">Sair</button>
+    </div>
+    <div class="holo" id="resumoDia" aria-live="polite">
+      <h3><span>Hoje</span><em>—</em></h3>
+      <p class="rs-t">Carregando vencimentos e agenda…</p>
+    </div>
+    <div class="holo" id="indPanel">
+      <h3>Indicadores <em>BCB</em></h3>
+      <div class="ind"><span>Selic meta</span><strong id="i-selic">—</strong><small id="d-selic">carregando…</small></div>
+      <div class="ind"><span>IPCA 12m</span><strong id="i-ipca">—</strong><small id="d-ipca">carregando…</small></div>
+      <div class="ind"><span>IGP-M 12m</span><strong id="i-igpm">—</strong><small id="d-igpm">carregando…</small></div>
+      <div class="ind"><span>Dólar</span><strong id="i-usd">—</strong><small id="d-usd">carregando…</small>
+        <svg class="spark" id="sp-usd" viewBox="0 0 200 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+    </div>
+    <p class="menu-sec">Diga “SINDICS” para chamar · “abre o menu” · “tema claro” · “pode descansar”</p>
+  </div>
+</aside>
 
 <aside class="drawer" id="condDrawer" aria-label="Condomínios">
   <h2><span id="condTitulo">Meus condomínios</span> <button id="closeCond" type="button">Fechar</button></h2>
@@ -335,7 +395,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
 </div>
 
 <div class="overlay" id="tapOverlay" hidden>
-  <strong>ATIVAR SINDICS</strong>
+  <strong id="tapTitulo">ATIVAR SINDICS</strong>
   <span id="tapMsg">Toque em qualquer lugar para ligar som e microfone. Depois disso ele fica em prontidão sozinho.</span>
 </div>
 
@@ -345,7 +405,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "3.3.0";
+  window.SINDICS_V = "3.4.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -423,12 +483,42 @@ function toggleHum(){
 /* ======================= ESTADO ======================= */
 let mode = "boot";
 const MODE_LABEL = {boot:"Inicializando", standby:"Em prontidão", connecting:"Conectando", listening:"Ouvindo", thinking:"Processando", speaking:"Falando"};
-const MODE_HEX = {boot:"#3fd0ff", standby:"#5a7fa8", connecting:"#8f7bff", listening:"#ffb547", thinking:"#8f7bff", speaking:"#3fd0ff"};
+const MODE_HEX_ESCURO = {boot:"#3fd0ff", standby:"#5a7fa8", connecting:"#8f7bff", listening:"#ffb547", thinking:"#8f7bff", speaking:"#3fd0ff"};
+const MODE_HEX_CLARO  = {boot:"#0477ab", standby:"#4f6f94", connecting:"#5a45d1", listening:"#b86600", thinking:"#5a45d1", speaking:"#0477ab"};
+const temaClaro = () => document.documentElement.dataset.theme === "light";
+let MODE_HEX = temaClaro() ? MODE_HEX_CLARO : MODE_HEX_ESCURO;
 function setMode(m){
   if (mode === m) return; mode = m;
   stateEl.textContent = MODE_LABEL[m];
   document.documentElement.style.setProperty("--accent", MODE_HEX[m]);
 }
+
+/* ======================= TEMA (escuro padrão / claro opcional) ======================= */
+function aplicarTema(t){
+  const claro = t === "light";
+  if (claro) document.documentElement.dataset.theme = "light"; else delete document.documentElement.dataset.theme;
+  try{ localStorage.setItem("sindics-tema", claro ? "light" : "dark"); }catch(_){}
+  document.querySelector('meta[name="theme-color"]').content = claro ? "#e9eff5" : "#04070d";
+  MODE_HEX = claro ? MODE_HEX_CLARO : MODE_HEX_ESCURO;
+  document.documentElement.style.setProperty("--accent", MODE_HEX[mode]);
+  $("themeBtn").textContent = claro ? "Tema escuro" : "Tema claro";
+  if (window.sindicsTema3D) window.sindicsTema3D(claro);
+}
+
+/* ======================= MENU (recolhido; abre ao tocar ou por voz) ======================= */
+const DRAWERS = ["menuDrawer","drawer","condDrawer","admDrawer"];
+function abrirMenu(){ DRAWERS.forEach(id => $(id).classList.remove("open")); $("menuDrawer").classList.add("open"); $("menuBtn").setAttribute("aria-expanded","true"); $("menuBtn").classList.remove("pulsar"); }
+function fecharMenu(){ $("menuDrawer").classList.remove("open"); $("menuBtn").setAttribute("aria-expanded","false"); }
+function abrirGaveta(id){ fecharMenu(); $(id).classList.add("open"); }
+
+/* Avisos curtos embaixo do núcleo: somem sozinhos (erros ficam) */
+let hintTimer = null;
+function agendarSumicoHint(){
+  hintEl.classList.remove("apagada"); clearTimeout(hintTimer);
+  if (!hintEl.classList.contains("err")) hintTimer = setTimeout(() => hintEl.classList.add("apagada"), 7000);
+}
+new MutationObserver(agendarSumicoHint).observe(hintEl, { childList:true, characterData:true, subtree:true });
+agendarSumicoHint();
 const inSession = () => ["connecting","listening","thinking","speaking"].includes(mode);
 
 /* ======================= LEGENDA, REGISTRO, PAINÉIS ======================= */
@@ -446,11 +536,14 @@ function addLog(who, text){
   p.append(s, document.createTextNode(text)); logEl.append(p); logEl.scrollTop = logEl.scrollHeight;
 }
 const TYPE_TAG = {noticias:"Notícias", calculo:"Cálculo", regra:"Regra", indicador:"Indicador", checklist:"Checklist", texto:"Info"};
+function limparTela(){ $("panels").innerHTML = ""; }
 function showPanel(p){
-  const box = $("panels"); const empty = $("emptyPanel"); if (empty) empty.remove();
+  const box = $("panels");
+  if (/^tela limpa$/i.test(String(p.titulo || "").trim()) && !(p.itens || []).length){ limparTela(); addLog("s", "Tela limpa."); return; }
   const tipo = TYPE_TAG[p.tipo] ? p.tipo : "texto";
   const card = document.createElement("div"); card.className = "holo card " + tipo;
   const h = document.createElement("h3"); h.innerHTML = `<span></span><em></em>`; h.firstChild.textContent = TYPE_TAG[tipo]; h.lastChild.textContent = new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.textContent = "×"; x.setAttribute("aria-label", "Fechar painel"); x.onclick = () => card.remove(); h.append(x);
   const t = document.createElement("p"); t.className = "t"; t.textContent = p.titulo || "";
   const ul = document.createElement("ul");
   (Array.isArray(p.itens) ? p.itens : []).slice(0,6).forEach(x => { const li = document.createElement("li"); li.textContent = String(x); ul.append(li); });
@@ -491,7 +584,7 @@ async function loadIndicators(){
     const mn = Math.min(...v), mx = Math.max(...v), w = 200, h = 30, sx = w/(v.length-1);
     const pts = v.map((y,i) => `${(i*sx).toFixed(1)},${(h-3-(y-mn)/(mx-mn||1)*(h-6)).toFixed(1)}`);
     const last = pts[pts.length-1].split(",");
-    $("sp-usd").innerHTML = `<polyline points="0,${h} ${pts.join(" ")} ${w},${h}" fill="rgba(63,208,255,.10)" stroke="none"/><polyline points="${pts.join(" ")}" fill="none" stroke="#3fd0ff" stroke-width="1.4"/><circle cx="${last[0]}" cy="${last[1]}" r="2.6" fill="#3fd0ff"/>`;
+    $("sp-usd").innerHTML = `<polyline points="0,${h} ${pts.join(" ")} ${w},${h}" style="fill:var(--line)" stroke="none"/><polyline points="${pts.join(" ")}" fill="none" style="stroke:var(--cyan)" stroke-width="1.4"/><circle cx="${last[0]}" cy="${last[1]}" r="2.6" style="fill:var(--cyan)"/>`;
   }).catch(()=>fail("usd"));
 }
 
@@ -518,9 +611,25 @@ async function initAudio(){
     const sink = inCtx.createGain(); sink.gain.value = 0;
     src.connect(micAnalyser); src.connect(processor); processor.connect(sink); sink.connect(inCtx.destination);
   }
-  await outCtx.resume(); await inCtx.resume(); sfx().resume();
-  return outCtx.state === "running";
+  liberarSom();
+  await new Promise(r => setTimeout(r, 250));   // resume() fica pendente sem toque: não esperar por ele
+  return somLiberado();
 }
+/* O navegador escuta sem toque, mas só deixa a página FALAR depois de um toque (exceto como app instalado). */
+const somLiberado = () => !!outCtx && outCtx.state === "running" && (!inCtx || inCtx.state === "running");
+function liberarSom(){ [outCtx, inCtx, sfxCtx].forEach(c => { if (c && c.state !== "running") c.resume().catch(() => {}); }); }
+let wakePendente = false;
+function mostrarToque(titulo, texto){ $("tapTitulo").textContent = titulo; $("tapMsg").textContent = texto; $("tapOverlay").hidden = false; }
+/* Qualquer toque ou tecla, em qualquer lugar, libera o som — sem botão específico */
+["pointerdown","keydown","touchend"].forEach(ev => addEventListener(ev, () => {
+  if (!outCtx || somLiberado()) return;
+  liberarSom();
+  setTimeout(() => {
+    if (!somLiberado()) return;
+    $("tapOverlay").hidden = true;
+    if (wakePendente){ wakePendente = false; wake(); }
+  }, 200);
+}, { capture:true, passive:true }));
 function playChunk(b64){
   const pcm = int16FromB64(b64); if (!pcm.length) return;
   const buf = outCtx.createBuffer(1, pcm.length, outRate), ch = buf.getChannelData(0);
@@ -533,13 +642,18 @@ function stopPlayback(){ playing.forEach(s => { try{ s.stop(); }catch(_){} }); p
 
 /* ======================= PALAVRA DE ATIVAÇÃO ======================= */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let rec=null, recOn=false;
+let rec=null, recOn=false, escutaBloqueada=false;
 function startWake(){
   if (!SR || recOn || inSession()) return;
   rec = new SR(); rec.lang = "pt-BR"; rec.continuous = true; rec.interimResults = true;
   rec.onresult = e => { for (let i=e.resultIndex;i<e.results.length;i++){ if (WAKE_RE.test(e.results[i][0].transcript)){ wake(); return; } } };
   rec.onend = () => { recOn = false; if (mode === "standby") setTimeout(startWake, 300); };
-  rec.onerror = e => { if (e.error === "not-allowed" || e.error === "service-not-allowed") hintEl.textContent = "O navegador bloqueou a escuta da palavra “SINDICS”. Use Chamar agora ou a barra de espaço."; };
+  rec.onerror = e => {
+    if (e.error === "not-allowed" || e.error === "service-not-allowed"){
+      escutaBloqueada = true;
+      mostrarToque("TOQUE PARA ATIVAR", "O navegador pediu um toque para começar a ouvir “SINDICS”. Toque em qualquer lugar — depois disso é só falar.");
+    }
+  };
   try{ rec.start(); recOn = true; }catch(_){}
 }
 function stopWake(){ if (rec){ rec.onend = null; try{ rec.abort(); }catch(_){} } recOn = false; }
@@ -556,7 +670,17 @@ function resetIdle(){
 }
 async function wake(){
   if (inSession()) return;
-  if (!outCtx || !micStream){ $("tapOverlay").hidden = false; return; }
+  if (!micStream){
+    try{ await initAudio(); }
+    catch(_){ mostrarToque("MICROFONE BLOQUEADO", "Clique no cadeado ao lado do endereço, coloque Microfone em Permitir e recarregue a página."); return; }
+  }
+  if (!somLiberado()){ liberarSom(); await new Promise(r => setTimeout(r, 250)); }
+  if (!somLiberado()){
+    wakePendente = true; sndWake();
+    mostrarToque("OUVI VOCÊ", "Toque em qualquer lugar da tela para liberar a minha voz. Isso só é pedido uma vez por abertura — instalado como aplicativo, nem isso.");
+    return;
+  }
+  $("tapOverlay").hidden = true;
   if ($("condDrawer").classList.contains("open") && !(PERFIL?.condominios || []).length) $("condDrawer").classList.remove("open"); // sem condomínio: cadastro pode ser por voz
   stopWake(); sndWake(); setMode("connecting"); wakeBtn.hidden = true; sleepBtn.hidden = false; youEl.textContent = "";
   captionEl.textContent = "";
@@ -639,8 +763,8 @@ async function bootLines(lines, gap=160){
 }
 async function bootSequence(){
   core.boot = 0; sndBoot();
-  await bootLines(["Núcleo SINDICS", "Reconhecimento de voz", "Base condominial · Fit Casa", "Indicadores · Banco Central", "Módulo de notícias", "Síntese de voz"]);
-  ["indCol","panels"].forEach((id,i) => { const el = $(id); el.style.opacity = 0; anim(el, {opacity:[0,1], transform:[`translateX(${i ? 30 : -30}px)`, "translateX(0)"]}, {...springIn, delay:.1 + i*.12}); });
+  await bootLines(["Núcleo SINDICS", "Reconhecimento de voz", "Base condominial", "Indicadores · Banco Central", "Módulo de notícias", "Síntese de voz"]);
+  const mb = $("menuBtn"); mb.style.opacity = 0; anim(mb, {opacity:[0,.62]}, {duration:.6, delay:.2}).then(() => { mb.style.opacity = ""; });
 }
 
 /* ======================= BOTÕES ======================= */
@@ -648,13 +772,25 @@ wakeBtn.addEventListener("click", wake);
 sleepBtn.addEventListener("click", () => endSession("Encerrado pelo botão."));
 muteBtn.addEventListener("click", () => { muted = !muted; muteBtn.textContent = muted ? "Ativar mic" : "Silenciar mic"; muteBtn.setAttribute("aria-pressed", String(muted)); });
 sfxBtn.addEventListener("click", toggleHum);
-$("logBtn").addEventListener("click", () => $("drawer").classList.add("open"));
+$("logBtn").addEventListener("click", () => abrirGaveta("drawer"));
 $("closeLog").addEventListener("click", () => $("drawer").classList.remove("open"));
+$("menuBtn").addEventListener("click", () => $("menuDrawer").classList.contains("open") ? fecharMenu() : abrirMenu());
+$("closeMenu").addEventListener("click", fecharMenu);
+$("themeBtn").addEventListener("click", () => aplicarTema(temaClaro() ? "dark" : "light"));
+$("themeBtn").textContent = temaClaro() ? "Tema escuro" : "Tema claro";
+wakeBtn.addEventListener("click", fecharMenu);
 document.addEventListener("keydown", e => {
   if (e.target.closest("button,input")) return;
   if (e.code === "Space"){ e.preventDefault(); inSession() ? endSession("Encerrado pelo teclado.") : (mode === "standby" && wake()); }
-  if (e.key === "Escape") ["drawer","condDrawer","admDrawer"].forEach(id => $(id).classList.remove("open"));
+  if (e.key === "Escape"){ DRAWERS.forEach(id => $(id).classList.remove("open")); $("menuBtn").setAttribute("aria-expanded","false"); }
 });
+
+/* ======================= APLICATIVO INSTALÁVEL (voz liberada sem toque) ======================= */
+let pedidoInstalar = null;
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); pedidoInstalar = e; $("installBtn").hidden = false; });
+addEventListener("appinstalled", () => { $("installBtn").hidden = true; pedidoInstalar = null; addLog("s", "SINDICS instalado como aplicativo."); });
+$("installBtn").addEventListener("click", async () => { if (!pedidoInstalar) return; pedidoInstalar.prompt(); await pedidoInstalar.userChoice.catch(() => {}); pedidoInstalar = null; $("installBtn").hidden = true; });
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 document.addEventListener("visibilitychange", () => { if (!document.hidden && mode === "standby") startWake(); });
 
 /* ======================= LOGIN ======================= */
@@ -704,7 +840,7 @@ $("googleBtn").addEventListener("click", async () => {
   const { error } = await sb.auth.signInWithOAuth({ provider: "google", options: { redirectTo: SITE_URL, queryParams: { prompt: "select_account" } } });
   if (error) msg("Não foi possível entrar com Google: " + error.message, true);
 });
-$("admBtn").addEventListener("click", () => { $("admDrawer").classList.add("open"); carregarAdmin(); });
+$("admBtn").addEventListener("click", () => { abrirGaveta("admDrawer"); carregarAdmin(); });
 $("closeAdm").addEventListener("click", () => $("admDrawer").classList.remove("open"));
 
 /* ======================= AGENDA E DOCUMENTOS (ferramentas de voz) ======================= */
@@ -726,11 +862,27 @@ const exigeData = (v, campo) => { if (!/^\d{4}-\d{2}-\d{2}$/.test(v || "")) thro
 const comFuso = v => /([+-]\d{2}:?\d{2}|Z)$/.test(v) ? v : v + "-03:00";
 
 async function executarFerramenta(nome, a){
+  /* Comandos só de tela: respondem na hora, sem consultar o servidor */
+  if (nome === "mostrar_na_tela"){ showPanel(a); return "Painel exibido na tela."; }
+  if (nome === "tela_controlar") return controlarTela(a);
   const { data: { user } } = await sb.auth.getUser();
   if (!user) throw new Error("Sessão expirada; o síndico precisa entrar de novo.");
+  return executarComDados(nome, a, user);
+}
+function controlarTela(a){
+  switch (a.acao){
+    case "abrir_menu": abrirMenu(); return "Menu aberto.";
+    case "fechar_menu": DRAWERS.forEach(id => $(id).classList.remove("open")); $("menuBtn").setAttribute("aria-expanded","false"); return "Menu e janelas fechados.";
+    case "tema_claro": aplicarTema("light"); return "Tema claro ativado.";
+    case "tema_escuro": aplicarTema("dark"); return "Tema escuro ativado.";
+    case "abrir_condominios": abrirCondominios(); return "Janela de condomínios aberta.";
+    case "abrir_registro": abrirGaveta("drawer"); return "Registro da conversa aberto.";
+    case "limpar_tela": limparTela(); return "Tela limpa.";
+    default: throw new Error("Ação de tela desconhecida.");
+  }
+}
+async function executarComDados(nome, a, user){
   switch (nome){
-    case "mostrar_na_tela": showPanel(a); return "Painel exibido na tela.";
-
     case "agenda_criar": {
       const cond = a.condominio ? acharCondominio(a.condominio) : null;
       const ini = new Date(comFuso(a.inicio)); if (isNaN(ini)) throw new Error("Data e hora de início inválidas.");
@@ -832,7 +984,7 @@ async function executarFerramenta(nome, a){
         `CNPJ ${mascaraCnpj(cnpj)}`, `${endereco} — ${cidade}/${uf}`, `${unidades} apartamentos`,
         "Pendente: Convenção em PDF", "Pendente: Regulamento Interno em PDF",
         "Envie os PDFs em Condomínios › Editar" ] });
-      $("condBtn").classList.add("pulsar"); setTimeout(() => $("condBtn").classList.remove("pulsar"), 15000);
+      ["menuBtn","condBtn"].forEach(id => $(id).classList.add("pulsar")); setTimeout(() => ["menuBtn","condBtn"].forEach(id => $(id).classList.remove("pulsar")), 20000);
       return { ok: true, id: data.id, mensagem: `${nomeC} cadastrado: CNPJ ${mascaraCnpj(cnpj)}, ${endereco}, ${cidade}/${uf}, ${unidades} apartamentos. Pendentes: Convenção e Regulamento Interno em PDF, que o síndico envia no botão Condomínios, opção Editar. Até lá, as respostas sobre regras desse condomínio seguem só a lei geral.` };
     }
     case "condominio_excluir": {
@@ -1041,7 +1193,7 @@ async function listarCondominios(){
 async function abrirCondominios(alvo = null, aviso = ""){
   condAlvo = alvo; $("condTitulo").textContent = alvo ? "Condomínios de " + alvo.nome : "Meus condomínios";
   $("condAviso").hidden = !aviso; $("condAviso").textContent = aviso;
-  limparFormCond(); $("condDrawer").classList.add("open"); await listarCondominios();
+  limparFormCond(); abrirGaveta("condDrawer"); await listarCondominios();
 }
 $("cCnpj").addEventListener("input", e => { e.target.value = mascaraCnpj(e.target.value); e.target.removeAttribute("aria-invalid"); });
 $("cCep").addEventListener("input", async e => {
@@ -1152,18 +1304,34 @@ async function start(){
   loadIndicators(); setInterval(loadIndicators, 30*60*1000);
   captionEl.textContent = "";
   await bootSequence();
-  stateEl.textContent = "Aguardando ativação";
-  $("tapOverlay").hidden = false;
+  await ativarSemToque();
+}
+/* Liga microfone e escuta da palavra "SINDICS" sozinho, sem botão.
+   Se o microfone já foi permitido antes, nada é pedido; na primeira vez o navegador pergunta. */
+async function ativarSemToque(){
+  let perm = "prompt";
+  try{ perm = (await navigator.permissions.query({ name:"microphone" })).state; }catch(_){}
+  if (perm === "denied"){ mostrarToque("MICROFONE BLOQUEADO", "Clique no cadeado ao lado do endereço, coloque Microfone em Permitir e recarregue a página."); return; }
+  stateEl.textContent = "Ligando microfone";
+  try{ await initAudio(); }
+  catch(_){ mostrarToque("ATIVAR SINDICS", "Toque aqui e, quando o navegador perguntar, clique em Permitir para o microfone."); return; }
+  standby("SINDICS em prontidão.");
+  if (!SR) hintEl.textContent = "Este navegador não reconhece a palavra “SINDICS”. Use o Google Chrome ou chame pelo menu.";
 }
 let activating = false;
 $("tapOverlay").addEventListener("click", async () => {
   if (activating) return; activating = true;
-  $("tapMsg").textContent = "Ativando… se o navegador perguntar, clique em Permitir para o microfone.";
   try{
-    const ok = await initAudio();
-    if (ok){ $("tapOverlay").hidden = true; sndWake(); standby("SINDICS em prontidão."); }
-    else $("tapMsg").textContent = "O som ainda está bloqueado. Toque de novo.";
+    if (!micStream){ $("tapMsg").textContent = "Ativando… se o navegador perguntar, clique em Permitir para o microfone."; await initAudio(); }
+    liberarSom(); await new Promise(r => setTimeout(r, 250));
+    if (escutaBloqueada){ escutaBloqueada = false; recOn = false; }
+    if (mode === "boot") standby("SINDICS em prontidão."); else if (mode === "standby") startWake();
+    if (somLiberado()){
+      $("tapOverlay").hidden = true;
+      if (wakePendente){ wakePendente = false; wake(); }
+    } else $("tapMsg").textContent = "O som ainda está bloqueado. Toque de novo.";
   }catch(_){
+    $("tapTitulo").textContent = "MICROFONE BLOQUEADO";
     $("tapMsg").textContent = "Não consegui acessar o microfone. Clique no cadeado ao lado do endereço, coloque Microfone em Permitir, recarregue a página e toque aqui.";
   }
   activating = false;
@@ -1202,7 +1370,7 @@ function initGL(){
   return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));}`;
 
   /* esfera de plasma */
-  const uni = { uTime:{value:0}, uLevel:{value:0}, uColor:{value:new THREE.Color("#3fd0ff")}, uBoot:{value:0} };
+  const uni = { uTime:{value:0}, uLevel:{value:0}, uColor:{value:new THREE.Color("#3fd0ff")}, uBoot:{value:0}, uLight:{value:0} };
   const plasma = new THREE.Mesh(
     new THREE.IcosahedronGeometry(1.35, isLite ? 32 : 64),
     new THREE.ShaderMaterial({ uniforms:uni, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false,
@@ -1211,10 +1379,14 @@ function initGL(){
         void main(){ float n = snoise(normal*1.6 + uTime*0.35) * (0.10 + uLevel*0.55) + snoise(normal*4.0 - uTime*0.8) * (0.03 + uLevel*0.18);
           vec3 p = position * uBoot + normal * n; vD = n; vec4 mv = modelViewMatrix * vec4(p,1.0); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); gl_Position = projectionMatrix * mv; }`,
       fragmentShader: `
-        uniform vec3 uColor; uniform float uLevel; varying vec3 vN; varying vec3 vV; varying float vD;
+        uniform vec3 uColor; uniform float uLevel; uniform float uLight; varying vec3 vN; varying vec3 vV; varying float vD;
         void main(){ float f = pow(1.0 - abs(dot(vN, vV)), 2.2); float core = pow(abs(dot(vN, vV)), 6.0);
           vec3 c = uColor * (f*1.4 + vD*1.2 + 0.08) + vec3(1.0)*core*(0.12 + uLevel*0.5);
-          gl_FragColor = vec4(c, clamp(f*0.95 + core*0.25 + 0.05, 0.0, 1.0)); }`
+          float a = clamp(f*0.95 + core*0.25 + 0.05, 0.0, 1.0);
+          /* tema claro: tinta colorida translúcida em vez de luz somada (que sumiria no fundo claro) */
+          vec3 cl = mix(uColor, uColor*0.55, f) + uColor*vD*0.8;
+          float al = clamp(f*0.85 + 0.12 + core*uLevel*0.35, 0.0, 0.92);
+          gl_FragColor = mix(vec4(c, a), vec4(cl, al), uLight); }`
     })
   );
   group.add(plasma);
@@ -1251,12 +1423,23 @@ function initGL(){
     {m:ringSeg(3.7, 120, .7, 1.5, 0, .3), s:-.05},
   ];
   rings.forEach(r => group.add(r.m));
+  let claro3D = false;
 
   /* anel de frequência (espectro da voz) */
   const FB = 128, fPos = new Float32Array(FB*2*3);
   const fGeo = new THREE.BufferGeometry(); fGeo.setAttribute("position", new THREE.BufferAttribute(fPos,3));
   const fLines = new THREE.LineSegments(fGeo, new THREE.LineBasicMaterial({color:0x3fd0ff, transparent:true, opacity:.9, blending:THREE.AdditiveBlending, depthWrite:false}));
   scene.add(fLines);
+
+  /* Troca de tema do núcleo: fundo, mistura de cores e brilho */
+  window.sindicsTema3D = claro => {
+    claro3D = claro;
+    renderer.setClearColor(claro ? 0xe9eff5 : 0x04070d, 1);
+    uni.uLight.value = claro ? 1 : 0;
+    const modo = claro ? THREE.NormalBlending : THREE.AdditiveBlending;
+    [plasma.material, glow.material, heart.material, pMat, fLines.material, ...rings.map(r => r.m.material)].forEach(m => { m.blending = modo; m.needsUpdate = true; });
+  };
+  window.sindicsTema3D(temaClaro());
 
   function resize(){
     const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w/h;
@@ -1282,8 +1465,9 @@ function initGL(){
     target.set(MODE_HEX[mode]); uni.uColor.value.lerp(target, .05);
     const col = uni.uColor.value;
     uni.uTime.value = t; uni.uLevel.value = L; uni.uBoot.value = core.boot;
-    glow.material.color.copy(col); glow.material.opacity = .35 + L*.5; glow.scale.setScalar((5.5 + L*3) * core.boot);
-    heart.material.opacity = .55 + L*.45; heart.scale.setScalar((1.1 + L*1.4) * core.boot);
+    glow.material.color.copy(col); glow.material.opacity = claro3D ? .14 + L*.2 : .35 + L*.5; glow.scale.setScalar((5.5 + L*3) * core.boot);
+    if (claro3D) heart.material.color.copy(col); else heart.material.color.setRGB(1, 1, 1);
+    heart.material.opacity = claro3D ? .3 + L*.35 : .55 + L*.45; heart.scale.setScalar((1.1 + L*1.4) * core.boot);
     pMat.color.copy(col); fLines.material.color.copy(col);
     rings.forEach(r => r.m.material.color.copy(col));
 
