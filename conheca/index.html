@@ -6,7 +6,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SINDICS · Inteligência Condominial</title>
-<meta name="description" content="SINDICS é a inteligência condominial por voz do síndico: agenda com alarmes, prazos dos documentos legais, regras da convenção na tela e comunicados prontos. Plano único de R$ 349 por mês.">
+<meta name="description" content="SINDICS é a inteligência condominial por voz do síndico: agenda com alarmes, prazos dos documentos legais, regras do regulamento na tela, diário operacional com relatório mensal e comunicados prontos. Planos a partir de R$ 450 por mês.">
 <meta property="og:title" content="SINDICS · Inteligência Condominial">
 <meta property="og:description" content="Fale com o SINDICS e ele cuida da agenda, dos prazos legais, das regras e dos comunicados do seu condomínio.">
 <meta property="og:image" content="../icon-512.png">
@@ -141,6 +141,31 @@ h2{font-family:var(--display);font-weight:600;font-size:clamp(28px,3.4vw,42px);l
 .seguro a{color:var(--ciano)}
 @media (max-width:820px){ .seguro ul{grid-template-columns:1fr} }
 
+/* planos */
+.planos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:34px}
+.pl{padding:32px 28px;display:flex;flex-direction:column;gap:8px;position:relative}
+.pl.destaque{border-color:var(--ciano);box-shadow:0 0 40px rgba(63,208,255,.14)}
+.pl-selo{position:absolute;top:-11px;left:28px;margin:0;padding:3px 10px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;background:var(--ciano);color:#03121c}
+.pl-nome{margin:0;font-family:var(--display);font-weight:600;font-size:22px;color:#fff}
+.pl-faixa{margin:0;font-family:var(--mono);font-size:12.5px;letter-spacing:.08em;color:var(--ciano)}
+.pl .numero{font-family:var(--display);font-weight:700;font-size:clamp(44px,5vw,60px);line-height:1;margin:14px 0 6px;color:#fff;text-shadow:0 0 34px rgba(63,208,255,.35)}
+.pl .numero.peq{font-size:clamp(30px,3.4vw,38px);padding:8px 0 6px}
+.pl .numero small{font-size:.32em;font-weight:500;color:var(--apagado);margin-left:6px;text-shadow:none}
+.pl .numero.peq small{display:block;margin:6px 0 0;font-size:.42em}
+.pl-txt{margin:0 0 18px;color:var(--apagado);flex:1}
+.pl .btn{align-self:stretch;text-align:center;justify-content:center}
+.inclui-todos{margin-top:18px;padding:32px 28px}
+.inclui-todos h3{font-family:var(--display);font-weight:600;font-size:19px;margin:0 0 16px;color:#fff}
+.inclui-todos ul{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 28px}
+.inclui-todos li{padding-left:26px;position:relative}
+.inclui-todos li::before{content:"";position:absolute;left:2px;top:.5em;width:11px;height:6px;border-left:2px solid var(--ciano);border-bottom:2px solid var(--ciano);transform:rotate(-45deg)}
+.pl-nota{margin:20px 0 0;color:var(--apagado);font-size:14px}
+.ma-planos{display:grid;gap:8px;margin:4px 0 6px}
+.modal-caixa .ma-planos label{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--linha);cursor:pointer;font-family:var(--body);font-size:14px;letter-spacing:0;color:var(--texto);margin:0}
+.modal-caixa .ma-planos label:has(input:checked){border-color:var(--ciano);background:rgba(63,208,255,.06)}
+.modal-caixa .ma-planos label b{color:#fff}
+.modal-caixa .ma-planos input[type=radio]{accent-color:var(--ciano);width:16px;height:16px;flex:none;margin:0;padding:0}
+@media (max-width:900px){ .planos{grid-template-columns:1fr} .inclui-todos ul{grid-template-columns:1fr} }
 /* preço */
 .plano{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr)}
 .plano .valor{padding:44px 40px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:6px}
@@ -226,14 +251,14 @@ footer a:hover{color:var(--texto)}
     <div class="fala-abre">
       <p class="estado" id="estado">INICIALIZANDO</p>
       <h1 id="saudacao"><span id="digitado"></span><span class="cursor" aria-hidden="true"></span></h1>
-      <p class="sub surge">Eu cuido da sua agenda com alarmes, controlo o vencimento dos documentos legais, mostro a regra da convenção na tela e escrevo o comunicado pronto para imprimir. Você só precisa falar.</p>
+      <p class="sub surge">Eu cuido da sua agenda com alarmes, controlo o vencimento dos documentos legais, mostro a regra do regulamento na tela, registro a operação do dia e escrevo o comunicado pronto para imprimir. Você só precisa falar.</p>
       <div class="acoes surge">
         <a class="btn forte js-assinar" href="#preco">
           Assinar agora
         </a>
         <a class="btn" href="#conversa">Ver uma conversa</a>
       </div>
-      <p class="preco-mini surge">Plano único · <b class="js-preco">R$ 349</b> por mês · todos os recursos</p>
+      <p class="preco-mini surge">Planos a partir de <b>R$ 450</b> por mês · todos os recursos incluídos</p>
       <a class="rolar surge" href="#conversa" aria-label="Rolar para baixo"></a>
     </div>
   </section>
@@ -268,10 +293,11 @@ footer a:hover{color:var(--texto)}
     <div class="w">
       <p class="marcador">// comandos de voz</p>
       <h2>Você diz. Ele faz.</h2>
-      <p class="intro">Seis pedidos do dia a dia do síndico e o que o SINDICS faz com cada um.</p>
+      <p class="intro">Sete pedidos do dia a dia do síndico e o que o SINDICS faz com cada um.</p>
       <div class="dialogos">
         <div class="dl"><q>Marca a assembleia dia 28 às 19h30 no salão e me avisa um dia antes.</q><p>Agenda, confere conflitos de horário e toca o alarme na hora certa. O calendário do mês abre na tela quando você pedir.</p><strong>agenda + alarmes</strong></div>
-        <div class="dl"><q>Pode fazer obra no sábado?</q><p>Procura na Convenção e no Regulamento Interno do condomínio e mostra o artigo na tela, com a penalidade quando houver.</p><strong>regras do condomínio</strong></div>
+        <div class="dl"><q>Pode fazer obra no sábado?</q><p>Procura no Regulamento Interno do condomínio (e na Convenção, se você enviar) e mostra o artigo na tela, com a penalidade quando houver.</p><strong>regras do condomínio</strong></div>
+        <div class="dl"><q>Registra: ronda na garagem feita, lâmpada do bloco B trocada.</q><p>Grava no diário operacional com data, hora, quem fez e a confirmação de presença no condomínio. No fim do mês, o relatório com indicadores e fotos sai pronto em PDF.</p><strong>operação do dia</strong></div>
         <div class="dl"><q>Escreve um comunicado sobre o horário da piscina.</q><p>Redige o texto formal com cabeçalho, CNPJ, data e sua assinatura. Abre em tela cheia para ajustar, copiar ou imprimir em PDF.</p><strong>comunicados</strong></div>
         <div class="dl"><q>O AVCB foi renovado, vence em março de 2028.</q><p>Atualiza a Pasta de Documentação Legal e passa a avisar com antecedência antes do próximo vencimento.</p><strong>prazos legais</strong></div>
         <div class="dl"><q>Divide uma obra de 48 mil em 6 parcelas entre os 120 apartamentos.</q><p>Faz a conta passo a passo e mostra o valor por unidade, usando os índices oficiais do Banco Central quando precisar de correção.</p><strong>cálculos de rateio</strong></div>
@@ -329,32 +355,50 @@ footer a:hover{color:var(--texto)}
 
   <section class="bloco" id="preco">
     <div class="w">
-      <p class="marcador">// assinatura</p>
-      <h2>Um plano. Tudo incluído.</h2>
-      <p class="intro">Inteligência condominial completa para quem leva a gestão condominial a sério. Assine em dois minutos e receba o acesso no seu e-mail assim que o pagamento for confirmado.</p>
-      <div class="plano holo">
-        <div class="valor">
-          <p>Assinatura mensal</p>
-          <p class="numero"><span class="js-preco">R$ 349</span><small>/mês</small></p>
-          <p>Pix, boleto ou cartão de crédito. Cobrança mensal automática e suporte direto com a nossa equipe.</p>
-          <a class="btn forte js-assinar" href="#preco">
-            Assinar agora
-          </a>
+      <p class="marcador">// planos</p>
+      <h2>Escolha pelo tamanho da sua carteira.</h2>
+      <p class="intro">Mensalidade fixa conforme a quantidade de condomínios que você administra. Todos os recursos em todos os planos. Assine em dois minutos e receba o acesso no seu e-mail assim que o pagamento for confirmado.</p>
+      <div class="planos">
+        <div class="pl holo">
+          <p class="pl-nome">Essencial</p>
+          <p class="pl-faixa">1 a 5 condomínios</p>
+          <p class="numero">R$ 450<small>/mês</small></p>
+          <p class="pl-txt">Para o síndico que está estruturando a carteira e quer tudo sob controle desde o primeiro prédio.</p>
+          <a class="btn forte js-assinar" data-plano="essencial" href="#preco">Assinar</a>
         </div>
-        <div class="inclui">
-          <h3>O que está incluído</h3>
-          <ul>
-            <li>Inteligência condominial por voz, com voz masculina ou feminina</li>
-            <li>Agenda com alarmes e calendário na tela</li>
-            <li>Pasta de Documentação Legal para cada condomínio</li>
-            <li>Leitura da Convenção e do Regulamento Interno</li>
-            <li>Comunicados, editais e advertências prontos para imprimir</li>
-            <li>Cálculos de rateio e índices do Banco Central</li>
-            <li>Radar Condominial com as notícias do dia</li>
-            <li>Área de privacidade e roteiro de LGPD do condomínio</li>
-            <li>Computador e celular, instalável como aplicativo</li>
-          </ul>
+        <div class="pl holo destaque">
+          <p class="pl-selo">recomendado</p>
+          <p class="pl-nome">Profissional</p>
+          <p class="pl-faixa">6 a 10 condomínios</p>
+          <p class="numero">R$ 899<small>/mês</small></p>
+          <p class="pl-txt">Para o síndico profissional com equipe, que precisa de operação documentada e relatório mensal de cada prédio.</p>
+          <a class="btn forte js-assinar" data-plano="profissional" href="#preco">Assinar</a>
         </div>
+        <div class="pl holo">
+          <p class="pl-nome">Sob consulta</p>
+          <p class="pl-faixa">11 ou mais condomínios</p>
+          <p class="numero peq">Proposta<small>personalizada</small></p>
+          <p class="pl-txt">Para administradoras e grandes carteiras. Montamos a proposta de acordo com a sua operação.</p>
+          <a class="btn js-contato" href="#">Fale conosco</a>
+        </div>
+      </div>
+      <div class="inclui-todos holo">
+        <h3>Incluído em todos os planos</h3>
+        <ul>
+          <li>Inteligência condominial por voz, com voz masculina ou feminina</li>
+          <li>Agenda com alarmes e calendário na tela</li>
+          <li>Pasta de Documentação Legal para cada condomínio</li>
+          <li>Leitura do Regulamento Interno (e da Convenção, se quiser)</li>
+          <li>Operação do dia: diário com fotos e confirmação de presença</li>
+          <li>Relatório operacional mensal em PDF</li>
+          <li>Gestores auxiliares, o seu braço direito no dia a dia</li>
+          <li>Comunicados, editais e advertências prontos para imprimir</li>
+          <li>Cálculos de rateio e índices do Banco Central</li>
+          <li>Radar Condominial com as notícias do dia</li>
+          <li>Área de privacidade e roteiro de LGPD do condomínio</li>
+          <li>Computador e celular, instalável como aplicativo</li>
+        </ul>
+        <p class="pl-nota">Pix, boleto ou cartão de crédito. Cobrança mensal automática, sem multa para cancelar.</p>
       </div>
     </div>
   </section>
@@ -365,8 +409,9 @@ footer a:hover{color:var(--texto)}
       <h2>Antes de assinar.</h2>
       <div class="faq">
         <details><summary>Preciso instalar alguma coisa?</summary><p>Não. O SINDICS abre no navegador, de preferência o Google Chrome. No celular ou no computador, dá para instalar como aplicativo para abrir com um toque.</p></details>
-        <details><summary>Como ele conhece as regras do meu condomínio?</summary><p>Você envia a Convenção e o Regulamento Interno em PDF, inclusive escaneados. O SINDICS lê os documentos e passa a responder com o artigo correspondente.</p></details>
-        <details><summary>Posso cadastrar mais de um condomínio?</summary><p>Sim. Cada condomínio tem suas próprias regras, documentos e prazos, e o SINDICS nunca mistura as informações entre eles.</p></details>
+        <details><summary>Como ele conhece as regras do meu condomínio?</summary><p>Você envia o Regulamento Interno em PDF, inclusive escaneado, e a Convenção se quiser (é opcional). O SINDICS lê os documentos e passa a responder com o artigo correspondente.</p></details>
+        <details><summary>Posso cadastrar mais de um condomínio?</summary><p>Sim. O Essencial atende de 1 a 5 condomínios e o Profissional de 6 a 10. Se a sua carteira crescer, você muda de plano sem perder nada. Acima de 10 condomínios, fazemos uma proposta personalizada. Cada condomínio tem suas próprias regras, documentos e prazos, e o SINDICS nunca mistura as informações entre eles.</p></details>
+        <details><summary>O que é a Operação do dia?</summary><p>É o diário do condomínio: você ou seu gestor registram por voz ou na tela o que foi feito (ronda, manutenção, ocorrência, prestador), com fotos. O SINDICS confere se o registro foi feito no condomínio, guardando só a distância, sem rastrear ninguém. No fim do mês, o relatório com os indicadores sai pronto em PDF para o conselho ou a assembleia.</p></details>
         <details><summary>Meu condomínio não fica em São Paulo. Funciona?</summary><p>Funciona. A lista de documentos segue a lei federal e as regras de São Paulo; para outras cidades, o SINDICS indica quais prazos confirmar com a regra local.</p></details>
         <details><summary>As respostas substituem um advogado ou contador?</summary><p>Não. O SINDICS orienta com base na lei e nos documentos do condomínio, e recomenda o jurídico ou a contabilidade quando o caso pede.</p></details>
         <details><summary>A conversa é gravada?</summary><p>A voz não é gravada. O texto da conversa fica guardado por até 90 dias para suporte e depois é apagado automaticamente.</p></details>
@@ -393,9 +438,13 @@ footer a:hover{color:var(--texto)}
 <div class="modal" id="modalAssinar" hidden role="dialog" aria-modal="true" aria-labelledby="maTitulo">
   <form class="modal-caixa holo" id="formAssinar" novalidate>
     <button class="fechar" type="button" id="maFechar" aria-label="Fechar">✕</button>
-    <p class="marcador">// assinatura · <span class="js-preco">R$ 349</span>/mês</p>
+    <p class="marcador">// assinatura · <span id="maPlano">Plano Essencial · R$ 450/mês</span></p>
     <h2 id="maTitulo">Assinar o SINDICS</h2>
     <p class="ma-sub">Depois destes dados você vai para a página segura de pagamento do Asaas. Confirmado o pagamento, o acesso chega no seu e-mail.</p>
+    <div class="ma-planos" role="radiogroup" aria-label="Plano">
+      <label><input type="radio" name="maPlano" value="essencial" checked> <span><b>Essencial</b> · 1 a 5 condomínios · R$ 450/mês</span></label>
+      <label><input type="radio" name="maPlano" value="profissional"> <span><b>Profissional</b> · 6 a 10 condomínios · R$ 899/mês</span></label>
+    </div>
     <label for="maNome">Nome completo</label>
     <input id="maNome" autocomplete="name" required>
     <label for="maEmail">E-mail (será seu login)</label>

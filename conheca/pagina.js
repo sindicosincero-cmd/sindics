@@ -1,10 +1,9 @@
 /* ===== Ajuste aqui ===== */
-const PRECO = "R$ 349";
+const PLANOS = { essencial: { nome: "Essencial", preco: "R$ 450" }, profissional: { nome: "Profissional", preco: "R$ 899" } };
 const WHATSAPP = "";   // só números, com DDI e DDD. Ex.: "5511999999999" (usado no "Fale com a nossa equipe")
 const MENSAGEM = "Olá! Tenho uma dúvida sobre o SINDICS, a inteligência condominial por voz.";
 const FN_ASSINAR = "https://hjjckvluydcejmrxolza.supabase.co/functions/v1/assinar";
 /* ======================== */
-document.querySelectorAll(".js-preco").forEach(e => { e.textContent = PRECO; });
 const contato = WHATSAPP
   ? "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(MENSAGEM)
   : "mailto:sindicanciaethics@gmail.com?subject=" + encodeURIComponent("Dúvida sobre o SINDICS") + "&body=" + encodeURIComponent(MENSAGEM);
@@ -14,7 +13,9 @@ document.querySelectorAll(".js-contato").forEach(a => { a.href = contato; if (WH
 (function(){
   const modal = document.getElementById("modalAssinar"), form = document.getElementById("formAssinar"), msg = document.getElementById("maMsg"), $ = id => document.getElementById(id);
   let voltarFoco = null;
-  const abrir = e => { e.preventDefault(); voltarFoco = e.currentTarget; modal.hidden = false; document.body.style.overflow = "hidden"; setTimeout(() => $("maNome").focus(), 50); };
+  const marcarPlano = v => { const p = PLANOS[v] ? v : "essencial"; const r = form.querySelector(`input[name="maPlano"][value="${p}"]`); if (r) r.checked = true; $("maPlano").textContent = `Plano ${PLANOS[p].nome} · ${PLANOS[p].preco}/mês`; };
+  form.querySelectorAll('input[name="maPlano"]').forEach(r => r.addEventListener("change", () => marcarPlano(r.value)));
+  const abrir = e => { e.preventDefault(); voltarFoco = e.currentTarget; marcarPlano(e.currentTarget.dataset.plano || form.querySelector('input[name="maPlano"]:checked')?.value); modal.hidden = false; document.body.style.overflow = "hidden"; setTimeout(() => $("maNome").focus(), 50); };
   const fechar = () => { modal.hidden = true; document.body.style.overflow = ""; if (voltarFoco) voltarFoco.focus(); };
   document.querySelectorAll(".js-assinar").forEach(a => a.addEventListener("click", abrir));
   $("maFechar").addEventListener("click", fechar);
@@ -43,7 +44,7 @@ document.querySelectorAll(".js-contato").forEach(a => { a.href = contato; if (WH
     if (!$("maAceite").checked) return erro(null, "Para assinar, aceite a Política de Privacidade e os Termos de Uso.");
     const btn = $("maEnviar"); btn.disabled = true; btn.textContent = "Preparando o pagamento…"; msg.className = "ma-msg ok"; msg.textContent = "";
     try{
-      const r = await fetch(FN_ASSINAR, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ acao: "assinar", nome, email, cpf_cnpj: doc, telefone: tel, aceite: true }) });
+      const r = await fetch(FN_ASSINAR, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ acao: "assinar", plano: form.querySelector('input[name="maPlano"]:checked')?.value || "essencial", nome, email, cpf_cnpj: doc, telefone: tel, aceite: true }) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j.erro || "Não foi possível iniciar a assinatura agora.");
       if (j.link){ msg.textContent = "Tudo certo. Abrindo a página de pagamento…"; location.href = j.link; return; }
