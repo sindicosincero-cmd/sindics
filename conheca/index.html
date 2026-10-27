@@ -170,6 +170,28 @@ h2{font-family:var(--display);font-weight:600;font-size:clamp(28px,3.4vw,42px);l
 .fecha h2{max-width:18em;margin:0 auto 14px}
 .fecha p{color:var(--apagado);margin:0 auto 30px;max-width:34em}
 .fecha .acoes{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.modal{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(2,5,10,.82);backdrop-filter:blur(6px);overflow-y:auto}
+.modal[hidden]{display:none}
+.modal-caixa{width:min(520px,100%);padding:30px 28px 24px;display:flex;flex-direction:column;gap:8px;margin:auto}
+.modal-caixa h2{font-size:28px;margin:0}
+.modal-caixa .marcador{margin:0}
+.ma-sub{color:var(--apagado);font-size:15px;margin:0 0 8px}
+.modal-caixa label{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--apagado);margin-top:6px}
+.modal-caixa input:not([type=checkbox]){width:100%;min-width:0;font-family:var(--body);font-size:16px;color:#fff;background:rgba(4,7,13,.7);border:1px solid var(--linha-forte);padding:11px 12px}
+.modal-caixa input:focus{outline:2px solid var(--ciano);outline-offset:1px}
+.modal-caixa input[aria-invalid=true]{border-color:var(--vermelho)}
+.ma-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ma-2 > div{display:flex;flex-direction:column;gap:8px;min-width:0}
+@media (max-width:480px){ .ma-2{grid-template-columns:1fr} }
+label.ma-aceite{display:flex;gap:10px;align-items:flex-start;font-family:var(--body);font-size:14px;letter-spacing:0;color:var(--texto);margin-top:10px}
+.ma-aceite input{width:18px;height:18px;flex:none;margin-top:2px;accent-color:var(--ciano)}
+.ma-aceite a,.ma-nota a{color:var(--ciano)}
+.ma-msg{min-height:1.3em;margin:4px 0;font-size:14px;color:var(--vermelho)}
+.ma-msg.ok{color:var(--verde)}
+.modal-caixa .btn{margin-top:4px}
+.ma-nota{margin:8px 0 0;font-size:13px;color:var(--apagado);text-align:center}
+.fechar{position:absolute;top:10px;right:12px;background:none;border:0;color:var(--apagado);font-size:18px;cursor:pointer;padding:6px}
+.fechar:hover{color:#fff}
 footer{border-top:1px solid var(--linha);padding:28px 0 40px;font-size:14px;color:#6f879e}
 footer .w{display:flex;gap:20px;flex-wrap:wrap;justify-content:space-between}
 footer nav{display:flex;gap:20px;flex-wrap:wrap}
@@ -188,7 +210,7 @@ footer a:hover{color:var(--texto)}
       <a href="#perguntas">Perguntas</a>
     </nav>
     <a class="entrar" href="../">Entrar</a>
-    <a class="btn forte peq js-whats" href="#preco">Assinar</a>
+    <a class="btn forte peq js-assinar" href="#preco">Assinar</a>
   </div>
 </header>
 
@@ -203,9 +225,8 @@ footer a:hover{color:var(--texto)}
       <h1 id="saudacao"><span id="digitado"></span><span class="cursor" aria-hidden="true"></span></h1>
       <p class="sub surge">Eu cuido da sua agenda com alarmes, controlo o vencimento dos documentos legais, mostro a regra da convenção na tela e escrevo o comunicado pronto para imprimir. Você só precisa falar.</p>
       <div class="acoes surge">
-        <a class="btn forte js-whats" href="#preco">
-          <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.7-1.3a.5.5 0 0 0 0-.5c0-.1-.6-1.4-.8-1.9s-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.1-.2-.2-.4-.3Z"/></svg>
-          Assinar pelo WhatsApp
+        <a class="btn forte js-assinar" href="#preco">
+          Assinar agora
         </a>
         <a class="btn" href="#conversa">Ver uma conversa</a>
       </div>
@@ -307,15 +328,14 @@ footer a:hover{color:var(--texto)}
     <div class="w">
       <p class="marcador">// assinatura</p>
       <h2>Um plano. Tudo incluído.</h2>
-      <p class="intro">Um assistente completo para quem leva a gestão condominial a sério. Assine pelo WhatsApp e receba seu acesso.</p>
+      <p class="intro">Um assistente completo para quem leva a gestão condominial a sério. Assine em dois minutos e receba o acesso no seu e-mail assim que o pagamento for confirmado.</p>
       <div class="plano holo">
         <div class="valor">
           <p>Assinatura mensal</p>
           <p class="numero"><span class="js-preco">R$ 349</span><small>/mês</small></p>
-          <p>Atendimento direto com a nossa equipe na assinatura e no suporte.</p>
-          <a class="btn forte js-whats" href="#preco">
-            <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.7-1.3a.5.5 0 0 0 0-.5c0-.1-.6-1.4-.8-1.9s-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.1-.2-.2-.4-.3Z"/></svg>
-            Assinar pelo WhatsApp
+          <p>Pix, boleto ou cartão de crédito. Cobrança mensal automática e suporte direto com a nossa equipe.</p>
+          <a class="btn forte js-assinar" href="#preco">
+            Assinar agora
           </a>
         </div>
         <div class="inclui">
@@ -347,7 +367,9 @@ footer a:hover{color:var(--texto)}
         <details><summary>Meu condomínio não fica em São Paulo. Funciona?</summary><p>Funciona. A lista de documentos segue a lei federal e as regras de São Paulo; para outras cidades, o SINDICS indica quais prazos confirmar com a regra local.</p></details>
         <details><summary>As respostas substituem um advogado ou contador?</summary><p>Não. O SINDICS orienta com base na lei e nos documentos do condomínio, e recomenda o jurídico ou a contabilidade quando o caso pede.</p></details>
         <details><summary>A conversa é gravada?</summary><p>A voz não é gravada. O texto da conversa fica guardado por até 90 dias para suporte e depois é apagado automaticamente.</p></details>
-        <details><summary>Como assino e como cancelo?</summary><p>Pelo WhatsApp, nos dois casos. Depois do pagamento, seu acesso é liberado e você entra com seu e-mail.</p></details>
+        <details><summary>Como funciona o pagamento?</summary><p>Você assina aqui na página e paga na página segura do Asaas, por Pix, boleto ou cartão. Assim que o pagamento é confirmado, o acesso chega no seu e-mail. A cobrança se repete todo mês na mesma data.</p></details>
+        <details><summary>E se eu atrasar uma mensalidade?</summary><p>O SINDICS avisa na tela e na abertura da conversa. Com 5 dias de atraso o acesso é suspenso, e volta na hora em que o pagamento é confirmado. Seus dados continuam guardados.</p></details>
+        <details><summary>Como cancelo?</summary><p>Escreva para a nossa equipe pelo e-mail sindicanciaethics@gmail.com. Não há multa.</p></details>
       </div>
     </div>
   </section>
@@ -356,14 +378,35 @@ footer a:hover{color:var(--texto)}
     <div class="w">
       <div class="orbe" aria-hidden="true"></div>
       <h2>O SINDICS está pronto. Falta você.</h2>
-      <p>Chame no WhatsApp, tire suas dúvidas e receba o acesso.</p>
+      <p>Assine agora e receba o acesso no seu e-mail assim que o pagamento for confirmado.</p>
       <div class="acoes">
-        <a class="btn forte js-whats" href="#preco">Assinar pelo WhatsApp</a>
+        <a class="btn forte js-assinar" href="#preco">Assinar agora</a>
         <a class="btn" href="../">Já sou assinante</a>
       </div>
     </div>
   </section>
 </main>
+
+<div class="modal" id="modalAssinar" hidden role="dialog" aria-modal="true" aria-labelledby="maTitulo">
+  <form class="modal-caixa holo" id="formAssinar" novalidate>
+    <button class="fechar" type="button" id="maFechar" aria-label="Fechar">✕</button>
+    <p class="marcador">// assinatura · <span class="js-preco">R$ 349</span>/mês</p>
+    <h2 id="maTitulo">Assinar o SINDICS</h2>
+    <p class="ma-sub">Depois destes dados você vai para a página segura de pagamento do Asaas. Confirmado o pagamento, o acesso chega no seu e-mail.</p>
+    <label for="maNome">Nome completo</label>
+    <input id="maNome" autocomplete="name" required>
+    <label for="maEmail">E-mail (será seu login)</label>
+    <input id="maEmail" type="email" autocomplete="email" required>
+    <div class="ma-2">
+      <div><label for="maDoc">CPF ou CNPJ</label><input id="maDoc" inputmode="numeric" maxlength="18" required></div>
+      <div><label for="maTel">WhatsApp</label><input id="maTel" inputmode="tel" maxlength="15" placeholder="(11) 90000-0000" required></div>
+    </div>
+    <label class="ma-aceite"><input id="maAceite" type="checkbox"> <span>Li e aceito a <a href="../privacidade.html" target="_blank" rel="noopener">Política de Privacidade e os Termos de Uso</a>.</span></label>
+    <p class="ma-msg" id="maMsg" role="status"></p>
+    <button class="btn forte" type="submit" id="maEnviar">Ir para o pagamento</button>
+    <p class="ma-nota">Prefere falar com alguém antes? <a class="js-contato" href="#">Fale com a nossa equipe</a>.</p>
+  </form>
+</div>
 
 <footer>
   <div class="w">
@@ -379,14 +422,58 @@ footer a:hover{color:var(--texto)}
 <script>
 /* ===== Ajuste aqui ===== */
 const PRECO = "R$ 349";
-const WHATSAPP = "";   // só números, com DDI e DDD. Ex.: "5511999999999"
-const MENSAGEM = "Olá! Quero assinar o SINDICS, o assistente de voz para síndicos.";
+const WHATSAPP = "";   // só números, com DDI e DDD. Ex.: "5511999999999" (usado no "Fale com a nossa equipe")
+const MENSAGEM = "Olá! Tenho uma dúvida sobre o SINDICS, o assistente de voz para síndicos.";
+const FN_ASSINAR = "https://hjjckvluydcejmrxolza.supabase.co/functions/v1/assinar";
 /* ======================== */
 document.querySelectorAll(".js-preco").forEach(e => { e.textContent = PRECO; });
-const link = WHATSAPP
+const contato = WHATSAPP
   ? "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(MENSAGEM)
-  : "mailto:sindicanciaethics@gmail.com?subject=" + encodeURIComponent("Quero assinar o SINDICS") + "&body=" + encodeURIComponent(MENSAGEM);
-document.querySelectorAll(".js-whats").forEach(a => { a.href = link; if (WHATSAPP){ a.target = "_blank"; a.rel = "noopener"; } });
+  : "mailto:sindicanciaethics@gmail.com?subject=" + encodeURIComponent("Dúvida sobre o SINDICS") + "&body=" + encodeURIComponent(MENSAGEM);
+document.querySelectorAll(".js-contato").forEach(a => { a.href = contato; if (WHATSAPP){ a.target = "_blank"; a.rel = "noopener"; } });
+
+/* ---------- Assinatura ---------- */
+(function(){
+  const modal = document.getElementById("modalAssinar"), form = document.getElementById("formAssinar"), msg = document.getElementById("maMsg"), $ = id => document.getElementById(id);
+  let voltarFoco = null;
+  const abrir = e => { e.preventDefault(); voltarFoco = e.currentTarget; modal.hidden = false; document.body.style.overflow = "hidden"; setTimeout(() => $("maNome").focus(), 50); };
+  const fechar = () => { modal.hidden = true; document.body.style.overflow = ""; if (voltarFoco) voltarFoco.focus(); };
+  document.querySelectorAll(".js-assinar").forEach(a => a.addEventListener("click", abrir));
+  $("maFechar").addEventListener("click", fechar);
+  modal.addEventListener("click", e => { if (e.target === modal) fechar(); });
+  addEventListener("keydown", e => { if (e.key === "Escape" && !modal.hidden) fechar(); });
+
+  const dig = v => v.replace(/\D/g, "");
+  $("maTel").addEventListener("input", e => { const d = dig(e.target.value).slice(0, 11); e.target.value = d.length <= 2 ? d : d.length <= 6 ? `(${d.slice(0,2)}) ${d.slice(2)}` : d.length <= 10 ? `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}` : `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`; });
+  $("maDoc").addEventListener("input", e => { const d = dig(e.target.value).slice(0, 14);
+    e.target.value = d.length <= 11 ? d.replace(/^(\d{3})(\d{0,3})(\d{0,3})(\d{0,2}).*$/, (m, a, b, c, x) => a + (b ? "." + b : "") + (c ? "." + c : "") + (x ? "-" + x : ""))
+      : d.replace(/^(\d{2})(\d{3})(\d{3})(\d{0,4})(\d{0,2}).*$/, (m, a, b, c, x, y) => `${a}.${b}.${c}/${x}${y ? "-" + y : ""}`); });
+
+  const cpfOk = c => { if (!/^\d{11}$/.test(c) || /^(\d)\1{10}$/.test(c)) return false; const dv = n => { let s = 0; for (let i = 0; i < n; i++) s += +c[i] * (n + 1 - i); const r = s * 10 % 11; return r === 10 ? 0 : r; }; return dv(9) === +c[9] && dv(10) === +c[10]; };
+  const cnpjOk = c => { if (!/^\d{14}$/.test(c) || /^(\d)\1{13}$/.test(c)) return false; const dv = (b, p) => { const s = [...b].reduce((t, ch, i) => t + +ch * p[i], 0) % 11; return s < 2 ? 0 : 11 - s; }; return dv(c.slice(0, 12), [5,4,3,2,9,8,7,6,5,4,3,2]) === +c[12] && dv(c.slice(0, 13), [6,5,4,3,2,9,8,7,6,5,4,3,2]) === +c[13]; };
+  const erro = (id, t) => { if (id){ $(id).setAttribute("aria-invalid", "true"); $(id).focus(); } msg.className = "ma-msg"; msg.textContent = t; };
+
+  form.addEventListener("input", e => { e.target.removeAttribute("aria-invalid"); if (msg.className === "ma-msg") msg.textContent = ""; });
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    ["maNome","maEmail","maDoc","maTel"].forEach(id => $(id).removeAttribute("aria-invalid"));
+    const nome = $("maNome").value.trim(), email = $("maEmail").value.trim().toLowerCase(), doc = dig($("maDoc").value), tel = dig($("maTel").value);
+    if (nome.length < 5 || !/\s/.test(nome)) return erro("maNome", "Informe seu nome completo.");
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return erro("maEmail", "Informe um e-mail válido. É nele que você recebe o acesso.");
+    if (!(doc.length === 11 ? cpfOk(doc) : cnpjOk(doc))) return erro("maDoc", "CPF ou CNPJ inválido. Confira os números.");
+    if (tel.length < 10) return erro("maTel", "Informe o WhatsApp com DDD.");
+    if (!$("maAceite").checked) return erro(null, "Para assinar, aceite a Política de Privacidade e os Termos de Uso.");
+    const btn = $("maEnviar"); btn.disabled = true; btn.textContent = "Preparando o pagamento…"; msg.className = "ma-msg ok"; msg.textContent = "";
+    try{
+      const r = await fetch(FN_ASSINAR, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ acao: "assinar", nome, email, cpf_cnpj: doc, telefone: tel, aceite: true }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.erro || "Não foi possível iniciar a assinatura agora.");
+      if (j.link){ msg.textContent = "Tudo certo. Abrindo a página de pagamento…"; location.href = j.link; return; }
+      msg.textContent = j.aviso || "Assinatura criada. O link de pagamento chega no seu e-mail.";
+    }catch(err){ erro(null, err.message + " Se preferir, fale com a nossa equipe."); }
+    btn.disabled = false; btn.textContent = "Ir para o pagamento";
+  });
+})();
 
 const reduzir = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const espera = ms => new Promise(r => setTimeout(r, reduzir ? 0 : ms));

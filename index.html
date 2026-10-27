@@ -212,6 +212,15 @@ button.cal-d.sel{border-color:var(--cyan);background:var(--btn-hover)}
 .dl-nota{margin:0;font-size:11.5px;line-height:1.5;color:var(--muted)}
 .dl-nota a,.lg-ul a,.aceite a,.lg-check a{color:var(--cyan)}
 
+/* ---------- Assinatura: aviso de atraso e bloqueio ---------- */
+.pag-banner{position:fixed;top:0;left:0;right:0;z-index:25;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
+  padding:10px 16px calc(10px);padding-top:max(10px,env(safe-area-inset-top,0px));background:#3a2a00;color:#ffe2a0;border-bottom:1px solid var(--amber);font-size:14px;text-align:center}
+:root[data-theme="light"] .pag-banner{background:#fff1cc;color:#5a3d00}
+.pag-banner button{padding:7px 12px;font-size:10.5px}
+.pag-banner #pagBannerFechar{border:0;background:none;padding:4px 8px;font-size:14px;letter-spacing:0;color:inherit}
+.bloq-acoes{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.bloq-nota{font-size:11px!important}
+
 /* ---------- Cadastro do síndico ---------- */
 .perfil-wrap{z-index:45;background:var(--overlay)}
 .perfil{width:min(640px,100%);height:auto;max-height:100%;overflow-y:auto}
@@ -763,6 +772,23 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   </section>
 </div>
 
+<div class="pag-banner" id="pagBanner" hidden role="status">
+  <span id="pagBannerTxt"></span>
+  <button id="pagBannerBtn" type="button" class="primary">Pagar agora</button>
+  <button id="pagBannerFechar" type="button" aria-label="Fechar aviso">✕</button>
+</div>
+
+<div class="overlay login" id="bloqueioOverlay" hidden>
+  <strong>ACESSO SUSPENSO</strong>
+  <span id="bloqueioMsg"></span>
+  <div class="bloq-acoes">
+    <button id="bloqueioPagar" class="primary" type="button">Pagar agora</button>
+    <button id="bloqueioRever" type="button">Já paguei</button>
+    <button id="bloqueioSair" type="button">Sair</button>
+  </div>
+  <span class="bloq-nota">O pagamento por Pix ou cartão libera o acesso em instantes. Boleto pode levar até 2 dias úteis para compensar.</span>
+</div>
+
 <div class="overlay" id="tapOverlay" hidden>
   <strong id="tapTitulo">ATIVAR SINDICS</strong>
   <span id="tapMsg">Toque em qualquer lugar para ligar som e microfone. Depois disso ele fica em prontidão sozinho.</span>
@@ -774,7 +800,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "3.7.0";
+  window.SINDICS_V = "3.8.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -1063,6 +1089,7 @@ async function wake(){
       bootLines(["Credenciais", "Base condominial", "Banco Central", "Canal de voz"], 110)
     ]);
     acesso = await r.json().catch(() => ({}));
+    if (r.status === 402){ endSession("Acesso suspenso por assinatura."); mostrarBloqueio(acesso.erro || "Acesso suspenso por falta de pagamento."); return; }
     if (!r.ok || !acesso.signed_url) throw new Error(acesso.erro || ("Servidor respondeu " + r.status));
   }catch(err){
     hintEl.textContent = err.message || "Não foi possível liberar a conversa."; hintEl.classList.add("err");
@@ -2175,16 +2202,95 @@ $("lgAviso").addEventListener("click", async () => {
   catch(e){ hintEl.textContent = e.message; hintEl.classList.add("err"); }
 });
 
+/* ======================= ASSINATURA (Asaas) ======================= */
+const FN_ASSINAR = SUPABASE_URL + "/functions/v1/assinar";
+const DIAS_BLOQUEIO = 5;
+const STATUS_ASS = { pendente: "aguardando pagamento", ativa: "em dia", atrasada: "em atraso", cancelada: "cancelada" };
+function diasDeAtraso(a){ return a && a.status === "atrasada" && a.atraso_desde ? Math.max(0, diasAte(a.atraso_desde) * -1) : 0; }
+async function situacaoAssinatura(uid){
+  const { data: a } = await sb.from("assinaturas").select("status, atraso_desde, link_pagamento").eq("sindico_id", uid).order("criado_em", { ascending: false }).limit(1).maybeSingle();
+  if (!a) return { tem: false };
+  const atraso = diasDeAtraso(a);
+  return { tem: true, ...a, atraso, faltam: DIAS_BLOQUEIO - atraso, bloqueado: a.status === "cancelada" || (a.status === "atrasada" && atraso >= DIAS_BLOQUEIO) };
+}
+async function chamarAssinar(corpo){
+  const { data: { session } } = await sb.auth.getSession();
+  const r = await fetch(FN_ASSINAR, { method: "POST", headers: { "Authorization": "Bearer " + (session?.access_token || ""), "apikey": SUPABASE_ANON, "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.erro || ("Servidor respondeu " + r.status));
+  return j;
+}
+async function pagarAgora(botao){
+  const janela = window.open("", "_blank"); // abre já no clique, para o navegador não bloquear
+  const txt = botao?.textContent; if (botao){ botao.disabled = true; botao.textContent = "Abrindo…"; }
+  try{
+    const { link } = await chamarAssinar({ acao: "pagar" });
+    if (janela) janela.location.href = link; else location.href = link;
+  }catch(e){
+    if (janela) janela.close();
+    hintEl.textContent = "Pagamento: " + e.message; hintEl.classList.add("err");
+    if ($("bloqueioOverlay") && !$("bloqueioOverlay").hidden) $("bloqueioMsg").textContent = e.message + " Se precisar, escreva para sindicanciaethics@gmail.com.";
+  }
+  if (botao){ botao.disabled = false; botao.textContent = txt; }
+}
+function mostrarAvisoAtraso(s){
+  const dias = s.atraso ? `há ${s.atraso} dia${s.atraso > 1 ? "s" : ""}` : "desde hoje";
+  $("pagBannerTxt").textContent = `Sua assinatura do SINDICS está em atraso ${dias}. O acesso será suspenso ${s.faltam <= 1 ? "amanhã" : `em ${s.faltam} dias`} se o pagamento não for regularizado.`;
+  $("pagBanner").hidden = false;
+}
+function mostrarBloqueio(texto){
+  if (inSession()) endSession("Acesso suspenso.");
+  stopWake();
+  $("bloqueioMsg").textContent = texto;
+  $("bloqueioOverlay").hidden = false; $("pagBanner").hidden = true;
+}
+$("pagBannerBtn").addEventListener("click", e => pagarAgora(e.currentTarget));
+$("pagBannerFechar").addEventListener("click", () => { $("pagBanner").hidden = true; });
+$("bloqueioPagar").addEventListener("click", e => pagarAgora(e.currentTarget));
+$("bloqueioRever").addEventListener("click", async () => {
+  $("bloqueioMsg").textContent = "Conferindo o pagamento…";
+  const { data: { user } } = await sb.auth.getUser(); if (!user){ $("bloqueioOverlay").hidden = true; mostrarLogin(); return; }
+  const s = await situacaoAssinatura(user.id);
+  if (s.bloqueado){ $("bloqueioMsg").textContent = "O pagamento ainda não foi confirmado. Pix e cartão confirmam em instantes; boleto, em até 2 dias úteis. Tente de novo daqui a pouco."; return; }
+  $("bloqueioOverlay").hidden = true; await aposLogin();
+});
+$("bloqueioSair").addEventListener("click", async () => { $("bloqueioOverlay").hidden = true; await sair(); });
+
 /* ======================= ADMINISTRAÇÃO (aprovar síndicos) ======================= */
 async function carregarAdmin(){
   const lista = $("admLista"); lista.innerHTML = "<p class='rs-t'>Carregando…</p>";
-  const [{ data: ps, error }, { data: cs }, { data: sols }] = await Promise.all([
+  const [{ data: ps, error }, { data: cs }, { data: sols }, { data: asss }] = await Promise.all([
     sb.from("perfis").select("id, nome, email, ativo, papel, plano, limite_sessoes_mes, criado_em, empresa, cnpj, telefone, email_contato, cidade, uf, cadastro_completo_em, exclusao_solicitada_em").order("criado_em", { ascending:false }),
     sb.from("condominios").select("id, sindico_id, nome"),
-    sb.from("lgpd_solicitacoes").select("*").in("status", ["aberta", "em_andamento"]).order("criado_em")
+    sb.from("lgpd_solicitacoes").select("*").in("status", ["aberta", "em_andamento"]).order("criado_em"),
+    sb.from("assinaturas").select("*").order("criado_em", { ascending: false })
   ]);
   if (error){ lista.textContent = "Erro: " + error.message; return; }
   lista.innerHTML = "";
+  /* Assinaturas (Asaas) */
+  const boxA = document.createElement("div"); boxA.className = "adm-lgpd adm-ass";
+  const hA = document.createElement("h4");
+  const ativas = (asss || []).filter(a => a.status === "ativa").length, atras = (asss || []).filter(a => a.status === "atrasada").length;
+  hA.textContent = `Assinaturas · ${ativas} em dia · ${atras} em atraso · ${(asss || []).filter(a => a.status === "pendente").length} aguardando pagamento`;
+  const bCon = document.createElement("button"); bCon.type = "button"; bCon.textContent = "Conectar Asaas"; bCon.style.cssText = "padding:6px 10px;font-size:10px;align-self:flex-start";
+  const msgCon = document.createElement("small");
+  bCon.onclick = async () => { bCon.disabled = true; msgCon.textContent = "Conectando…"; try{ const j = await chamarAssinar({ acao: "configurar_webhook" }); msgCon.textContent = j.mensagem; msgCon.style.color = "var(--ok)"; }catch(e){ msgCon.textContent = e.message; msgCon.style.color = "var(--danger)"; } bCon.disabled = false; };
+  boxA.append(hA, bCon, msgCon);
+  (asss || []).slice(0, 30).forEach(a => {
+    const atraso = diasDeAtraso(a);
+    const it = document.createElement("small");
+    const sit = a.status === "atrasada" ? `em atraso há ${atraso} dia(s)${atraso >= DIAS_BLOQUEIO ? " · BLOQUEADO" : ` · bloqueia em ${DIAS_BLOQUEIO - atraso}`}` : (STATUS_ASS[a.status] || a.status);
+    it.textContent = `${a.nome} · ${a.email} · R$ ${Number(a.valor).toFixed(2).replace(".", ",")} · ${sit}${a.ultimo_pagamento_em ? " · último pagamento " + new Date(a.ultimo_pagamento_em).toLocaleDateString("pt-BR") : ""}${(a.status === "ativa" || a.status === "atrasada") && !a.sindico_id ? " · conta ainda não criada" : ""}`;
+    if (a.status === "atrasada") it.style.color = atraso >= DIAS_BLOQUEIO ? "var(--danger)" : "var(--amber)";
+    boxA.append(it);
+    if (a.status === "ativa" || a.status === "atrasada"){
+      const bR = document.createElement("button"); bR.type = "button"; bR.textContent = a.sindico_id ? "Reenviar acesso" : "Criar conta e enviar convite"; bR.style.cssText = "padding:5px 9px;font-size:9.5px;align-self:flex-start";
+      bR.onclick = async () => { bR.disabled = true; try{ const j = await chamarAssinar({ acao: "reenviar_convite", assinatura_id: a.id }); bR.textContent = j.mensagem; }catch(e){ bR.textContent = e.message; bR.disabled = false; } };
+      boxA.append(bR);
+    }
+  });
+  if (!(asss || []).length){ const v = document.createElement("small"); v.textContent = "Nenhuma assinatura ainda. Depois de colocar a chave do Asaas no servidor, toque em Conectar Asaas uma vez."; boxA.append(v); }
+  lista.append(boxA);
   if ((sols || []).length){
     const box = document.createElement("div"); box.className = "adm-lgpd";
     const h = document.createElement("h4"); h.textContent = `Pedidos LGPD em aberto (${sols.length}) · prazo 15 dias`; box.append(h);
@@ -2204,6 +2310,8 @@ async function carregarAdmin(){
     const topo = document.createElement("div"); topo.className = "adm-top";
     const n = document.createElement("strong"); n.textContent = p.nome || "(sem nome)";
     const st = document.createElement("span"); st.className = "pill " + (p.ativo ? "on" : "off"); st.textContent = p.papel === "admin" ? "admin" : p.ativo ? "ativo" : "aguardando";
+    const asP = (asss || []).find(a => a.sindico_id === p.id);
+    if (asP && p.papel !== "admin"){ const d = diasDeAtraso(asP); st.textContent = asP.status === "atrasada" ? (d >= DIAS_BLOQUEIO ? "bloqueado" : `atraso ${d}d`) : (STATUS_ASS[asP.status] || asP.status); st.className = "pill " + (asP.status === "ativa" ? "on" : "off"); }
     topo.append(n, st);
     const em = document.createElement("small"); em.textContent = `${p.email} · desde ${new Date(p.criado_em).toLocaleDateString("pt-BR")}`;
     const cd = document.createElement("small"); cd.textContent = conds.length ? "Condomínios: " + conds.join(", ") : "Nenhum condomínio cadastrado";
@@ -2461,6 +2569,19 @@ async function aposLogin(){
     mostrarLogin("Cadastro recebido! Seu acesso está aguardando a aprovação do administrador. Você será avisado quando for liberado.", true);
     return;
   }
+  $("pagBanner").hidden = true;
+  if (p.papel !== "admin"){
+    const s = await situacaoAssinatura(user.id);
+    if (s.bloqueado){
+      $("loginOverlay").hidden = true; msg("");
+      mostrarBloqueio(s.status === "cancelada"
+        ? "Sua assinatura do SINDICS foi cancelada. Para voltar a usar, fale com a nossa equipe em sindicanciaethics@gmail.com."
+        : `Sua assinatura está em atraso há ${s.atraso} dias e o acesso foi suspenso. Regularize o pagamento e o SINDICS volta na hora.`);
+      if (s.status === "cancelada") $("bloqueioPagar").hidden = $("bloqueioRever").hidden = true;
+      return;
+    }
+    if (s.tem && s.status === "atrasada") mostrarAvisoAtraso(s);
+  }
   const { data: cs } = await sb.from("condominios").select("id, nome, cidade, unidades, cnpj").eq("sindico_id", user.id).order("nome");
   PERFIL = { ...p, condominios: cs || [] }; preencherCabecalho(PERFIL); rotuloVoz();
   $("admBtn").hidden = p.papel !== "admin";
@@ -2676,6 +2797,7 @@ initGL();
 (async function partida(){
   if (!sb){ mostrarLogin("Não foi possível carregar o módulo de login. Verifique a internet e recarregue.", true); return; }
   let recuperando = /type=recovery/.test(location.hash);
+  const convite = /type=invite/.test(location.hash);
   sb.auth.onAuthStateChange((evento) => {
     if (evento === "PASSWORD_RECOVERY"){
       recuperando = true;
@@ -2686,6 +2808,11 @@ initGL();
   });
   const { data: { session } } = await sb.auth.getSession();
   if (recuperando) return;
+  if (convite && session){
+    $("loginOverlay").hidden = false; $("loginForm").hidden = true; $("forgotBtn").hidden = true; $("newPwdForm").hidden = false;
+    msg("Pagamento confirmado. Bem-vindo ao SINDICS! Crie sua senha para entrar."); setTimeout(() => $("pwd1").focus(), 80);
+    return;
+  }
   if (session) await aposLogin(); else mostrarLogin();
 })();
 </script>
