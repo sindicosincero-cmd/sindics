@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "3.8.4";
+  window.SINDICS_V = "3.8.5";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -1224,7 +1224,7 @@ function mascaraTel(v){
   if (d.length <= 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
   return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
 }
-const PF_CAMPOS = { pfNome:"nome", pfEmpresa:"empresa", pfCnpj:"cnpj", pfCep:"cep", pfEnd:"endereco", pfCidade:"cidade", pfUf:"uf", pfEmailC:"email_contato", pfTel:"telefone", pfAss:"assinatura" };
+const PF_CAMPOS = { pfNome:"nome", pfEmpresa:"empresa", pfCnpj:"cnpj", pfCep:"cep", pfEnd:"endereco", pfCidade:"cidade", pfUf:"uf", pfEmailC:"email_contato", pfTel:"telefone", pfAss:"assinatura", pfTrat:"tratamento" };
 function preencherPerfilForm(p = {}){
   for (const [id, k] of Object.entries(PF_CAMPOS)){
     let v = p[k] || "";
@@ -1855,7 +1855,7 @@ let iniciado = false;
 async function aposLogin(){
   const { data: { user } } = await sb.auth.getUser();
   if (!user){ mostrarLogin(); return; }
-  const { data: p } = await sb.from("perfis").select("nome, assinatura, empresa, papel, ativo, email, cnpj, cep, endereco, cidade, uf, email_contato, telefone, voz, cadastro_completo_em, aceite_termos_em, aceite_termos_versao, exclusao_solicitada_em").eq("id", user.id).maybeSingle();
+  const { data: p } = await sb.from("perfis").select("nome, tratamento, assinatura, empresa, papel, ativo, email, cnpj, cep, endereco, cidade, uf, email_contato, telefone, voz, cadastro_completo_em, aceite_termos_em, aceite_termos_versao, exclusao_solicitada_em").eq("id", user.id).maybeSingle();
   if (p && (!p.cadastro_completo_em || p.aceite_termos_versao !== TERMOS_V)){
     PERFIL = { ...p, condominios: PERFIL?.condominios || [] };
     $("loginOverlay").hidden = true; msg("");
