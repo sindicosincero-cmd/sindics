@@ -2,236 +2,256 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>SINDICS · Assistente de voz do síndico</title>
-<meta name="description" content="SINDICS é o assistente de voz do síndico: agenda com alarmes, prazos dos documentos legais, regras da convenção na tela e comunicados prontos. Plano único mensal.">
+<meta name="description" content="SINDICS é o assistente de voz do síndico: agenda com alarmes, prazos dos documentos legais, regras da convenção na tela e comunicados prontos. Plano único de R$ 349 por mês.">
 <meta property="og:title" content="SINDICS · Assistente de voz do síndico">
 <meta property="og:description" content="Fale com o SINDICS e ele cuida da agenda, dos prazos legais, das regras e dos comunicados do seu condomínio.">
 <meta property="og:image" content="../icon-512.png">
-<meta name="theme-color" content="#0f2233">
+<meta name="theme-color" content="#04070d">
 <link rel="icon" href="../icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --concreto:#e9eef1;      /* fundo: concreto frio */
-  --papel:#f7f9fa;         /* superfícies */
-  --tinta:#0f2233;         /* texto e áreas escuras */
-  --tinta-2:#46596b;       /* texto secundário */
-  --linha:#c9d4dc;
-  --ciano:#0a86b8;         /* marca, com contraste no claro */
-  --ciano-luz:#3fd0ff;     /* marca no escuro (igual ao app) */
-  --ambar:#c98a00;
-  --verde:#1f8a5b;
-  --vermelho:#c23b3b;
-  --display:"Chakra Petch",system-ui,sans-serif;
-  --body:"IBM Plex Sans",system-ui,sans-serif;
-  color-scheme:light;
+  --fundo:#04070d; --painel:#07101c; --painel-2:#0a1626;
+  --texto:#d9e6f5; --apagado:#8aa0b8; --linha:rgba(63,208,255,.16); --linha-forte:rgba(63,208,255,.38);
+  --ciano:#3fd0ff; --ambar:#f2c14e; --verde:#4fd18b; --vermelho:#ff7a7a;
+  --display:"Chakra Petch",system-ui,sans-serif; --body:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-body{margin:0;background:var(--concreto);color:var(--tinta);font-family:var(--body);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--fundo);color:var(--texto);font-family:var(--body);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit}
 .w{width:min(1120px,100%);margin:0 auto;padding:0 20px}
-:focus-visible{outline:3px solid var(--ambar);outline-offset:3px}
+:focus-visible{outline:2px solid var(--ambar);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 
 /* ---------- topo ---------- */
-.topo{position:sticky;top:0;z-index:10;background:rgba(233,238,241,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--linha)}
-.topo .w{display:flex;align-items:center;gap:24px;height:64px}
-.marca{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.28em;text-decoration:none;color:var(--tinta)}
-.topo nav{display:flex;gap:22px;margin-left:auto;font-size:15px}
-.topo nav a{text-decoration:none;color:var(--tinta-2)}
-.topo nav a:hover{color:var(--tinta)}
-.topo .entrar{font-size:15px;color:var(--tinta-2);text-decoration:none}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-family:var(--display);font-weight:600;font-size:16px;letter-spacing:.04em;text-decoration:none;
-  padding:14px 24px;border-radius:6px;border:2px solid var(--tinta);cursor:pointer;transition:background .15s,color .15s}
-.btn.cheio{background:var(--tinta);color:#fff}
-.btn.cheio:hover{background:#1b3a55;border-color:#1b3a55}
-.btn.vazio{background:transparent;color:var(--tinta)}
-.btn.vazio:hover{background:var(--papel)}
-.btn.peq{padding:9px 16px;font-size:14px}
-.btn svg{width:20px;height:20px;flex:none}
-@media (max-width:820px){ .topo nav{display:none} .topo .entrar{margin-left:auto} }
+.topo{position:fixed;top:0;left:0;right:0;z-index:20;transition:background .3s,border-color .3s;border-bottom:1px solid transparent}
+.topo.rolou{background:rgba(4,7,13,.82);backdrop-filter:blur(10px);border-bottom-color:var(--linha)}
+.topo .w{display:flex;align-items:center;gap:22px;height:64px}
+.marca{font-family:var(--display);font-weight:700;font-size:19px;letter-spacing:.32em;text-decoration:none;color:var(--ciano)}
+.topo nav{display:flex;gap:22px;margin-left:auto;font-size:14.5px}
+.topo nav a{text-decoration:none;color:var(--apagado)}
+.topo nav a:hover{color:var(--texto)}
+.topo .entrar{font-size:14.5px;color:var(--apagado);text-decoration:none}
+.topo .entrar:hover{color:var(--texto)}
+@media (max-width:860px){ .topo nav{display:none} .topo .entrar{margin-left:auto} }
 
-/* ---------- abertura ---------- */
-.abre{padding:72px 0 88px}
-.abre .w{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.02fr);gap:56px;align-items:center}
-h1 .l{display:block}
-h1{font-family:var(--display);font-weight:700;font-size:clamp(38px,5.4vw,64px);line-height:1.04;letter-spacing:-.01em;margin:0 0 22px}
-.abre p.lead{font-size:clamp(18px,1.8vw,20px);color:var(--tinta-2);max-width:34em;margin:0 0 30px}
-.acoes{display:flex;gap:12px;flex-wrap:wrap}
-.preco-mini{margin:18px 0 0;font-size:15px;color:var(--tinta-2)}
-.preco-mini b{color:var(--tinta)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;
+  padding:15px 26px;border:1px solid var(--linha-forte);background:rgba(7,16,28,.6);color:var(--texto);cursor:pointer;transition:background .2s,color .2s,border-color .2s,box-shadow .2s;
+  clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+.btn:hover{border-color:var(--ciano);color:#fff}
+.btn.forte{background:var(--ciano);border-color:var(--ciano);color:#02121c}
+.btn.forte:hover{background:#7fe0ff;color:#02121c;box-shadow:0 0 30px rgba(63,208,255,.45)}
+.btn.peq{padding:9px 16px;font-size:12.5px}
+.btn svg{width:19px;height:19px;flex:none}
 
-/* painel escuro = o próprio SINDICS falando */
-.painel{position:relative;background:var(--tinta);color:#d9e6f5;border-radius:14px;padding:28px 26px 26px;min-height:470px;overflow:hidden;
-  box-shadow:0 30px 60px -30px rgba(15,34,51,.55)}
-.painel::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:repeating-linear-gradient(0deg,rgba(63,208,255,.035) 0 1px,transparent 1px 34px),repeating-linear-gradient(90deg,rgba(63,208,255,.035) 0 1px,transparent 1px 34px)}
-.nucleo{width:120px;height:120px;margin:4px auto 22px;border-radius:50%;position:relative;
-  background:radial-gradient(circle at 50% 50%,#fff 0 6%,rgba(63,208,255,.95) 14%,rgba(63,208,255,.35) 42%,rgba(63,208,255,0) 70%)}
-.nucleo::before,.nucleo::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:1px solid rgba(63,208,255,.45);border-left-color:transparent;border-right-color:transparent}
-.nucleo::after{inset:-30px;border-color:rgba(63,208,255,.22);border-top-color:transparent;border-bottom-color:transparent}
-.painel.falando .nucleo{animation:pulsa 1.1s ease-in-out infinite}
-.painel.falando .nucleo::before{animation:gira 6s linear infinite}
-.painel.falando .nucleo::after{animation:gira 9s linear infinite reverse}
-@keyframes pulsa{50%{transform:scale(1.08);filter:brightness(1.25)}}
-@keyframes gira{to{transform:rotate(360deg)}}
-.estado{text-align:center;font-family:var(--display);font-size:12px;letter-spacing:.4em;color:var(--ciano-luz);margin:0 0 20px;min-height:1.2em}
-.fala{position:relative;z-index:1;margin:0 0 12px;font-size:16px;line-height:1.5;max-width:92%}
-.fala.voce{margin-left:auto;text-align:right;color:#f2c14e}
-.fala.ele{color:#d9e6f5}
-.fala small{display:block;font-size:12px;color:#7f97ad;margin-bottom:2px}
-.cartao{position:relative;z-index:1;margin-top:16px;border:1px solid rgba(63,208,255,.35);border-left:3px solid var(--ciano-luz);background:rgba(6,11,20,.6);padding:12px 14px;border-radius:4px}
-.cartao h3{margin:0 0 8px;font-family:var(--display);font-weight:600;font-size:15px;color:#fff}
-.cartao ul{list-style:none;margin:0;padding:0;font-size:14px}
-.cartao li{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid rgba(63,208,255,.12)}
-.cartao li span:last-child{white-space:nowrap}
-.ok{color:#4fd18b}.atencao{color:#f2c14e}.vencido{color:#ff7a7a}
-.oculto{opacity:0;transform:translateY(6px)}
-.mostra{opacity:1;transform:none;transition:opacity .45s,transform .45s}
-@media (prefers-reduced-motion:reduce){.mostra{transition:none}.painel.falando .nucleo,.painel.falando .nucleo::before,.painel.falando .nucleo::after{animation:none}}
-@media (max-width:900px){ .abre{padding:44px 0 64px} .abre .w{grid-template-columns:1fr;gap:40px} .painel{min-height:0} }
+/* ---------- abertura: o núcleo esperando ---------- */
+.abre{position:relative;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 20px max(48px,env(safe-area-inset-bottom));overflow:hidden;text-align:center}
+#nucleo{position:absolute;left:0;top:0;width:100%;height:100vh;height:100svh;display:block}
+@media (max-width:700px) and (orientation:portrait){ .abre{justify-content:flex-start;padding-top:calc(46svh + 40px)} .fala-abre::before{top:30%} }
+.abre::after{content:"";position:absolute;inset:auto 0 0 0;height:40%;background:linear-gradient(to bottom,rgba(4,7,13,0),var(--fundo));pointer-events:none}
+.hud{position:absolute;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:#5d7a92;z-index:2;line-height:1.7;text-align:left;pointer-events:none}
+.hud.esq{left:22px;top:88px}
+.hud.dir{right:22px;top:88px;text-align:right}
+.hud .ok{color:var(--verde)}
+@media (max-width:700px){ .hud.dir{display:none} .hud.esq{top:76px;left:16px;font-size:10px} }
+.fala-abre{position:relative;z-index:3;max-width:820px}
+.fala-abre::before{content:"";position:absolute;z-index:-1;left:50%;top:46%;width:150%;height:125%;transform:translate(-50%,-50%);background:radial-gradient(ellipse at center,rgba(4,7,13,.82) 0%,rgba(4,7,13,.6) 42%,rgba(4,7,13,0) 70%);pointer-events:none}
+.estado{font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.5em;color:var(--ciano);margin:0 0 18px;min-height:1.2em;text-shadow:0 0 14px rgba(63,208,255,.6)}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(27px,4.6vw,54px);line-height:1.12;margin:0 0 16px;min-height:2.3em;color:#fff;text-shadow:0 0 30px rgba(63,208,255,.25)}
+h1 .cursor{display:inline-block;width:.42ch;height:.9em;margin-left:4px;vertical-align:-.08em;background:var(--ciano);animation:pisca 1s steps(2) infinite}
+@keyframes pisca{50%{opacity:0}}
+.sub{font-size:clamp(17px,1.7vw,19px);color:#a9bdd1;max-width:36em;margin:0 auto 30px}
+.surge{opacity:0;transform:translateY(10px);transition:opacity .8s,transform .8s}
+.surge.on{opacity:1;transform:none}
+.abre .acoes{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.preco-mini{margin:18px 0 0;font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:var(--apagado)}
+.preco-mini b{color:var(--ciano);font-weight:500}
+.rolar{display:block;margin:22px auto 0;width:22px;height:34px;border:1px solid var(--linha-forte);border-radius:12px;position:relative}
+.rolar::after{content:"";position:absolute;left:50%;top:7px;width:2px;height:7px;margin-left:-1px;background:var(--ciano);animation:desce 1.8s ease-in-out infinite}
+@keyframes desce{60%{transform:translateY(10px);opacity:0}}
+@media (prefers-reduced-motion:reduce){ h1 .cursor,.rolar::after{animation:none} .surge{transition:none} }
 
 /* ---------- seções ---------- */
-section.bloco{padding:88px 0;border-top:1px solid var(--linha)}
-h2{font-family:var(--display);font-weight:700;font-size:clamp(28px,3.4vw,40px);line-height:1.12;margin:0 0 14px}
-.intro{color:var(--tinta-2);max-width:40em;margin:0 0 44px;font-size:18px}
+section.bloco{position:relative;padding:110px 0;border-top:1px solid var(--linha)}
+h2{font-family:var(--display);font-weight:600;font-size:clamp(28px,3.4vw,42px);line-height:1.12;margin:0 0 14px;color:#fff}
+.intro{color:var(--apagado);max-width:40em;margin:0 0 48px;font-size:18px}
+.marcador{font-family:var(--mono);font-size:12px;color:var(--ciano);margin:0 0 14px;letter-spacing:.06em}
 
-/* você diz → ele faz */
-.dialogos{display:grid;gap:0;border-top:2px solid var(--tinta)}
-.dl{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.25fr) minmax(0,.7fr);gap:28px;padding:24px 0;border-bottom:1px solid var(--linha);align-items:baseline}
-.dl q{font-family:var(--display);font-weight:600;font-size:clamp(18px,1.8vw,21px);line-height:1.3;quotes:"“" "”"}
-.dl p{margin:0;color:var(--tinta-2)}
-.dl strong{font-weight:600;font-size:15px;color:var(--tinta);text-align:right}
-@media (max-width:820px){ .dl{grid-template-columns:1fr;gap:6px} .dl strong{text-align:left;order:-1;font-size:14px;color:var(--ciano)} }
+/* moldura holográfica com cantos */
+.holo{position:relative;background:linear-gradient(180deg,rgba(10,22,38,.92),rgba(7,16,28,.92));border:1px solid var(--linha)}
+.holo::before,.holo::after{content:"";position:absolute;width:18px;height:18px;border:2px solid var(--ciano);pointer-events:none}
+.holo::before{top:-1px;left:-1px;border-right:0;border-bottom:0}
+.holo::after{bottom:-1px;right:-1px;border-left:0;border-top:0}
 
-/* pasta de documentação */
-.duas{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px;align-items:start}
-.duas p{color:var(--tinta-2);margin:0 0 16px}
-.pasta{background:var(--papel);border:1px solid var(--linha);border-radius:10px;padding:8px 0}
+/* conversa de exemplo */
+.duas{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:64px;align-items:center}
+.duas p{color:var(--apagado);margin:0 0 16px}
+@media (max-width:900px){ .duas{grid-template-columns:1fr;gap:36px} }
+.conversa{padding:26px 24px}
+.fala{margin:0 0 14px;font-size:16px;line-height:1.5;max-width:92%}
+.fala small{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:#5d7a92;margin-bottom:2px}
+.fala.voce{margin-left:auto;text-align:right;color:var(--ambar)}
+.cartao{margin:4px 0 16px;border:1px solid var(--linha-forte);border-left:3px solid var(--ciano);background:rgba(4,7,13,.7);padding:12px 14px}
+.cartao h3{margin:0 0 8px;font-family:var(--display);font-weight:600;font-size:15px;color:#fff}
+.cartao ul{list-style:none;margin:0;padding:0;font-size:14px}
+.cartao li{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid var(--linha)}
+.cartao li span:last-child{white-space:nowrap}
+.c-ok{color:var(--verde)} .c-at{color:var(--ambar)} .c-ve{color:var(--vermelho)}
+.passo{opacity:0;transform:translateY(6px)}
+.passo.on{opacity:1;transform:none;transition:opacity .45s,transform .45s}
+
+/* você diz, ele faz */
+.dialogos{border-top:1px solid var(--linha-forte)}
+.dl{display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.25fr) minmax(0,.62fr);gap:28px;padding:26px 0;border-bottom:1px solid var(--linha);align-items:baseline}
+.dl q{font-family:var(--display);font-weight:500;font-size:clamp(18px,1.8vw,21px);line-height:1.3;color:#fff;quotes:"“" "”"}
+.dl p{margin:0;color:var(--apagado)}
+.dl strong{font-family:var(--mono);font-weight:500;font-size:12.5px;letter-spacing:.06em;color:var(--ciano);text-align:right}
+@media (max-width:820px){ .dl{grid-template-columns:1fr;gap:6px} .dl strong{text-align:left;order:-1} }
+
+/* pasta */
+.pasta{padding:6px 0}
 .doc{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 16px;padding:14px 20px;border-bottom:1px solid var(--linha)}
 .doc:last-child{border-bottom:0}
-.doc b{font-weight:600}
-.doc small{grid-column:1;color:var(--tinta-2);font-size:13.5px}
-.doc .st{grid-row:1 / span 2;grid-column:2;align-self:center;font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;border:1.5px solid currentColor;white-space:nowrap}
-.st.v{color:var(--vermelho)} .st.a{color:var(--ambar)} .st.e{color:var(--verde)} .st.f{color:var(--tinta-2)}
-@media (max-width:900px){ .duas{grid-template-columns:1fr;gap:32px} }
+.doc b{font-weight:500;color:#fff}
+.doc small{grid-column:1;color:#6f879e;font-size:13px}
+.doc .st{grid-row:1 / span 2;grid-column:2;align-self:center;font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;padding:4px 9px;border:1px solid currentColor;white-space:nowrap}
+.st.v{color:var(--vermelho)} .st.a{color:var(--ambar)} .st.e{color:var(--verde)} .st.f{color:var(--apagado)}
 
 /* para quem */
-.publico{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px}
-.publico h3{font-family:var(--display);font-weight:600;font-size:21px;margin:0 0 8px}
-.publico p{margin:0;color:var(--tinta-2)}
-@media (max-width:820px){ .publico{grid-template-columns:1fr;gap:28px} }
+.publico{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.publico > div{padding:28px 24px}
+.publico h3{font-family:var(--display);font-weight:600;font-size:20px;margin:0 0 8px;color:#fff}
+.publico p{margin:0;color:var(--apagado)}
+@media (max-width:820px){ .publico{grid-template-columns:1fr} }
 
-/* segurança: faixa escura */
-.seguro{background:var(--tinta);color:#d9e6f5;border-top:0}
-.seguro h2{color:#fff}
-.seguro .intro{color:#9fb3c8}
-.seguro ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 48px}
+/* segurança */
+.seguro ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:30px 56px}
+.seguro li{padding-left:22px;border-left:2px solid var(--ciano)}
 .seguro li b{display:block;font-family:var(--display);font-weight:600;font-size:19px;color:#fff;margin-bottom:4px}
-.seguro li span{color:#9fb3c8}
-.seguro a{color:var(--ciano-luz)}
+.seguro li span{color:var(--apagado)}
+.seguro a{color:var(--ciano)}
 @media (max-width:820px){ .seguro ul{grid-template-columns:1fr} }
 
 /* preço */
-.plano{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:0;background:var(--papel);border:2px solid var(--tinta);border-radius:12px;overflow:hidden}
-.plano .valor{padding:40px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:6px}
-.plano .valor p{margin:0;color:var(--tinta-2)}
-.plano .numero{font-family:var(--display);font-weight:700;font-size:clamp(52px,7vw,76px);line-height:1;margin:8px 0 4px;color:var(--tinta)}
-.plano .numero small{font-size:.32em;font-weight:600;color:var(--tinta-2);margin-left:6px}
-.plano .valor .btn{margin-top:22px;align-self:flex-start}
-.plano .inclui{padding:40px}
-.plano .inclui h3{font-family:var(--display);font-weight:600;font-size:19px;margin:0 0 14px}
+.plano{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr)}
+.plano .valor{padding:44px 40px;border-right:1px solid var(--linha);display:flex;flex-direction:column;gap:6px}
+.plano .valor p{margin:0;color:var(--apagado)}
+.plano .numero{font-family:var(--display);font-weight:700;font-size:clamp(56px,7vw,82px);line-height:1;margin:10px 0 6px;color:#fff;text-shadow:0 0 34px rgba(63,208,255,.35)}
+.plano .numero small{font-size:.28em;font-weight:500;color:var(--apagado);margin-left:6px;text-shadow:none}
+.plano .valor .btn{margin-top:24px;align-self:flex-start}
+.plano .inclui{padding:44px 40px}
+.plano .inclui h3{font-family:var(--display);font-weight:600;font-size:19px;margin:0 0 16px;color:#fff}
 .plano ul{margin:0;padding:0;list-style:none;display:grid;gap:10px}
-.plano li{padding-left:28px;position:relative}
-.plano li::before{content:"";position:absolute;left:2px;top:.45em;width:12px;height:7px;border-left:2.5px solid var(--verde);border-bottom:2.5px solid var(--verde);transform:rotate(-45deg)}
-@media (max-width:820px){ .plano{grid-template-columns:1fr} .plano .valor{border-right:0;border-bottom:1px solid var(--linha);padding:28px} .plano .inclui{padding:28px} }
+.plano li{padding-left:26px;position:relative}
+.plano li::before{content:"";position:absolute;left:2px;top:.5em;width:11px;height:6px;border-left:2px solid var(--ciano);border-bottom:2px solid var(--ciano);transform:rotate(-45deg)}
+@media (max-width:820px){ .plano{grid-template-columns:1fr} .plano .valor{border-right:0;border-bottom:1px solid var(--linha);padding:30px 24px} .plano .inclui{padding:30px 24px} }
 
 /* perguntas */
-.faq{max-width:780px}
+.faq{max-width:800px}
 .faq details{border-bottom:1px solid var(--linha)}
-.faq summary{cursor:pointer;list-style:none;padding:20px 40px 20px 0;font-family:var(--display);font-weight:600;font-size:19px;position:relative}
+.faq summary{cursor:pointer;list-style:none;padding:20px 40px 20px 0;font-family:var(--display);font-weight:500;font-size:19px;position:relative;color:#fff}
 .faq summary::-webkit-details-marker{display:none}
-.faq summary::after{content:"+";position:absolute;right:4px;top:16px;font-size:26px;font-weight:500;color:var(--ciano)}
+.faq summary::after{content:"+";position:absolute;right:4px;top:15px;font-size:26px;color:var(--ciano)}
 .faq details[open] summary::after{content:"–"}
-.faq details p{margin:0 0 20px;color:var(--tinta-2);max-width:42em}
+.faq details p{margin:0 0 20px;color:var(--apagado);max-width:42em}
 
 /* fechamento */
-.fecha{text-align:center;padding:96px 0}
+.fecha{text-align:center;padding:120px 0;border-top:1px solid var(--linha);position:relative;overflow:hidden}
+.fecha .orbe{width:150px;height:150px;margin:0 auto 34px;border-radius:50%;
+  background:radial-gradient(circle,#fff 0 5%,rgba(63,208,255,.95) 13%,rgba(63,208,255,.3) 40%,rgba(63,208,255,0) 68%);animation:respira 3.2s ease-in-out infinite}
+@keyframes respira{50%{transform:scale(1.07);filter:brightness(1.2)}}
+@media (prefers-reduced-motion:reduce){ .fecha .orbe{animation:none} }
 .fecha h2{max-width:18em;margin:0 auto 14px}
-.fecha p{color:var(--tinta-2);margin:0 auto 30px;max-width:34em}
-.fecha .acoes{justify-content:center}
-footer{border-top:1px solid var(--linha);padding:28px 0 40px;font-size:14px;color:var(--tinta-2)}
+.fecha p{color:var(--apagado);margin:0 auto 30px;max-width:34em}
+.fecha .acoes{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+footer{border-top:1px solid var(--linha);padding:28px 0 40px;font-size:14px;color:#6f879e}
 footer .w{display:flex;gap:20px;flex-wrap:wrap;justify-content:space-between}
 footer nav{display:flex;gap:20px;flex-wrap:wrap}
+footer a:hover{color:var(--texto)}
 </style>
 </head>
 <body>
 
-<header class="topo">
+<header class="topo" id="topo">
   <div class="w">
     <a class="marca" href="#">SINDICS</a>
     <nav aria-label="Seções">
-      <a href="#o-que-faz">O que ele faz</a>
+      <a href="#conversa">Como funciona</a>
       <a href="#documentos">Documentos legais</a>
       <a href="#preco">Preço</a>
       <a href="#perguntas">Perguntas</a>
     </nav>
     <a class="entrar" href="../">Entrar</a>
-    <a class="btn cheio peq js-whats" href="#preco">Assinar</a>
+    <a class="btn forte peq js-whats" href="#preco">Assinar</a>
   </div>
 </header>
 
 <main>
-  <section class="abre">
-    <div class="w">
-      <div>
-        <h1><span class="l">O síndico fala.</span> <span class="l">O SINDICS resolve.</span></h1>
-        <p class="lead">Um assistente de voz feito para a rotina do condomínio: marca seus compromissos com alarme, controla o vencimento dos documentos legais, mostra a regra da convenção na tela e escreve o comunicado pronto para imprimir.</p>
-        <div class="acoes">
-          <a class="btn cheio js-whats" href="#preco">
-            <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.7-1.3a.5.5 0 0 0 0-.5c0-.1-.6-1.4-.8-1.9s-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.1-.2-.2-.4-.3Z"/></svg>
-            Assinar pelo WhatsApp
-          </a>
-          <a class="btn vazio" href="#o-que-faz">Ver o que ele faz</a>
-        </div>
-        <p class="preco-mini">Plano único: <b class="js-preco">R$ 349</b> por mês, com todos os recursos.</p>
-      </div>
+  <section class="abre" aria-label="Apresentação">
+    <canvas id="nucleo" aria-hidden="true"></canvas>
+    <div class="hud esq" id="bootlog" aria-hidden="true"></div>
+    <div class="hud dir" aria-hidden="true"><span id="relogio">--:--</span><br>São Paulo · BR<br>Canal de voz <span class="ok">ativo</span></div>
 
-      <div class="painel" id="demo" aria-label="Exemplo de conversa com o SINDICS">
-        <div class="nucleo" aria-hidden="true"></div>
-        <p class="estado" id="estado">EM PRONTIDÃO</p>
-        <p class="fala voce oculto" data-passo="1"><small>Você</small>SINDICS, como está a documentação do Residencial Aurora?</p>
-        <p class="fala ele oculto" data-passo="2"><small>SINDICS</small>O seguro vence em 12 dias e a limpeza da caixa d’água está vencida. O resto está em dia. Coloquei na tela.</p>
-        <div class="cartao oculto" data-passo="3">
+    <div class="fala-abre">
+      <p class="estado" id="estado">INICIALIZANDO</p>
+      <h1 id="saudacao"><span id="digitado"></span><span class="cursor" aria-hidden="true"></span></h1>
+      <p class="sub surge">Eu cuido da sua agenda com alarmes, controlo o vencimento dos documentos legais, mostro a regra da convenção na tela e escrevo o comunicado pronto para imprimir. Você só precisa falar.</p>
+      <div class="acoes surge">
+        <a class="btn forte js-whats" href="#preco">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.7-1.3a.5.5 0 0 0 0-.5c0-.1-.6-1.4-.8-1.9s-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.1-.2-.2-.4-.3Z"/></svg>
+          Assinar pelo WhatsApp
+        </a>
+        <a class="btn" href="#conversa">Ver uma conversa</a>
+      </div>
+      <p class="preco-mini surge">Plano único · <b class="js-preco">R$ 349</b> por mês · todos os recursos</p>
+      <a class="rolar surge" href="#conversa" aria-label="Rolar para baixo"></a>
+    </div>
+  </section>
+
+  <section class="bloco" id="conversa">
+    <div class="w duas">
+      <div>
+        <p class="marcador">// como funciona</p>
+        <h2>Fale como falaria com o seu gerente predial.</h2>
+        <p>Diga “SINDICS” e peça. Ele responde em voz, coloca o que importa na tela e já deixa tudo registrado: o compromisso na agenda, o prazo na pasta de documentos, a regra com o número do artigo.</p>
+        <p>Sem menus para decorar. Funciona no computador e no celular, e pode ser instalado como aplicativo.</p>
+      </div>
+      <div class="conversa holo" id="demo" aria-label="Exemplo de conversa com o SINDICS">
+        <p class="fala voce passo"><small>VOCÊ</small>SINDICS, como está a documentação do Residencial Aurora?</p>
+        <p class="fala passo"><small>SINDICS</small>O seguro vence em 12 dias e a limpeza da caixa d’água está vencida. O resto está em dia. Coloquei na tela.</p>
+        <div class="cartao passo">
           <h3>Residencial Aurora · documentos</h3>
           <ul>
-            <li><span>Limpeza da caixa d’água</span><span class="vencido">vencida</span></li>
-            <li><span>Seguro obrigatório</span><span class="atencao">vence em 12 dias</span></li>
-            <li><span>AVCB</span><span class="ok">em dia até 03/2028</span></li>
-            <li><span>Extintores</span><span class="ok">em dia até 05/2027</span></li>
+            <li><span>Limpeza da caixa d’água</span><span class="c-ve">vencida</span></li>
+            <li><span>Seguro obrigatório</span><span class="c-at">vence em 12 dias</span></li>
+            <li><span>AVCB</span><span class="c-ok">em dia até 03/2028</span></li>
+            <li><span>Extintores</span><span class="c-ok">em dia até 05/2027</span></li>
           </ul>
         </div>
-        <p class="fala voce oculto" data-passo="4"><small>Você</small>Marca a limpeza para sexta às 9h.</p>
-        <p class="fala ele oculto" data-passo="5"><small>SINDICS</small>Marquei sexta, às 9h, com aviso meia hora antes.</p>
+        <p class="fala voce passo"><small>VOCÊ</small>Marca a limpeza para sexta às 9h.</p>
+        <p class="fala passo"><small>SINDICS</small>Marquei sexta, às 9h, com aviso meia hora antes.</p>
       </div>
     </div>
   </section>
 
   <section class="bloco" id="o-que-faz">
     <div class="w">
+      <p class="marcador">// comandos de voz</p>
       <h2>Você diz. Ele faz.</h2>
-      <p class="intro">Sem menus para decorar. Chame “SINDICS” e peça como pediria a um assistente que conhece o seu condomínio.</p>
+      <p class="intro">Seis pedidos do dia a dia do síndico e o que o SINDICS faz com cada um.</p>
       <div class="dialogos">
-        <div class="dl"><q>Marca a assembleia dia 28 às 19h30 no salão e me avisa um dia antes.</q><p>Agenda o compromisso, confere conflitos de horário e toca o alarme na hora certa. O calendário do mês abre na tela quando você pedir.</p><strong>Agenda com alarmes</strong></div>
-        <div class="dl"><q>Pode fazer obra no sábado?</q><p>Procura a resposta na Convenção e no Regulamento Interno do condomínio e mostra o artigo na tela, com a penalidade quando houver.</p><strong>Regras do condomínio</strong></div>
-        <div class="dl"><q>Escreve um comunicado sobre o horário da piscina.</q><p>Redige o texto formal com cabeçalho, CNPJ, data e sua assinatura. Abre em tela cheia para ajustar, copiar ou imprimir em PDF.</p><strong>Comunicados prontos</strong></div>
-        <div class="dl"><q>O AVCB foi renovado, vence em março de 2028.</q><p>Atualiza a Pasta de Documentação Legal e passa a avisar com antecedência antes do próximo vencimento.</p><strong>Prazos legais</strong></div>
-        <div class="dl"><q>Divide uma obra de 48 mil em 6 parcelas entre os 120 apartamentos.</q><p>Faz a conta passo a passo e mostra o valor por unidade, usando os índices oficiais do Banco Central quando precisar de correção.</p><strong>Cálculos de rateio</strong></div>
-        <div class="dl"><q>Quais são as notícias do setor hoje?</q><p>Apresenta as principais notícias do mercado condominial do dia, como um jornal, com o veículo de cada uma.</p><strong>Radar Condominial</strong></div>
+        <div class="dl"><q>Marca a assembleia dia 28 às 19h30 no salão e me avisa um dia antes.</q><p>Agenda, confere conflitos de horário e toca o alarme na hora certa. O calendário do mês abre na tela quando você pedir.</p><strong>agenda + alarmes</strong></div>
+        <div class="dl"><q>Pode fazer obra no sábado?</q><p>Procura na Convenção e no Regulamento Interno do condomínio e mostra o artigo na tela, com a penalidade quando houver.</p><strong>regras do condomínio</strong></div>
+        <div class="dl"><q>Escreve um comunicado sobre o horário da piscina.</q><p>Redige o texto formal com cabeçalho, CNPJ, data e sua assinatura. Abre em tela cheia para ajustar, copiar ou imprimir em PDF.</p><strong>comunicados</strong></div>
+        <div class="dl"><q>O AVCB foi renovado, vence em março de 2028.</q><p>Atualiza a Pasta de Documentação Legal e passa a avisar com antecedência antes do próximo vencimento.</p><strong>prazos legais</strong></div>
+        <div class="dl"><q>Divide uma obra de 48 mil em 6 parcelas entre os 120 apartamentos.</q><p>Faz a conta passo a passo e mostra o valor por unidade, usando os índices oficiais do Banco Central quando precisar de correção.</p><strong>cálculos de rateio</strong></div>
+        <div class="dl"><q>Quais são as notícias do setor hoje?</q><p>Apresenta as principais notícias do mercado condominial do dia, como um telejornal, com o veículo de cada uma.</p><strong>radar condominial</strong></div>
       </div>
     </div>
   </section>
@@ -239,36 +259,39 @@ footer nav{display:flex;gap:20px;flex-wrap:wrap}
   <section class="bloco" id="documentos">
     <div class="w duas">
       <div>
+        <p class="marcador">// pasta de documentação legal</p>
         <h2>Nenhum laudo vencido passa despercebido.</h2>
-        <p>Cada condomínio ganha a mesma Pasta de Documentação Legal, montada a partir da lei e das normas técnicas: AVCB, seguro obrigatório, brigada de incêndio, extintores, para-raios, caixa d’água, elevadores, PMOC, PGR e PCMSO, entre outros.</p>
-        <p>Você informa só a data da última renovação. O SINDICS calcula o vencimento pelo prazo legal, avisa com antecedência e conta, logo na abertura do dia, o que precisa de atenção.</p>
-        <p>A lista segue a lei federal e as regras do Estado e da cidade de São Paulo. Em outros locais, o SINDICS indica o que conferir na regra local.</p>
+        <p>Cada condomínio ganha a mesma pasta, montada a partir da lei e das normas técnicas: AVCB, seguro obrigatório, brigada de incêndio, extintores, para-raios, caixa d’água, elevadores, PMOC, PGR e PCMSO, entre outros.</p>
+        <p>Você informa só a data da última renovação. O SINDICS calcula o vencimento pelo prazo legal e avisa com antecedência, logo na abertura do dia.</p>
+        <p>A lista segue a lei federal e as regras do Estado e da cidade de São Paulo. Em outros locais, ele indica o que conferir na regra local.</p>
       </div>
-      <div class="pasta" aria-label="Exemplo da Pasta de Documentação Legal">
-        <div class="doc"><b>Limpeza da caixa d’água</b><small>A cada 6 meses · Comunicado CVS 36/1991</small><span class="st v">Vencido</span></div>
-        <div class="doc"><b>Seguro obrigatório da edificação</b><small>Anual · Código Civil, art. 1.346</small><span class="st a">Vence em 12 dias</span></div>
-        <div class="doc"><b>AVCB</b><small>3 anos em SP para residencial · Decreto 69.118/2024</small><span class="st e">Em dia</span></div>
-        <div class="doc"><b>Atestado de brigada de incêndio</b><small>12 meses · IT 17/2025</small><span class="st e">Em dia</span></div>
-        <div class="doc"><b>Laudo do para-raios (SPDA)</b><small>3 anos · ABNT NBR 5419</small><span class="st f">Sem cadastro</span></div>
-        <div class="doc"><b>RIA dos elevadores</b><small>Anual · Lei municipal 10.348/1987</small><span class="st e">Em dia</span></div>
+      <div class="pasta holo" aria-label="Exemplo da Pasta de Documentação Legal">
+        <div class="doc"><b>Limpeza da caixa d’água</b><small>A cada 6 meses · Comunicado CVS 36/1991</small><span class="st v">vencido</span></div>
+        <div class="doc"><b>Seguro obrigatório da edificação</b><small>Anual · Código Civil, art. 1.346</small><span class="st a">12 dias</span></div>
+        <div class="doc"><b>AVCB</b><small>3 anos em SP para residencial · Decreto 69.118/2024</small><span class="st e">em dia</span></div>
+        <div class="doc"><b>Atestado de brigada de incêndio</b><small>12 meses · IT 17/2025</small><span class="st e">em dia</span></div>
+        <div class="doc"><b>Laudo do para-raios (SPDA)</b><small>3 anos · ABNT NBR 5419</small><span class="st f">sem cadastro</span></div>
+        <div class="doc"><b>RIA dos elevadores</b><small>Anual · Lei municipal 10.348/1987</small><span class="st e">em dia</span></div>
       </div>
     </div>
   </section>
 
   <section class="bloco">
     <div class="w">
+      <p class="marcador">// para quem</p>
       <h2>Para quem cuida de condomínio todos os dias.</h2>
-      <p class="intro">Um painel por síndico, com todos os condomínios que ele administra.</p>
+      <p class="intro">Um painel por síndico, com todos os condomínios que ele administra, sem misturar regras nem prazos.</p>
       <div class="publico">
-        <div><h3>Síndico profissional</h3><p>Vários condomínios, uma agenda só. O SINDICS separa regras e prazos de cada prédio e avisa o que vence primeiro.</p></div>
-        <div><h3>Síndico morador</h3><p>Sem experiência em legislação? Ele explica a regra em linguagem simples e diz o que a lei exige e quando.</p></div>
-        <div><h3>Administradora</h3><p>Padroniza o controle de documentos e comunicados entre os síndicos da carteira.</p></div>
+        <div class="holo"><h3>Síndico profissional</h3><p>Vários condomínios, uma agenda só. O SINDICS separa regras e prazos de cada prédio e avisa o que vence primeiro.</p></div>
+        <div class="holo"><h3>Síndico morador</h3><p>Sem experiência em legislação? Ele explica a regra em linguagem simples e diz o que a lei exige e quando.</p></div>
+        <div class="holo"><h3>Administradora</h3><p>Padroniza o controle de documentos e comunicados entre os síndicos da carteira.</p></div>
       </div>
     </div>
   </section>
 
   <section class="bloco seguro">
     <div class="w">
+      <p class="marcador">// privacidade</p>
       <h2>Feito para respeitar a LGPD.</h2>
       <p class="intro">Condomínio lida com dados de muita gente. O SINDICS foi desenhado para não aumentar esse risco.</p>
       <ul>
@@ -282,14 +305,15 @@ footer nav{display:flex;gap:20px;flex-wrap:wrap}
 
   <section class="bloco" id="preco">
     <div class="w">
-      <h2>Um plano, tudo incluído.</h2>
+      <p class="marcador">// assinatura</p>
+      <h2>Um plano. Tudo incluído.</h2>
       <p class="intro">Um assistente completo para quem leva a gestão condominial a sério. Assine pelo WhatsApp e receba seu acesso.</p>
-      <div class="plano">
+      <div class="plano holo">
         <div class="valor">
           <p>Assinatura mensal</p>
           <p class="numero"><span class="js-preco">R$ 349</span><small>/mês</small></p>
           <p>Atendimento direto com a nossa equipe na assinatura e no suporte.</p>
-          <a class="btn cheio js-whats" href="#preco">
+          <a class="btn forte js-whats" href="#preco">
             <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.7-1.3a.5.5 0 0 0 0-.5c0-.1-.6-1.4-.8-1.9s-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6a2.7 2.7 0 0 0 1.8-1.2 2.2 2.2 0 0 0 .1-1.2c0-.1-.2-.2-.4-.3Z"/></svg>
             Assinar pelo WhatsApp
           </a>
@@ -305,7 +329,7 @@ footer nav{display:flex;gap:20px;flex-wrap:wrap}
             <li>Cálculos de rateio e índices do Banco Central</li>
             <li>Radar Condominial com as notícias do dia</li>
             <li>Área de privacidade e roteiro de LGPD do condomínio</li>
-            <li>Funciona no computador e no celular, instalável como aplicativo</li>
+            <li>Computador e celular, instalável como aplicativo</li>
           </ul>
         </div>
       </div>
@@ -314,7 +338,8 @@ footer nav{display:flex;gap:20px;flex-wrap:wrap}
 
   <section class="bloco" id="perguntas">
     <div class="w">
-      <h2>Perguntas frequentes</h2>
+      <p class="marcador">// perguntas frequentes</p>
+      <h2>Antes de assinar.</h2>
       <div class="faq">
         <details><summary>Preciso instalar alguma coisa?</summary><p>Não. O SINDICS abre no navegador, de preferência o Google Chrome. No celular ou no computador, dá para instalar como aplicativo para abrir com um toque.</p></details>
         <details><summary>Como ele conhece as regras do meu condomínio?</summary><p>Você envia a Convenção e o Regulamento Interno em PDF, inclusive escaneados. O SINDICS lê os documentos e passa a responder com o artigo correspondente.</p></details>
@@ -329,11 +354,12 @@ footer nav{display:flex;gap:20px;flex-wrap:wrap}
 
   <section class="fecha">
     <div class="w">
-      <h2>Comece a falar com o seu condomínio.</h2>
-      <p>Chame no WhatsApp, tire suas dúvidas e receba o acesso ao SINDICS.</p>
+      <div class="orbe" aria-hidden="true"></div>
+      <h2>O SINDICS está pronto. Falta você.</h2>
+      <p>Chame no WhatsApp, tire suas dúvidas e receba o acesso.</p>
       <div class="acoes">
-        <a class="btn cheio js-whats" href="#preco">Assinar pelo WhatsApp</a>
-        <a class="btn vazio" href="../">Já sou assinante</a>
+        <a class="btn forte js-whats" href="#preco">Assinar pelo WhatsApp</a>
+        <a class="btn" href="../">Já sou assinante</a>
       </div>
     </div>
   </section>
@@ -362,28 +388,136 @@ const link = WHATSAPP
   : "mailto:sindicanciaethics@gmail.com?subject=" + encodeURIComponent("Quero assinar o SINDICS") + "&body=" + encodeURIComponent(MENSAGEM);
 document.querySelectorAll(".js-whats").forEach(a => { a.href = link; if (WHATSAPP){ a.target = "_blank"; a.rel = "noopener"; } });
 
-/* Demonstração: a conversa acontece uma vez, quando o painel aparece */
+const reduzir = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const espera = ms => new Promise(r => setTimeout(r, reduzir ? 0 : ms));
+addEventListener("scroll", () => document.getElementById("topo").classList.toggle("rolou", scrollY > 40), { passive: true });
+
+/* ======================= NÚCLEO (WebGL puro) ======================= */
+const nucleo = { nivel: 0, alvo: 0.04, boot: 0, mx: 0, my: 0, visivel: true };
+let falando = false;
 (function(){
-  const painel = document.getElementById("demo"), estado = document.getElementById("estado");
-  const passos = [...painel.querySelectorAll("[data-passo]")];
-  const reduzir = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (reduzir){ passos.forEach(p => p.classList.replace("oculto", "mostra")); return; }
-  const roteiro = [[1, "OUVINDO", 600], [2, "FALANDO", 1500], [3, "FALANDO", 1300], [4, "OUVINDO", 2200], [5, "FALANDO", 1500]];
-  let rodou = false;
-  const rodar = async () => {
-    if (rodou) return; rodou = true;
-    const espera = ms => new Promise(r => setTimeout(r, ms));
-    for (const [n, st, ms] of roteiro){
-      await espera(ms);
-      estado.textContent = st; painel.classList.toggle("falando", st === "FALANDO");
-      painel.querySelector(`[data-passo="${n}"]`).classList.replace("oculto", "mostra");
+  const cv = document.getElementById("nucleo");
+  const gl = cv.getContext("webgl", { antialias: false, premultipliedAlpha: false }) || cv.getContext("experimental-webgl");
+  if (!gl){ cv.style.background = "radial-gradient(circle at 50% 40%,#fff 0 1.5%,rgba(63,208,255,.9) 4%,rgba(63,208,255,.25) 13%,transparent 26%)"; return; }
+  const VS = "attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}";
+  const FS = `precision highp float;
+  uniform vec2 uRes; uniform float uT; uniform float uL; uniform float uB; uniform vec2 uM;
+  float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+  float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+  float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*n(p);p*=2.03;a*=.5;}return v;}
+  float anel(vec2 q,float r,float esp,float seg,float duty,float vel,float tilt){
+    vec2 e=vec2(q.x,q.y/tilt); float d=abs(length(e)-r)*tilt; float a=atan(e.y,e.x)/6.2831853+.5;
+    float s=step(fract(a*seg+uT*vel),duty); return smoothstep(esp,0.,d)*s;}
+  void main(){
+    vec2 uv=(gl_FragCoord.xy-.5*uRes)/min(uRes.x,uRes.y);
+    float mob=step(uRes.x,uRes.y);
+    uv.y-=mix(.17,.42,mob);
+    uv-=uM*.025;
+    uv/=mix(.86,.8,mob);
+    float r=length(uv), a=atan(uv.y,uv.x);
+    float L=uL, B=uB;
+    vec3 ci=vec3(.247,.816,1.);
+    float R=.2*B+.035*(fbm(vec2(a*2.,uT*.6))-.5)*(1.+L*4.)+.012*sin(a*7.+uT*3.)*L;
+    float borda=exp(-abs(r-R)*(38.-L*14.));
+    float dentro=smoothstep(R,0.,r);
+    float plasma=fbm(uv*6.+vec2(uT*.35,-uT*.25))*dentro;
+    vec3 c=ci*(borda*1.1+plasma*.9*(.6+L)+dentro*.12);
+    c+=vec3(1.)*exp(-r*r*(260.-L*120.))*(.75+L*.9);
+    c+=ci*exp(-r*(5.2-L*1.6))*(.32+L*.45);
+    float bar=fract(a/6.2831853*96.);
+    float amp=.012+fbm(vec2(floor(a/6.2831853*96.),uT*5.))*.09*L;
+    float ri=.245*B;
+    c+=ci*step(bar,.42)*step(ri,r)*step(r,ri+amp)*(.45+L);
+    c+=ci*.85*anel(uv,.33*B,.0035,3.,.68,.06,.42);
+    c+=ci*.45*anel(uv,.37*B,.0022,64.,.42,-.025,.38);
+    c+=ci*.55*anel(uv,.43*B,.003,8.,.55,.035,.46);
+    c+=ci*.28*anel(uv,.5*B,.002,120.,.3,-.012,.34);
+    vec2 pp=vec2(a*3.+uT*.12, r*22.);
+    vec2 id=floor(pp*vec2(6.,1.)); vec2 fp=fract(pp*vec2(6.,1.))-.5;
+    float rnd=h(id); float on=step(.72,rnd)*smoothstep(.17,.62,r)*smoothstep(.95,.6,r);
+    c+=ci*on*smoothstep(.09,0.,length(fp*vec2(.55,1.)))*(.6+.6*sin(uT*2.+rnd*30.));
+    vec2 g=abs(fract(gl_FragCoord.xy/42.)-.5);
+    c+=ci*.035*step(.48,max(g.x,g.y))*smoothstep(1.4,.2,r);
+    c*=smoothstep(1.6,.3,r);
+    c+=vec3(.016,.027,.05);
+    gl_FragColor=vec4(c,1.);
+  }`;
+  try{
+    const sh = (t, s) => { const o = gl.createShader(t); gl.shaderSource(o, s); gl.compileShader(o); if (!gl.getShaderParameter(o, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; };
+    const pr = gl.createProgram(); gl.attachShader(pr, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(pr); gl.useProgram(pr);
+    const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+    const loc = gl.getAttribLocation(pr, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    const U = n => gl.getUniformLocation(pr, n); const uRes = U("uRes"), uT = U("uT"), uL = U("uL"), uB = U("uB"), uM = U("uM");
+    const dpr = Math.min(devicePixelRatio || 1, innerWidth < 700 ? 1.25 : 1.5);
+    const tamanho = () => { cv.width = Math.round(cv.clientWidth * dpr); cv.height = Math.round(cv.clientHeight * dpr); gl.viewport(0, 0, cv.width, cv.height); };
+    addEventListener("resize", tamanho); tamanho();
+    addEventListener("pointermove", e => { nucleo.mx = e.clientX / innerWidth - .5; nucleo.my = .5 - e.clientY / innerHeight; }, { passive: true });
+    let mx = 0, my = 0, rodando = false;
+    const quadro = t => {
+      if (!nucleo.visivel){ rodando = false; return; }
+      nucleo.nivel += (nucleo.alvo - nucleo.nivel) * .18;
+      nucleo.boot += (1 - nucleo.boot) * (reduzir ? 1 : .035);
+      mx += (nucleo.mx - mx) * .05; my += (nucleo.my - my) * .05;
+      gl.uniform2f(uRes, cv.width, cv.height); gl.uniform1f(uT, reduzir ? 8 : t / 1000);
+      gl.uniform1f(uL, nucleo.nivel); gl.uniform1f(uB, Math.max(.05, nucleo.boot)); gl.uniform2f(uM, mx, my);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      if (reduzir){ rodando = false; return; }
+      requestAnimationFrame(quadro);
+    };
+    const ligar = () => { if (!rodando){ rodando = true; requestAnimationFrame(quadro); } };
+    new IntersectionObserver(es => { nucleo.visivel = es[0].isIntersecting; if (nucleo.visivel) ligar(); }).observe(cv);
+    ligar();
+    window.sindicsRedesenha = ligar;
+  }catch(err){
+    console.error(err);
+    cv.style.background = "radial-gradient(circle at 50% 40%,#fff 0 1.5%,rgba(63,208,255,.9) 4%,rgba(63,208,255,.25) 13%,transparent 26%)";
+  }
+  document.querySelectorAll(".btn").forEach(b => {
+    b.addEventListener("pointerenter", () => { if (!falando) nucleo.alvo = .3; });
+    b.addEventListener("pointerleave", () => { if (!falando) nucleo.alvo = .04; });
+  });
+})();
+
+/* ======================= A RECEPÇÃO ======================= */
+(async function recepcao(){
+  const bootEl = document.getElementById("bootlog"), estado = document.getElementById("estado"), alvo = document.getElementById("digitado");
+  const relogio = () => { document.getElementById("relogio").textContent = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" }).format(new Date()); };
+  relogio(); setInterval(relogio, 15000);
+  const hora = Number(new Intl.DateTimeFormat("en-GB", { timeZone: "America/Sao_Paulo", hour: "2-digit", hour12: false }).format(new Date()));
+  const saud = hora < 5 ? "Boa noite" : hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite";
+  for (const l of ["Núcleo SINDICS", "Base condominial", "Legislação e prazos", "Reconhecimento de voz", "Síntese de voz"]){
+    const d = document.createElement("div"); d.innerHTML = "▸ <span></span> <span class='ok'>OK</span>"; d.children[0].textContent = l + " " + ".".repeat(Math.max(2, 24 - l.length));
+    bootEl.append(d); await espera(170);
+  }
+  estado.textContent = "EM PRONTIDÃO"; await espera(900);
+  const frases = [saud + ". Eu sou o SINDICS.", "Estava esperando por você."];
+  document.getElementById("saudacao").setAttribute("aria-label", frases.join(" "));
+  estado.textContent = "FALANDO"; falando = true;
+  for (let i = 0; i < frases.length; i++){
+    if (i) alvo.append(document.createElement("br"));
+    const span = document.createElement("span"); alvo.append(span);
+    for (const ch of frases[i]){
+      span.textContent += ch;
+      nucleo.alvo = /[ .,]/.test(ch) ? .12 : .35 + Math.random() * .55;
+      await espera(/[.,]/.test(ch) ? 260 : 42);
     }
-    await espera(1800); painel.classList.remove("falando"); estado.textContent = "EM PRONTIDÃO";
-  };
-  if ("IntersectionObserver" in window){
-    const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)){ io.disconnect(); rodar(); } }, { threshold: .4 });
-    io.observe(painel);
-  } else rodar();
+    nucleo.alvo = .08; await espera(450);
+  }
+  falando = false; nucleo.alvo = .04; estado.textContent = "EM PRONTIDÃO";
+  document.querySelectorAll(".surge").forEach((e, i) => setTimeout(() => e.classList.add("on"), reduzir ? 0 : i * 160));
+  if (reduzir && window.sindicsRedesenha) window.sindicsRedesenha();
+})();
+
+/* ======================= CONVERSA DE EXEMPLO ======================= */
+(function(){
+  const passos = [...document.querySelectorAll("#demo .passo")];
+  if (reduzir || !("IntersectionObserver" in window)){ passos.forEach(p => p.classList.add("on")); return; }
+  const ms = [200, 1400, 1100, 2000, 1400];
+  const io = new IntersectionObserver(async es => {
+    if (!es.some(e => e.isIntersecting)) return; io.disconnect();
+    for (let i = 0; i < passos.length; i++){ await espera(ms[i]); passos[i].classList.add("on"); }
+  }, { threshold: .35 });
+  io.observe(document.getElementById("demo"));
 })();
 </script>
 </body>
