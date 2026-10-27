@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "3.8.5";
+  window.SINDICS_V = "3.9.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -13,9 +13,15 @@ const FN_EXCLUIR = SUPABASE_URL + "/functions/v1/excluir-condominio";
 const SITE_URL = "https://sindicosincero-cmd.github.io/sindics/";
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
 let PERFIL = null;
+/* Gestor auxiliar: enxerga e opera só os condomínios que o síndico autorizou */
+const ZERO_ID = "00000000-0000-0000-0000-000000000000";
+const souGestor = () => PERFIL?.papel === "gestor";
+function idsCond(){ const ids = PERFIL?.condIdsGestor || (PERFIL?.condominios || []).map(c => c.id); return ids.length ? ids : [ZERO_ID]; }
+function escopoOr(uid){ return souGestor() ? `sindico_id.eq.${uid},condominio_id.in.(${idsCond().join(",")})` : `sindico_id.eq.${uid}`; }
+function filtroCond(q, uid){ return souGestor() ? q.in("id", idsCond()) : q.eq("sindico_id", uid); }
 
 function preencherCabecalho(p){
-  document.getElementById("hdrSindico").textContent = "Inteligência Condominial · " + (p.assinatura ? p.assinatura.split("—")[0].trim() : p.nome);
+  document.getElementById("hdrSindico").textContent = "Inteligência Condominial · " + (p.papel === "gestor" ? `${p.nome} · gestor${p.sindicoNome ? " de " + p.sindicoNome : ""}` : (p.assinatura ? p.assinatura.split("—")[0].trim() : p.nome));
   document.getElementById("hdrEmpresa").textContent = p.empresa || "—";
   const cs = p.condominios || [];
   document.getElementById("hdrCondLabel").textContent = cs.length > 1 ? "Condomínios" : "Condomínio";
@@ -173,7 +179,7 @@ function aplicarTema(t){
 }
 
 /* ======================= MENU (recolhido; abre ao tocar ou por voz) ======================= */
-const DRAWERS = ["menuDrawer","drawer","condDrawer","admDrawer"];
+const DRAWERS = ["menuDrawer","drawer","condDrawer","admDrawer","equipeDrawer"];
 function abrirMenu(){ DRAWERS.forEach(id => $(id).classList.remove("open")); $("menuDrawer").classList.add("open"); $("menuBtn").setAttribute("aria-expanded","true"); $("menuBtn").classList.remove("pulsar"); }
 function fecharMenu(){ $("menuDrawer").classList.remove("open"); $("menuBtn").setAttribute("aria-expanded","false"); }
 function abrirGaveta(id){ fecharMenu(); $(id).classList.add("open"); }
@@ -614,7 +620,7 @@ async function executarComDados(nome, a, user){
     case "agenda_listar": {
       const di = exigeData(a.data_inicio, "data_inicio"), df = exigeData(a.data_fim, "data_fim");
       let q = sb.from("compromissos").select("id, titulo, inicio, fim, condominio_id, local, status, lembrete_minutos")
-        .eq("sindico_id", user.id).gte("inicio", new Date(di + "T00:00:00-03:00").toISOString()).lte("inicio", new Date(df + "T23:59:59-03:00").toISOString()).order("inicio");
+        .or(escopoOr(user.id)).gte("inicio", new Date(di + "T00:00:00-03:00").toISOString()).lte("inicio", new Date(df + "T23:59:59-03:00").toISOString()).order("inicio");
       if (!a.incluir_cancelados) q = q.neq("status", "cancelado");
       const { data, error } = await q; if (error) throw error;
       return { total: data.length, compromissos: data.map(c => ({ id: c.id, titulo: c.titulo, quando: quando(c.inicio), condominio: nomeCondPorId(c.condominio_id), local: c.local, status: c.status, alarme: textoLembrete(c.lembrete_minutos) })) };
@@ -632,7 +638,7 @@ async function executarComDados(nome, a, user){
         patch = { lembrete_avisado_em: null };
       } else throw new Error("Ação desconhecida.");
       if (a.lembrete_minutos != null) patch.lembrete_minutos = minutosLembrete(a.lembrete_minutos);
-      const { data, error } = await sb.from("compromissos").update(patch).eq("id", a.id).eq("sindico_id", user.id).select("titulo, inicio, lembrete_minutos").maybeSingle();
+      const { data, error } = await sb.from("compromissos").update(patch).eq("id", a.id).or(escopoOr(user.id)).select("titulo, inicio, lembrete_minutos").maybeSingle();
       if (error) throw error; if (!data) throw new Error("Compromisso não encontrado.");
       atualizarResumoTela(); aposMudarAgenda(new Date(data.inicio));
       const feito = a.acao === "remarcar" ? "remarcado para " + quando(data.inicio) : a.acao === "cancelar" ? "cancelado" : a.acao === "concluir" ? "concluído" : "alarme ajustado";
@@ -698,7 +704,7 @@ async function executarComDados(nome, a, user){
       return "Comunicado aberto em tela inteira, com cabeçalho do condomínio e assinatura. O síndico pode ajustar o texto na tela, copiar ou imprimir/salvar em PDF.";
     }
     case "documentos_listar": {
-      let q = sb.from("documentos_legais").select("id, documento, condominio_id, data_renovacao, data_vencimento, alertar_dias_antes, observacoes, situacao").eq("sindico_id", user.id).neq("situacao", "nao_aplica").order("data_vencimento");
+      let q = sb.from("documentos_legais").select("id, documento, condominio_id, data_renovacao, data_vencimento, alertar_dias_antes, observacoes, situacao").or(escopoOr(user.id)).neq("situacao", "nao_aplica").order("data_vencimento");
       if (a.condominio) q = q.eq("condominio_id", acharCondominio(a.condominio).id);
       const { data, error } = await q; if (error) throw error;
       let itens = data.filter(d => d.data_vencimento).map(d => ({ id: d.id, documento: d.documento, condominio: nomeCondPorId(d.condominio_id), renovado_em: dataBR(d.data_renovacao), vence_em: dataBR(d.data_vencimento), dias_para_vencer: diasAte(d.data_vencimento), aviso_dias_antes: d.alertar_dias_antes, em_alerta: diasAte(d.data_vencimento) <= d.alertar_dias_antes, observacoes: d.observacoes }));
@@ -707,11 +713,11 @@ async function executarComDados(nome, a, user){
     }
     case "documento_alterar": {
       if (a.acao === "excluir"){
-        const { data: alvo } = await sb.from("documentos_legais").select("documento, condominio_id").eq("id", a.id).eq("sindico_id", user.id).maybeSingle();
+        const { data: alvo } = await sb.from("documentos_legais").select("documento, condominio_id").eq("id", a.id).or(escopoOr(user.id)).maybeSingle();
         if (!alvo) throw new Error("Documento não encontrado.");
         const ok = await confirmarNaTela("EXCLUIR DOCUMENTO", `Remover "${alvo.documento}"${alvo.condominio_id ? " do " + nomeCondPorId(alvo.condominio_id) : ""} da Pasta de Documentação Legal? O controle de vencimento deixa de existir.`, "Excluir documento");
         if (!ok) return { ok: false, mensagem: "O síndico não confirmou na tela. Nada foi apagado." };
-        const { data, error } = await sb.from("documentos_legais").delete().eq("id", a.id).eq("sindico_id", user.id).select("documento").maybeSingle();
+        const { data, error } = await sb.from("documentos_legais").delete().eq("id", a.id).or(escopoOr(user.id)).select("documento").maybeSingle();
         if (error) throw error; if (!data) throw new Error("Documento não encontrado.");
         atualizarResumoTela(); return { ok: true, mensagem: `${data.documento} excluído.` };
       }
@@ -731,18 +737,19 @@ async function executarComDados(nome, a, user){
       }
       if (a.alertar_dias_antes != null) patch.alertar_dias_antes = Math.max(0, Math.min(365, Number(a.alertar_dias_antes)));
       if (!Object.keys(patch).length) throw new Error("Nada para alterar.");
-      const { data, error } = await sb.from("documentos_legais").update(patch).eq("id", a.id).eq("sindico_id", user.id).select("documento, data_vencimento, alertar_dias_antes").maybeSingle();
+      const { data, error } = await sb.from("documentos_legais").update(patch).eq("id", a.id).or(escopoOr(user.id)).select("documento, data_vencimento, alertar_dias_antes").maybeSingle();
       if (error) throw error; if (!data) throw new Error("Documento não encontrado.");
       atualizarResumoTela();
       return { ok: true, mensagem: `${data.documento}: vence em ${dataBR(data.data_vencimento)}, aviso ${data.alertar_dias_antes} dias antes.` };
     }
     case "condominios_listar": {
-      const { data, error } = await sb.from("condominios").select("nome, cnpj, endereco, cidade, unidades, convencao_status, regulamento_status").eq("sindico_id", user.id).order("nome");
+      const { data, error } = await filtroCond(sb.from("condominios").select("nome, cnpj, endereco, cidade, unidades, convencao_status, regulamento_status"), user.id).order("nome");
       if (error) throw error;
       const st = s => s === "pronto" ? "enviado e lido" : s === "erro" ? "erro de leitura, reenviar" : s === "pendente" ? "pendente" : "em leitura";
       return { total: data.length, condominios: data.map(c => ({ nome: c.nome, cnpj: mascaraCnpj(c.cnpj || ""), endereco: [c.endereco, c.cidade].filter(Boolean).join(", "), apartamentos: c.unidades, convencao: st(c.convencao_status), regulamento: st(c.regulamento_status) })) };
     }
     case "condominio_cadastrar": {
+      if (souGestor()) throw new Error("Somente o síndico pode cadastrar novos condomínios. Oriente o gestor a pedir ao síndico.");
       const cnpj = soCnpj(a.cnpj);
       if (!cnpjValido(cnpj)) throw new Error("CNPJ inválido. Peça para o síndico repetir os 14 números do CNPJ.");
       const nomeC = String(a.nome || "").trim(); if (nomeC.length < 3) throw new Error("Informe o nome do condomínio.");
@@ -772,6 +779,7 @@ async function executarComDados(nome, a, user){
       return { ok: true, id: data.id, mensagem: `${nomeC} cadastrado: CNPJ ${mascaraCnpj(cnpj)}, ${endereco}, ${cidade}/${uf}, ${unidades} apartamentos. Pendentes: Convenção e Regulamento Interno em PDF, que o síndico envia no botão Condomínios, opção Editar. Até lá, as respostas sobre regras desse condomínio seguem só a lei geral.` };
     }
     case "condominio_excluir": {
+      if (souGestor()) throw new Error("Somente o síndico pode excluir condomínios. Oriente o gestor a falar com o síndico.");
       if (a.confirmado !== true) throw new Error("Exclusão não confirmada. Avise o que será apagado e peça para o síndico dizer 'confirmo a exclusão'.");
       const cond = acharCondominio(a.condominio);
       const ok = await confirmarNaTela("EXCLUIR CONDOMÍNIO", `Apagar o cadastro do ${cond.nome}, com Convenção, Regulamento, PDFs e prazos de documentos legais? A agenda é mantida. Não dá para desfazer.`, "Excluir condomínio");
@@ -795,8 +803,8 @@ async function atualizarResumoTela(){
   const { data: { user } } = await sb.auth.getUser(); if (!user) return;
   const hoje = hojeISO();
   const [{ data: docs }, { data: comps }] = await Promise.all([
-    sb.from("documentos_legais").select("documento, condominio_id, data_vencimento, alertar_dias_antes").eq("sindico_id", user.id).order("data_vencimento"),
-    sb.from("compromissos").select("titulo, inicio, condominio_id").eq("sindico_id", user.id).eq("status", "agendado")
+    sb.from("documentos_legais").select("documento, condominio_id, data_vencimento, alertar_dias_antes").or(escopoOr(user.id)).order("data_vencimento"),
+    sb.from("compromissos").select("titulo, inicio, condominio_id").or(escopoOr(user.id)).eq("status", "agendado")
       .gte("inicio", new Date(hoje + "T00:00:00-03:00").toISOString()).lte("inicio", new Date(hoje + "T23:59:59-03:00").toISOString()).order("inicio")
   ]);
   const alerta = (docs || []).map(d => ({ ...d, f: diasAte(d.data_vencimento) })).filter(d => d.f <= d.alertar_dias_antes);
@@ -824,7 +832,7 @@ async function carregarLembretes(){
   const { data: { user } } = await sb.auth.getUser(); if (!user) return;
   const agora = Date.now();
   const { data } = await sb.from("compromissos").select("id, titulo, inicio, condominio_id, local, lembrete_minutos")
-    .eq("sindico_id", user.id).eq("status", "agendado").is("lembrete_avisado_em", null).gt("lembrete_minutos", 0)
+    .or(escopoOr(user.id)).eq("status", "agendado").is("lembrete_avisado_em", null).gt("lembrete_minutos", 0)
     .gte("inicio", new Date(agora - 10 * 60000).toISOString()).lte("inicio", new Date(agora + 8 * 86400000).toISOString()).order("inicio");
   lembretes = data || [];
   verificarLembretes();
@@ -896,9 +904,9 @@ async function renderCalendario(){
     const { data: { user } } = await sb.auth.getUser();
     if (user){
       const [rc, rd] = await Promise.all([
-        sb.from("compromissos").select("id, titulo, inicio, fim, condominio_id, local, status, lembrete_minutos").eq("sindico_id", user.id).neq("status", "cancelado")
+        sb.from("compromissos").select("id, titulo, inicio, fim, condominio_id, local, status, lembrete_minutos").or(escopoOr(user.id)).neq("status", "cancelado")
           .gte("inicio", new Date(`${calMes}-01T00:00:00-03:00`).toISOString()).lte("inicio", new Date(`${calMes}-${pad2(diasMes)}T23:59:59-03:00`).toISOString()).order("inicio"),
-        sb.from("documentos_legais").select("id, documento, condominio_id, data_vencimento, alertar_dias_antes").eq("sindico_id", user.id)
+        sb.from("documentos_legais").select("id, documento, condominio_id, data_vencimento, alertar_dias_antes").or(escopoOr(user.id))
           .gte("data_vencimento", `${calMes}-01`).lte("data_vencimento", `${calMes}-${pad2(diasMes)}`).order("data_vencimento")
       ]);
       if (mesPedido !== calMes) return;   // usuário já trocou de mês
@@ -1238,14 +1246,17 @@ function abrirPerfil(modo, p = {}, aviso = ""){
   perfilModo = modo;
   const criar = modo === "criar";
   $("pfAcesso").hidden = !criar;
-  $("pfTitulo").textContent = criar ? "Criar conta de síndico" : modo === "completar" ? "Complete seu cadastro" : "Meu cadastro";
+  const gestor = modo === "gestor" || (modo === "editar" && p.papel === "gestor");
+  $("pfBlocoEmpresa").hidden = $("pfBlocoAss").hidden = gestor;
+  $("pfTitulo").textContent = criar ? "Criar conta de síndico" : modo === "completar" ? "Complete seu cadastro" : modo === "gestor" ? "Seu acesso de gestor" : "Meu cadastro";
   $("pfIntro").textContent = aviso || (criar
     ? "Preencha seus dados profissionais. Depois de confirmar o e-mail, seu acesso é liberado pelo administrador."
     : modo === "completar" ? "Para continuar usando o SINDICS, precisamos dos seus dados profissionais completos e do seu aceite à Política de Privacidade."
+    : modo === "gestor" ? "Bem-vindo à equipe. Confirme seus dados de contato e o aceite da Política de Privacidade para começar."
     : "Confira e corrija seus dados. As alterações valem na hora.");
   $("pfSalvar").textContent = criar ? "Criar conta" : "Salvar cadastro";
-  $("pfFechar").hidden = modo === "completar";
-  $("pfSair").hidden = modo !== "completar";
+  $("pfFechar").hidden = modo === "completar" || modo === "gestor";
+  $("pfSair").hidden = modo !== "completar" && modo !== "gestor";
   ["pfEmail","pfSenha","pfSenha2"].forEach(id => { $(id).value = id === "pfEmail" ? ($("email").value || "") : ""; });
   preencherPerfilForm(p);
   if (!criar && !$("pfEmailC").value && p.email) $("pfEmailC").value = p.email;
@@ -1266,6 +1277,12 @@ function validarPerfil(v){
   const erro = (id, t) => { $(id).setAttribute("aria-invalid", "true"); $(id).focus(); return t; };
   Object.keys(PF_CAMPOS).forEach(id => $(id).removeAttribute("aria-invalid"));
   if (v.nome.length < 3 || !/\s/.test(v.nome)) return erro("pfNome", "Informe seu nome completo (nome e sobrenome).");
+  if (perfilModo === "gestor" || (perfilModo === "editar" && souGestor())){
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.email_contato)) return erro("pfEmailC", "E-mail de contato inválido.");
+    if (v.telefone.length < 10 || v.telefone.length > 11) return erro("pfTel", "Telefone inválido: use DDD + número.");
+    if (!$("pfAceite").checked) return "Para continuar, marque o aceite da Política de Privacidade e dos Termos de Uso.";
+    return "";
+  }
   if (v.empresa.length < 2) return erro("pfEmpresa", "Informe o nome da sua empresa.");
   if (!cnpjValido(v.cnpj)) return erro("pfCnpj", "CNPJ da empresa inválido. Confira os números.");
   if (v.cep.length !== 8) return erro("pfCep", "Informe o CEP com 8 números.");
@@ -1324,7 +1341,8 @@ $("perfilForm").addEventListener("submit", async e => {
   if (!user){ fecharPerfil(); mostrarLogin("Sua sessão expirou. Entre novamente."); return; }
   $("pfSalvar").disabled = true; pfMsg("Salvando…");
   const agora = new Date().toISOString();
-  const patch = { ...v, cadastro_completo_em: PERFIL?.cadastro_completo_em || agora };
+  const ehG = perfilModo === "gestor" || (perfilModo === "editar" && souGestor());
+  const patch = ehG ? { nome: v.nome, tratamento: v.tratamento, telefone: v.telefone, email_contato: v.email_contato } : { ...v, cadastro_completo_em: PERFIL?.cadastro_completo_em || agora };
   if (PERFIL?.aceite_termos_versao !== TERMOS_V){ patch.aceite_termos_em = agora; patch.aceite_termos_versao = TERMOS_V; }
   const { error } = await sb.from("perfis").update(patch).eq("id", user.id);
   $("pfSalvar").disabled = false;
@@ -1483,6 +1501,76 @@ $("lgAviso").addEventListener("click", async () => {
   catch(e){ hintEl.textContent = e.message; hintEl.classList.add("err"); }
 });
 
+/* ======================= MINHA EQUIPE (gestores auxiliares) ======================= */
+const FN_EQUIPE = SUPABASE_URL + "/functions/v1/equipe";
+const LIMITE_GESTORES = 3;
+async function chamarEquipe(corpo){
+  const { data: { session } } = await sb.auth.getSession();
+  const r = await fetch(FN_EQUIPE, { method: "POST", headers: { "Authorization": "Bearer " + (session?.access_token || ""), "apikey": SUPABASE_ANON, "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.erro || ("Servidor respondeu " + r.status));
+  return j;
+}
+const eqMsg = (t, err) => { $("eqMsg").textContent = t || ""; $("eqMsg").style.color = err ? "var(--danger)" : "var(--ok)"; };
+function caixasCondominios(alvo, marcados = []){
+  alvo.innerHTML = "";
+  (PERFIL?.condominios || []).forEach(c => {
+    const l = document.createElement("label"); const cb = document.createElement("input"); cb.type = "checkbox"; cb.value = c.id; cb.checked = marcados.includes(c.id);
+    const t = document.createElement("span"); t.textContent = c.nome; l.append(cb, t); alvo.append(l);
+  });
+  if (!(PERFIL?.condominios || []).length){ const v = document.createElement("small"); v.textContent = "Cadastre um condomínio antes de convidar gestores."; alvo.append(v); }
+}
+const marcadosEm = el => [...el.querySelectorAll("input:checked")].map(i => i.value);
+async function abrirEquipe(){
+  if (souGestor()) return;
+  abrirGaveta("equipeDrawer"); eqMsg(""); caixasCondominios($("eqConds"));
+  await listarEquipe();
+}
+async function listarEquipe(){
+  const { data: { user } } = await sb.auth.getUser(); if (!user) return;
+  const { data, error } = await sb.from("gestores").select("*").eq("sindico_id", user.id).eq("status", "ativo").order("criado_em");
+  const box = $("eqLista"); box.innerHTML = "";
+  if (error){ box.textContent = "Erro: " + error.message; return; }
+  $("eqContagem").textContent = `${data.length} de ${LIMITE_GESTORES} gestores`;
+  $("eqForm").hidden = data.length >= LIMITE_GESTORES;
+  if (!data.length){ const p = document.createElement("p"); p.className = "rs-t"; p.textContent = "Nenhum gestor na equipe ainda."; box.append(p); }
+  data.forEach(g => {
+    const card = document.createElement("div"); card.className = "eq-card";
+    const n = document.createElement("strong"); n.textContent = g.nome;
+    const e = document.createElement("small"); e.textContent = g.email + " · desde " + new Date(g.criado_em).toLocaleDateString("pt-BR");
+    const conds = document.createElement("div"); conds.className = "eq-conds"; caixasCondominios(conds, g.condominios || []);
+    const st = document.createElement("small");
+    const acoes = document.createElement("div"); acoes.className = "eq-acoes";
+    const bS = document.createElement("button"); bS.type = "button"; bS.className = "primary"; bS.textContent = "Salvar condomínios";
+    bS.onclick = async () => {
+      const ids = marcadosEm(conds); if (!ids.length){ st.textContent = "Marque pelo menos um condomínio (ou remova o gestor)."; st.style.color = "var(--danger)"; return; }
+      bS.disabled = true; const { error } = await sb.from("gestores").update({ condominios: ids }).eq("id", g.id); bS.disabled = false;
+      st.textContent = error ? "Erro: " + error.message : "Condomínios atualizados ✓"; st.style.color = error ? "var(--danger)" : "var(--ok)";
+    };
+    const bR = document.createElement("button"); bR.type = "button"; bR.textContent = "Reenviar acesso";
+    bR.onclick = async () => { bR.disabled = true; try{ const j = await chamarEquipe({ acao: "reenviar", id: g.id }); st.textContent = j.mensagem; st.style.color = "var(--ok)"; }catch(err){ st.textContent = err.message; st.style.color = "var(--danger)"; } bR.disabled = false; };
+    const bX = document.createElement("button"); bX.type = "button"; bX.className = "perigo"; bX.textContent = "Remover";
+    bX.onclick = async () => {
+      if (!await confirmarNaTela("REMOVER GESTOR", `${g.nome} perde o acesso aos seus condomínios na hora. Os registros que ele fez continuam no sistema.`, "Remover gestor")) return;
+      try{ await chamarEquipe({ acao: "remover", id: g.id }); listarEquipe(); }catch(err){ st.textContent = err.message; st.style.color = "var(--danger)"; }
+    };
+    acoes.append(bS, bR, bX); card.append(n, e, conds, acoes, st); box.append(card);
+  });
+}
+$("equipeBtn").addEventListener("click", abrirEquipe);
+$("closeEquipe").addEventListener("click", () => $("equipeDrawer").classList.remove("open"));
+$("eqForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const nome = $("eqNome").value.trim(), email = $("eqEmail").value.trim().toLowerCase(), condominios = marcadosEm($("eqConds"));
+  if (nome.length < 3){ eqMsg("Informe o nome do gestor.", true); $("eqNome").focus(); return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ eqMsg("Informe um e-mail válido.", true); $("eqEmail").focus(); return; }
+  if (!condominios.length){ eqMsg("Marque pelo menos um condomínio.", true); return; }
+  $("eqEnviar").disabled = true; eqMsg("Enviando convite…");
+  try{ const j = await chamarEquipe({ acao: "convidar", nome, email, condominios }); eqMsg(j.mensagem); $("eqNome").value = $("eqEmail").value = ""; caixasCondominios($("eqConds")); await listarEquipe(); }
+  catch(err){ eqMsg(err.message, true); }
+  $("eqEnviar").disabled = false;
+});
+
 /* ======================= CONFIRMAÇÃO NA TELA (ações que não têm volta) ======================= */
 /* Exclusões pedidas por voz só acontecem depois de um toque do síndico. Protege contra mal-entendidos
    e contra textos maliciosos dentro de documentos tentando induzir o assistente. */
@@ -1608,7 +1696,7 @@ async function carregarAdmin(){
     const conds = (cs || []).filter(c => c.sindico_id === p.id).map(c => c.nome);
     const topo = document.createElement("div"); topo.className = "adm-top";
     const n = document.createElement("strong"); n.textContent = p.nome || "(sem nome)";
-    const st = document.createElement("span"); st.className = "pill " + (p.ativo ? "on" : "off"); st.textContent = p.papel === "admin" ? "admin" : p.ativo ? "ativo" : "aguardando";
+    const st = document.createElement("span"); st.className = "pill " + (p.ativo ? "on" : "off"); st.textContent = p.papel === "admin" ? "admin" : p.papel === "gestor" ? "gestor" : p.ativo ? "ativo" : "aguardando";
     const asP = (asss || []).find(a => a.sindico_id === p.id);
     if (asP && p.papel !== "admin"){ const d = diasDeAtraso(asP); st.textContent = asP.status === "atrasada" ? (d >= DIAS_BLOQUEIO ? "bloqueado" : `atraso ${d}d`) : (STATUS_ASS[asP.status] || asP.status); st.className = "pill " + (asP.status === "ativa" ? "on" : "off"); }
     topo.append(n, st);
@@ -1656,6 +1744,7 @@ const cMsg = (t, err) => { $("cMsg").textContent = t || ""; $("cMsg").style.colo
 function limparFormCond(){
   ["cCnpj","cNome","cCep","cUnid","cEnd","cCidade","cUf","cConv","cReg"].forEach(id => { $(id).value = ""; $(id).removeAttribute("aria-invalid"); });
   condEditId = null; $("cCancelar").hidden = true; $("cSalvar").textContent = "Salvar condomínio";
+  $("condForm").hidden = souGestor(); // gestor só edita condomínios autorizados; não cadastra novos
   $("cConvObr").hidden = $("cRegObr").hidden = false;
   $("cDocDica").textContent = "O SINDICS lê os dois documentos e passa a conhecer as regras do condomínio. PDFs escaneados também funcionam, só demoram um pouco mais.";
   $("cProg").hidden = true;
@@ -1735,7 +1824,8 @@ async function processarDocumento(condId, donoId, tipo, file){
 async function listarCondominios(){
   const { data: { user } } = await sb.auth.getUser(); if (!user) return [];
   const dono = condAlvo ? condAlvo.id : user.id;
-  const { data, error } = await sb.from("condominios").select("id, nome, cnpj, endereco, cidade, uf, cep, unidades, convencao_status, regulamento_status, convencao_msg, regulamento_msg").eq("sindico_id", dono).order("nome");
+  const qL = sb.from("condominios").select("id, nome, cnpj, endereco, cidade, uf, cep, unidades, convencao_status, regulamento_status, convencao_msg, regulamento_msg");
+  const { data, error } = await (condAlvo ? qL.eq("sindico_id", dono) : filtroCond(qL, user.id)).order("nome");
   const box = $("condLista"); box.innerHTML = "";
   if (error){ box.textContent = "Erro ao carregar: " + error.message; return []; }
   if (!data.length){ const p = document.createElement("p"); p.className = "rs-t"; p.textContent = "Nenhum condomínio cadastrado ainda."; box.append(p); }
@@ -1747,7 +1837,7 @@ async function listarCondominios(){
     const l3 = document.createElement("small"); l3.textContent = c.unidades ? c.unidades + " apartamentos" : "Quantidade de apartamentos não informada";
     const b = document.createElement("button"); b.type = "button"; b.textContent = "Editar";
     b.onclick = () => {
-      condEditId = c.id; $("cCnpj").value = c.cnpj ? mascaraCnpj(c.cnpj) : ""; $("cNome").value = c.nome; $("cCep").value = c.cep ? c.cep.replace(/^(\d{5})(\d{3})$/, "$1-$2") : "";
+      $("condForm").hidden = false; condEditId = c.id; $("cCnpj").value = c.cnpj ? mascaraCnpj(c.cnpj) : ""; $("cNome").value = c.nome; $("cCep").value = c.cep ? c.cep.replace(/^(\d{5})(\d{3})$/, "$1-$2") : "";
       $("cUnid").value = c.unidades || ""; $("cEnd").value = c.endereco || ""; $("cCidade").value = (c.cidade || "").replace(/\/[A-Z]{2}$/, ""); $("cUf").value = c.uf || (c.cidade || "").split("/")[1] || "";
       $("condFormTitulo").textContent = "Editar " + c.nome; $("cSalvar").textContent = "Salvar alterações"; $("cCancelar").hidden = false; cMsg(""); $("cCnpj").focus();
       $("cConvObr").hidden = c.convencao_status !== "pronto" ? false : true; $("cRegObr").hidden = c.regulamento_status !== "pronto" ? false : true;
@@ -1846,7 +1936,7 @@ $("condForm").addEventListener("submit", async e => {
 });
 async function recarregarCondominiosPerfil(){
   const { data: { user } } = await sb.auth.getUser(); if (!user || !PERFIL) return;
-  const { data: cs } = await sb.from("condominios").select("id, nome, cidade, unidades, cnpj").eq("sindico_id", user.id).order("nome");
+  const { data: cs } = await filtroCond(sb.from("condominios").select("id, nome, cidade, unidades, cnpj"), user.id).order("nome");
   PERFIL.condominios = cs || []; preencherCabecalho(PERFIL);
   if (PERFIL.condominios.length) $("condAviso").hidden = true;
 }
@@ -1856,7 +1946,22 @@ async function aposLogin(){
   const { data: { user } } = await sb.auth.getUser();
   if (!user){ mostrarLogin(); return; }
   const { data: p } = await sb.from("perfis").select("nome, tratamento, assinatura, empresa, papel, ativo, email, cnpj, cep, endereco, cidade, uf, email_contato, telefone, voz, cadastro_completo_em, aceite_termos_em, aceite_termos_versao, exclusao_solicitada_em").eq("id", user.id).maybeSingle();
-  if (p && (!p.cadastro_completo_em || p.aceite_termos_versao !== TERMOS_V)){
+  $("equipeBtn").hidden = p?.papel === "gestor";
+  if (p && p.papel === "gestor"){
+    // gestor: cadastro simples (nome, telefone e aceite) e acesso só pelos vínculos ativos com síndicos
+    if (p.aceite_termos_versao !== TERMOS_V || !p.telefone){
+      PERFIL = { ...p, condominios: [] }; $("loginOverlay").hidden = true; msg("");
+      perfilDepois = aposLogin;
+      abrirPerfil("gestor", p, "Bem-vindo à equipe! Confirme seus dados e o aceite da Política de Privacidade para começar.");
+      return;
+    }
+    const { data: vinc } = await sb.from("gestores").select("sindico_id, sindico_nome, condominios").eq("gestor_id", user.id).eq("status", "ativo");
+    if (!(vinc || []).length){ await sb.auth.signOut(); mostrarLogin("Seu acesso de gestor não está ativo. Fale com o síndico que convidou você.", true); return; }
+    p.condIdsGestor = [...new Set(vinc.flatMap(v => v.condominios || []))];
+    p.sindicoNome = [...new Set(vinc.map(v => v.sindico_nome).filter(Boolean))].join(" e ");
+    PERFIL = { ...p, condominios: [] };
+  }
+  if (p && p.papel !== "gestor" && (!p.cadastro_completo_em || p.aceite_termos_versao !== TERMOS_V)){
     PERFIL = { ...p, condominios: PERFIL?.condominios || [] };
     $("loginOverlay").hidden = true; msg("");
     perfilDepois = aposLogin;
@@ -1869,7 +1974,7 @@ async function aposLogin(){
     return;
   }
   $("pagBanner").hidden = true;
-  if (p.papel !== "admin"){
+  if (p.papel !== "admin" && p.papel !== "gestor"){
     const s = await situacaoAssinatura(user.id);
     if (s.bloqueado){
       $("loginOverlay").hidden = true; msg("");
@@ -1881,14 +1986,21 @@ async function aposLogin(){
     }
     if (s.tem && s.status === "atrasada") mostrarAvisoAtraso(s);
   }
-  const { data: cs } = await sb.from("condominios").select("id, nome, cidade, unidades, cnpj").eq("sindico_id", user.id).order("nome");
+  const { data: cs } = await filtroCond(sb.from("condominios").select("id, nome, cidade, unidades, cnpj"), user.id).order("nome");
   PERFIL = { ...p, condominios: cs || [] }; preencherCabecalho(PERFIL); rotuloVoz();
   $("admBtn").hidden = p.papel !== "admin";
+  $("equipeBtn").hidden = p.papel === "gestor";
+  if (p.papel === "gestor" && p.condIdsGestor.length && !PERFIL.condominios.length){
+    $("loginOverlay").hidden = true; mostrarBloqueio("O SINDICS está suspenso porque a assinatura do síndico está pendente. Avise o síndico para regularizar.");
+    $("bloqueioPagar").hidden = true; return;
+  }
   $("loginOverlay").hidden = true; msg("");
   try{ history.replaceState(null, "", location.pathname); }catch(_){}
   atualizarResumoTela(); carregarLembretes();
   if (!iniciado){ iniciado = true; start(); }
-  if (!PERFIL.condominios.length)
+  if (!PERFIL.condominios.length && souGestor())
+    abrirCondominios(null, "Ainda não há condomínios liberados para você. Peça ao síndico para autorizar em Minha equipe.");
+  else if (!PERFIL.condominios.length)
     abrirCondominios(null, "Bem-vindo ao SINDICS! Cadastre o seu condomínio aqui (CNPJ, nome, endereço, apartamentos, Convenção e Regulamento em PDF) ou feche esta janela e diga “SINDICS” para cadastrar por voz.");
   else if (PERFIL.condominios.some(c => !c.cnpj))
     abrirCondominios(null, "Complete o cadastro: informe o CNPJ e o endereço dos condomínios marcados em âmbar.");

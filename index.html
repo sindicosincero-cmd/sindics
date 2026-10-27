@@ -225,6 +225,8 @@ button.cal-d.sel{border-color:var(--cyan);background:var(--btn-hover)}
 .perfil-wrap{z-index:45;background:var(--overlay)}
 .perfil{width:min(640px,100%);height:auto;max-height:100%;overflow-y:auto}
 .cform.pf-form{border:0;padding:0;margin:0}
+.pf-bloco{display:flex;flex-direction:column;gap:6px;min-width:0}
+.pf-bloco[hidden]{display:none}
 .pf-form fieldset{border:1px solid var(--line);padding:10px 14px 14px;margin:0 0 6px;display:flex;flex-direction:column;gap:6px;min-width:0}
 .pf-form legend{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;color:var(--cyan);text-transform:uppercase;padding:0 6px}
 .aceite{display:flex;gap:10px;align-items:flex-start;font-family:var(--body)!important;font-size:13px!important;letter-spacing:0!important;text-transform:none!important;color:var(--fg)!important;line-height:1.5;margin-top:8px!important}
@@ -266,6 +268,16 @@ button.perigo:hover{background:var(--danger);color:var(--bg)}
 .lg-item strong{font-size:14px;font-weight:500}
 .lg-item span{font-size:12.5px;line-height:1.5;color:var(--muted)}
 .lg-item small{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--accent)}
+.eq-lista{display:flex;flex-direction:column;gap:10px}
+.eq-card{border:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:8px}
+.eq-card strong{font-size:15px}
+.eq-card small{font-family:var(--mono);font-size:10.5px;color:var(--muted);overflow-wrap:anywhere}
+.eq-conds{display:flex;flex-direction:column;gap:6px}
+.eq-conds label{display:flex;gap:8px;align-items:center;font-family:var(--body);font-size:13.5px;letter-spacing:0;text-transform:none;color:var(--fg);margin:0}
+.eq-conds input{width:16px!important;height:16px;accent-color:var(--cyan)}
+.eq-acoes{display:flex;gap:6px;flex-wrap:wrap}
+.eq-acoes button{padding:6px 10px;font-size:10px}
+.eq-sub{margin-top:6px}
 .adm-lgpd{border:1px solid var(--amber);padding:10px 12px;display:flex;flex-direction:column;gap:6px}
 .adm-lgpd h4{margin:0;font-family:var(--mono);font-weight:500;font-size:10.5px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase}
 
@@ -498,6 +510,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
       <button id="perfilBtn" type="button">Meu cadastro</button>
       <button id="lgpdBtn" type="button">Privacidade e LGPD</button>
       <button id="installBtn" type="button" hidden>Instalar app</button>
+      <button id="equipeBtn" type="button">Minha equipe</button>
       <button id="admBtn" type="button" hidden>Síndicos</button>
       <button id="logoutBtn" type="button">Sair</button>
     </div>
@@ -614,6 +627,26 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   <p class="com-dica">Você pode clicar no texto e ajustar antes de imprimir. Para mudar por voz: “SINDICS, troca o segundo parágrafo…”.</p>
 </div>
 
+<aside class="drawer" id="equipeDrawer" aria-label="Minha equipe">
+  <h2>Minha equipe <button id="closeEquipe" type="button">Fechar</button></h2>
+  <div class="log">
+    <p class="dica">Gestores auxiliares usam o SINDICS no dia a dia, só nos condomínios que você autorizar: agenda, documentos legais, comunicados, regras e cálculos. Não podem cadastrar ou excluir condomínios, nem mexer na assinatura ou na equipe.</p>
+    <p class="rs-t" id="eqContagem"></p>
+    <div id="eqLista" class="eq-lista"></div>
+    <form id="eqForm" class="cform" novalidate>
+      <p class="rs-t">Convidar gestor</p>
+      <label for="eqNome">Nome do gestor *</label>
+      <input id="eqNome" autocomplete="off">
+      <label for="eqEmail">E-mail do gestor *</label>
+      <input id="eqEmail" type="email" autocomplete="off">
+      <p class="rs-t eq-sub">Condomínios que ele vai cuidar *</p>
+      <div id="eqConds" class="eq-conds"></div>
+      <p class="cmsg" id="eqMsg" role="status"></p>
+      <button id="eqEnviar" class="primary" type="submit">Enviar convite</button>
+    </form>
+  </div>
+</aside>
+
 <aside class="drawer" id="admDrawer" aria-label="Administração de síndicos">
   <h2>Síndicos cadastrados <button id="closeAdm" type="button">Fechar</button></h2>
   <div class="log" id="admLista"></div>
@@ -676,6 +709,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
         <legend>Seus dados</legend>
         <label for="pfNome">Seu nome completo *</label>
         <input id="pfNome" autocomplete="name">
+        <div class="pf-bloco" id="pfBlocoEmpresa">
         <label for="pfEmpresa">Sua empresa *</label>
         <input id="pfEmpresa" autocomplete="organization">
         <label for="pfCnpj">CNPJ da empresa *</label>
@@ -688,6 +722,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
         <input id="pfEnd" autocomplete="street-address">
         <label for="pfCidade">Cidade *</label>
         <input id="pfCidade" autocomplete="address-level2">
+        </div>
         <div class="c2">
           <div><label for="pfEmailC">E-mail de contato *</label><input id="pfEmailC" type="email" autocomplete="email"></div>
           <div><label for="pfTel">Telefone / WhatsApp *</label><input id="pfTel" inputmode="tel" placeholder="(11) 90000-0000" maxlength="15" autocomplete="tel"></div>
@@ -695,9 +730,11 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
         <label for="pfTrat">Como o SINDICS deve chamar você</label>
         <input id="pfTrat" maxlength="40" placeholder="Ex.: Sr. Cardoso, Dra. Ana, Marcos">
         <p class="dica">Se ficar em branco, uso seu primeiro nome.</p>
+        <div class="pf-bloco" id="pfBlocoAss">
         <label for="pfAss">Assinatura dos comunicados</label>
         <input id="pfAss" placeholder="Ex.: Maria Souza — Síndica Profissional">
         <p class="dica">Usada no rodapé dos comunicados. Se ficar em branco, uso seu nome e “Síndico”.</p>
+        </div>
       </fieldset>
       <label class="aceite"><input id="pfAceite" type="checkbox"> <span>Li e aceito a <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade e os Termos de Uso</a> do SINDICS, incluindo o tratamento dos meus dados conforme a LGPD (Lei 13.709/2018).</span></label>
       <p class="cmsg" id="pfMsg" role="status"></p>
@@ -807,6 +844,6 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   <span id="tapMsg">Toque em qualquer lugar para ligar som e microfone. Depois disso ele fica em prontidão sozinho.</span>
 </div>
 
-<script src="app.js?v=3.8.5"></script>
+<script src="app.js?v=3.9.0"></script>
 </body>
 </html>
