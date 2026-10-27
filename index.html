@@ -360,7 +360,7 @@ function preencherCabecalho(p){
   document.getElementById("hdrCond").textContent = cs.length > 1 ? cs.length + " cadastrados" : (cs[0] ? cs[0].nome : "nenhum");
 }
 const WAKE_RE = /\b(s[ií]ndi(cs|ks|x|ques|quis|cos?)|sin\s?dics|syndics?)\b/i;
-const SLEEP_RE = /(pode descansar|pode desligar|encerrar (a )?conversa|desligar sindics|at[eé] mais,? sindics|obrigado,? sindics)/i;
+const SLEEP_RE = /(pode descansar|pode desligar|pode encerrar|encerr(ar|a|e)( (a )?conversa| por hoje| aqui)?\b|desligar sindics|desliga|at[eé] mais|at[eé] amanh[ãa]|at[eé] logo|tchau|boa noite,? sindics|obrigad[oa],? sindics|[eé] s[oó] isso|por hoje [eé] s[oó])/i;
 const IDLE_MS = 30000;
 /* Legenda das respostas do SINDICS na tela. false = só voz (as falas continuam no Registro). */
 const SHOW_CAPTION = false;
