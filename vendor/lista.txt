@@ -1,0 +1,7 @@
+# arquivo-local  endereço de origem
+three.min.js https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js
+motion.js https://cdn.jsdelivr.net/npm/motion@11.11.13/dist/motion.js
+supabase.js https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js
+pdf.min.js https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js
+pdf.worker.min.js https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js
+tesseract.min.js https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js

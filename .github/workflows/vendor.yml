@@ -1,0 +1,33 @@
+# Copia as bibliotecas usadas pelo SINDICS para dentro do próprio site (pasta vendor/),
+# para não depender de servidores externos na hora de carregar a página.
+name: Copiar bibliotecas (vendor)
+on:
+  workflow_dispatch:
+  push:
+    paths: ['.github/workflows/vendor.yml', 'vendor/lista.txt']
+permissions:
+  contents: write
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Baixar e conferir
+        run: |
+          set -euo pipefail
+          mkdir -p vendor
+          while read -r destino url; do
+            [ -z "$destino" ] && continue
+            case "$destino" in \#*) continue;; esac
+            curl -fsSL --retry 3 "$url" -o "vendor/$destino"
+            test -s "vendor/$destino"
+          done < vendor/lista.txt
+          ( cd vendor && for f in *.js; do echo "$f sha384-$(openssl dgst -sha384 -binary "$f" | openssl base64 -A)"; done ) > vendor/SRI.txt
+          cat vendor/SRI.txt
+      - name: Salvar no repositório
+        run: |
+          git config user.name "sindics-bot"
+          git config user.email "sindics-bot@users.noreply.github.com"
+          git add vendor
+          git diff --cached --quiet || git commit -m "Atualiza bibliotecas locais (vendor)"
+          git push
