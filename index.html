@@ -210,6 +210,55 @@ button.cal-d.sel{border-color:var(--cyan);background:var(--btn-hover)}
 .dl-item .dl-quando{grid-column:2;font-size:12.5px;color:var(--fg)}
 .dl-item button{grid-column:3;grid-row:1 / span 2;align-self:center;padding:6px 9px;font-size:10px;letter-spacing:.1em}
 .dl-nota{margin:0;font-size:11.5px;line-height:1.5;color:var(--muted)}
+.dl-nota a,.lg-ul a,.aceite a,.lg-check a{color:var(--cyan)}
+
+/* ---------- Cadastro do síndico ---------- */
+.perfil-wrap{z-index:45;background:var(--overlay)}
+.perfil{width:min(640px,100%);height:auto;max-height:100%;overflow-y:auto}
+.cform.pf-form{border:0;padding:0;margin:0}
+.pf-form fieldset{border:1px solid var(--line);padding:10px 14px 14px;margin:0 0 6px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.pf-form legend{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;color:var(--cyan);text-transform:uppercase;padding:0 6px}
+.aceite{display:flex;gap:10px;align-items:flex-start;font-family:var(--body)!important;font-size:13px!important;letter-spacing:0!important;text-transform:none!important;color:var(--fg)!important;line-height:1.5;margin-top:8px!important}
+.aceite input{width:18px!important;height:18px;flex:none;margin-top:2px;accent-color:var(--cyan)}
+button.link.destaque{color:var(--cyan);text-decoration:none;border-bottom:1px solid var(--cyan);padding:4px 0}
+.pol-link{font-family:var(--body);font-size:12px;color:var(--muted)}
+.pol-link:hover{color:var(--fg)}
+.login{overflow-y:auto;justify-content:safe center;padding-top:24px;padding-bottom:24px}
+
+/* ---------- Privacidade e LGPD ---------- */
+.lg-abas{display:flex;gap:6px}
+.lg-abas button{padding:8px 12px;font-size:10.5px}
+.lg-abas button[aria-selected="true"]{border-color:var(--cyan);color:var(--cyan)}
+.lg-corpo{flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;padding-right:4px}
+.lg-corpo[hidden]{display:none}
+.lg-col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.lg-larga{grid-column:1 / -1}
+.lg-col h3{margin:6px 0 0;font-family:var(--mono);font-weight:500;font-size:10.5px;letter-spacing:.16em;color:var(--accent);text-transform:uppercase;border-top:1px solid var(--line-strong);padding-top:8px}
+.lg-dl{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;font-size:13.5px}
+.lg-dl dt{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;padding-top:2px}
+.lg-dl dd{margin:0;overflow-wrap:anywhere}
+.lg-ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:13.5px;line-height:1.5}
+.lg-acoes{display:flex;gap:8px;flex-wrap:wrap}
+.lg-acoes button{padding:9px 12px;font-size:10.5px}
+.lg-acoes select,.cform select,.cform textarea{font-family:var(--body);font-size:14px;padding:8px 10px;background:var(--btn-bg);color:var(--fg);border:1px solid var(--line-strong);max-width:100%;min-width:0}
+.cform textarea{resize:vertical}
+button.perigo{border-color:var(--danger);color:var(--danger)}
+button.perigo:hover{background:var(--danger);color:var(--bg)}
+.lg-lista{display:flex;flex-direction:column;gap:6px}
+.lg-sol{border:1px solid var(--line);border-left:3px solid var(--amber);padding:8px 10px;font-size:13px;display:flex;flex-direction:column;gap:2px}
+.lg-sol.atendida{border-left-color:var(--ok)} .lg-sol.recusada{border-left-color:var(--danger)}
+.lg-sol small{font-family:var(--mono);font-size:10.5px;color:var(--muted);overflow-wrap:anywhere}
+.lg-topo{display:flex;flex-direction:column;gap:10px}
+.lg-prog{margin:0;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--muted)}
+.lg-check{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.lg-item{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;border:1px solid var(--line);border-left:3px solid var(--line-strong);padding:10px 12px;cursor:pointer}
+.lg-item.feito{border-left-color:var(--ok)}
+.lg-item input{width:18px;height:18px;margin-top:2px;accent-color:var(--ok);grid-row:span 3}
+.lg-item strong{font-size:14px;font-weight:500}
+.lg-item span{font-size:12.5px;line-height:1.5;color:var(--muted)}
+.lg-item small{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--accent)}
+.adm-lgpd{border:1px solid var(--amber);padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.adm-lgpd h4{margin:0;font-family:var(--mono);font-weight:500;font-size:10.5px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase}
 
 /* ---------- Radar Condominial (edição do dia) ---------- */
 .rd{width:min(1100px,100%)}
@@ -260,6 +309,10 @@ button.cal-d.sel{border-color:var(--cyan);background:var(--btn-hover)}
 
 @media (max-width:860px){
   .cal{height:100%;padding:12px}
+  .perfil{height:auto}
+  .lg-corpo,.lg-check{grid-template-columns:1fr}
+  .lg-abas{order:3;width:100%}
+  .lg-abas button{flex:1}
   .dl-item{grid-template-columns:minmax(0,1fr) auto}
   .dl-pill{grid-row:auto;grid-column:1;justify-self:start}
   .dl-item small,.dl-item .dl-quando,.dl-item strong{grid-column:1 / -1}
@@ -432,6 +485,9 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
       <button id="mute" type="button" aria-pressed="false">Silenciar mic</button>
       <button id="sfxBtn" type="button" aria-pressed="false">Som ambiente</button>
       <button id="themeBtn" type="button">Tema claro</button>
+      <button id="vozBtn" type="button">Voz: masculina</button>
+      <button id="perfilBtn" type="button">Meu cadastro</button>
+      <button id="lgpdBtn" type="button">Privacidade e LGPD</button>
       <button id="installBtn" type="button" hidden>Instalar app</button>
       <button id="admBtn" type="button" hidden>Síndicos</button>
       <button id="logoutBtn" type="button">Sair</button>
@@ -448,7 +504,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
       <div class="ind"><span>Dólar</span><strong id="i-usd">—</strong><small id="d-usd">carregando…</small>
         <svg class="spark" id="sp-usd" viewBox="0 0 200 30" preserveAspectRatio="none" aria-hidden="true"></svg></div>
     </div>
-    <p class="menu-sec">Diga “SINDICS” para chamar · “abre o menu” · “tema claro” · “pode descansar”</p>
+    <p class="menu-sec">Diga “SINDICS” para chamar · “abre o menu” · “tema claro” · “muda para voz feminina” · “pode descansar”</p>
   </div>
 </aside>
 
@@ -585,6 +641,125 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   </form>
   <button id="forgotBtn" class="link" type="button">Esqueci minha senha</button>
   <span id="loginMsg" role="status"></span>
+  <button id="criarContaBtn" class="link destaque" type="button">Ainda não tem conta? Criar conta de síndico</button>
+  <a class="pol-link" href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade e Termos de Uso</a>
+</div>
+
+<div class="cal-wrap perfil-wrap" id="perfilOverlay" hidden>
+  <section class="cal holo perfil" role="dialog" aria-labelledby="pfTitulo">
+    <div class="dl-top">
+      <h2 id="pfTitulo">Cadastro do síndico</h2>
+      <button id="pfFechar" type="button">Fechar</button>
+    </div>
+    <p class="dica" id="pfIntro"></p>
+    <form id="perfilForm" class="cform pf-form" novalidate>
+      <fieldset id="pfAcesso">
+        <legend>Acesso ao sistema</legend>
+        <label for="pfEmail">E-mail de login *</label>
+        <input id="pfEmail" type="email" autocomplete="username">
+        <div class="c2">
+          <div><label for="pfSenha">Senha (mín. 8) *</label><input id="pfSenha" type="password" autocomplete="new-password" minlength="8"></div>
+          <div><label for="pfSenha2">Repita a senha *</label><input id="pfSenha2" type="password" autocomplete="new-password" minlength="8"></div>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Seus dados</legend>
+        <label for="pfNome">Seu nome completo *</label>
+        <input id="pfNome" autocomplete="name">
+        <label for="pfEmpresa">Sua empresa *</label>
+        <input id="pfEmpresa" autocomplete="organization">
+        <label for="pfCnpj">CNPJ da empresa *</label>
+        <input id="pfCnpj" autocomplete="off" placeholder="00.000.000/0000-00" maxlength="18">
+        <div class="c2">
+          <div><label for="pfCep">CEP *</label><input id="pfCep" inputmode="numeric" placeholder="00000-000" maxlength="9" autocomplete="postal-code"></div>
+          <div><label for="pfUf">UF *</label><input id="pfUf" maxlength="2" autocomplete="address-level1"></div>
+        </div>
+        <label for="pfEnd">Endereço (rua, número, complemento, bairro) *</label>
+        <input id="pfEnd" autocomplete="street-address">
+        <label for="pfCidade">Cidade *</label>
+        <input id="pfCidade" autocomplete="address-level2">
+        <div class="c2">
+          <div><label for="pfEmailC">E-mail de contato *</label><input id="pfEmailC" type="email" autocomplete="email"></div>
+          <div><label for="pfTel">Telefone / WhatsApp *</label><input id="pfTel" inputmode="tel" placeholder="(11) 90000-0000" maxlength="15" autocomplete="tel"></div>
+        </div>
+        <label for="pfAss">Assinatura dos comunicados</label>
+        <input id="pfAss" placeholder="Ex.: Maria Souza — Síndica Profissional">
+        <p class="dica">Usada no rodapé dos comunicados. Se ficar em branco, uso seu nome e “Síndico”.</p>
+      </fieldset>
+      <label class="aceite"><input id="pfAceite" type="checkbox"> <span>Li e aceito a <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade e os Termos de Uso</a> do SINDICS, incluindo o tratamento dos meus dados conforme a LGPD (Lei 13.709/2018).</span></label>
+      <p class="cmsg" id="pfMsg" role="status"></p>
+      <div class="c2b">
+        <button id="pfSalvar" class="primary" type="submit">Salvar cadastro</button>
+        <button id="pfSair" type="button" hidden>Sair da conta</button>
+      </div>
+    </form>
+  </section>
+</div>
+
+<div class="cal-wrap" id="lgpdOverlay" hidden>
+  <section class="cal holo lg" role="dialog" aria-labelledby="lgTitulo">
+    <div class="dl-top">
+      <h2 id="lgTitulo">Privacidade e LGPD</h2>
+      <div class="lg-abas" role="tablist">
+        <button id="lgAbaDados" type="button" role="tab" aria-selected="true">Seus dados</button>
+        <button id="lgAbaCond" type="button" role="tab" aria-selected="false">LGPD no condomínio</button>
+      </div>
+      <button id="lgFechar" type="button">Fechar</button>
+    </div>
+    <div class="lg-corpo" id="lgDados" role="tabpanel">
+      <div class="lg-col">
+        <h3>O que o SINDICS guarda sobre você</h3>
+        <dl class="lg-dl" id="lgResumo"></dl>
+        <h3>Como tratamos</h3>
+        <ul class="lg-ul">
+          <li><b>Sua voz não é gravada.</b> O áudio é usado só durante a conversa.</li>
+          <li><b>Transcrição da conversa:</b> apagada automaticamente em 90 dias.</li>
+          <li><b>Registros de acesso:</b> guardados por 6 meses (Marco Civil da Internet, art. 15).</li>
+          <li><b>Moradores:</b> o SINDICS não pede nem guarda dados pessoais de moradores.</li>
+          <li><b>Onde ficam:</b> banco de dados no Brasil (São Paulo). A voz é processada pela ElevenLabs, com transferência internacional nos termos do art. 33 da LGPD.</li>
+        </ul>
+        <p class="dl-nota"><a href="privacidade.html" target="_blank" rel="noopener">Ler a Política de Privacidade completa</a></p>
+      </div>
+      <div class="lg-col">
+        <h3>Seus direitos (LGPD, art. 18)</h3>
+        <div class="lg-acoes">
+          <button id="lgBaixar" type="button" class="primary">Baixar meus dados</button>
+          <button id="lgCorrigir" type="button">Corrigir meu cadastro</button>
+          <button id="lgExcluir" type="button" class="perigo">Pedir exclusão da conta</button>
+        </div>
+        <p class="cmsg" id="lgMsg" role="status"></p>
+        <form id="lgForm" class="cform" novalidate>
+          <label for="lgTipo">Outra solicitação</label>
+          <select id="lgTipo">
+            <option value="acesso">Saber quais dados vocês têm e com quem compartilham</option>
+            <option value="correcao">Corrigir um dado</option>
+            <option value="revogacao">Revogar um consentimento</option>
+            <option value="outro">Outro assunto de privacidade</option>
+          </select>
+          <label for="lgDetalhe">Detalhes</label>
+          <textarea id="lgDetalhe" rows="3" maxlength="2000"></textarea>
+          <button type="submit">Enviar solicitação</button>
+        </form>
+        <h3>Suas solicitações</h3>
+        <div id="lgLista" class="lg-lista"></div>
+        <p class="dl-nota">Respondemos em até 15 dias (LGPD, art. 19). Canal do encarregado: <a href="mailto:sindicanciaethics@gmail.com">sindicanciaethics@gmail.com</a>.</p>
+      </div>
+    </div>
+    <div class="lg-corpo" id="lgCond" role="tabpanel" hidden>
+      <div class="lg-col lg-larga">
+        <div class="lg-topo">
+          <p class="dica">Roteiro de adequação do condomínio à LGPD. O condomínio é o <b>controlador</b> dos dados de moradores, funcionários e visitantes, e o síndico é quem responde por ele. Marque o que já está feito: fica salvo neste aparelho.</p>
+          <div class="lg-acoes">
+            <select id="lgCondSel" aria-label="Condomínio"></select>
+            <button id="lgAviso" type="button" class="primary">Gerar aviso de privacidade para o mural</button>
+          </div>
+          <p class="lg-prog" id="lgProg"></p>
+        </div>
+        <div id="lgCheck" class="lg-check"></div>
+        <p class="dl-nota">Base: Lei 13.709/2018 (LGPD), Resolução CD/ANPD nº 2/2022 (agentes de pequeno porte) e Resolução CD/ANPD nº 15/2024 (incidentes). Material de orientação, não substitui parecer jurídico.</p>
+      </div>
+    </div>
+  </section>
 </div>
 
 <div class="overlay" id="tapOverlay" hidden>
@@ -598,7 +773,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "3.6.0";
+  window.SINDICS_V = "3.7.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -892,23 +1067,29 @@ async function wake(){
     hintEl.textContent = err.message || "Não foi possível liberar a conversa."; hintEl.classList.add("err");
     endSession("Conversa não liberada: " + (err.message || "erro")); return;
   }
-  if (acesso.perfil){ PERFIL = acesso.perfil; preencherCabecalho(PERFIL); }
+  if (acesso.perfil){ PERFIL = { ...PERFIL, ...acesso.perfil, voz: acesso.voz || PERFIL?.voz }; preencherCabecalho(PERFIL); rotuloVoz(); }
   captionEl.textContent = "Conectando…";
+  /* Voz escolhida pelo síndico. Se a feminina falhar ao conectar, tenta de novo com a padrão. */
+  const usarVoz = acesso.voz === "feminina" && acesso.voice_id && !vozFalhou;
+  const dv = { ...acesso.dynamic_variables, voz: usarVoz ? "feminina" : "masculina" };
+  const override = { agent: { prompt: { knowledge_base: acesso.knowledge_base || [] } } };
+  if (usarVoz) override.tts = { voice_id: acesso.voice_id };
+  let conectou = false;
   ws = new WebSocket(acesso.signed_url);
   ws.onopen = () => ws.send(JSON.stringify({
     type:"conversation_initiation_client_data",
-    dynamic_variables: acesso.dynamic_variables,
-    conversation_config_override: { agent: { prompt: { knowledge_base: acesso.knowledge_base || [] } } }
+    dynamic_variables: dv,
+    conversation_config_override: override
   }));
   ws.onmessage = ev => {
     let m; try{ m = JSON.parse(ev.data); }catch(_){ return; }
     switch(m.type){
       case "conversation_initiation_metadata": {
         const f = m.conversation_initiation_metadata_event?.agent_output_audio_format || "pcm_16000"; const r = /pcm_(\d+)/.exec(f); outRate = r ? +r[1] : 16000;
-        setMode("listening"); captionEl.textContent = ""; hintEl.classList.remove("err"); hintEl.textContent = "Conectado · pode falar e interromper quando quiser · diga “pode descansar” para encerrar"; resetIdle(); break;
+        conectou = true; setMode("listening"); captionEl.textContent = ""; hintEl.classList.remove("err"); hintEl.textContent = "Conectado · pode falar e interromper quando quiser · diga “pode descansar” para encerrar"; resetIdle(); break;
       }
       case "audio": { const a = m.audio_event?.audio_base_64; if (a){ playChunk(a); resetIdle(); } break; }
-      case "agent_response": { const t = m.agent_response_event?.agent_response; if (t){ if (SHOW_CAPTION) typeCaption(t); addLog("a", t); } if (sleepAfterReply) sleepAfterSpeech(); break; }
+      case "agent_response": { const t = m.agent_response_event?.agent_response; if (t){ if (SHOW_CAPTION) typeCaption(t); addLog("a", t); } if (reiniciarAposFala){ reiniciarAposFala = false; reiniciarComNovaVoz(); } else if (sleepAfterReply) sleepAfterSpeech(); break; }
       case "user_transcript": { const t = m.user_transcription_event?.user_transcript; if (t && t.trim()){ if (SHOW_CAPTION) youEl.textContent = t; addLog("u", t); setMode("thinking"); resetIdle(); if (SLEEP_RE.test(t)) sleepAfterReply = true; } break; }
       case "client_tool_call": {
         const c = m.client_tool_call || {}; const sock = ws;
@@ -932,6 +1113,11 @@ async function wake(){
   };
   ws.onerror = () => { hintEl.textContent = "Falha na conexão com o SINDICS. Confira a internet."; hintEl.classList.add("err"); };
   ws.onclose = ev => {
+    if (usarVoz && !conectou && mode === "connecting"){
+      vozFalhou = true; addLog("s", "A voz feminina não está liberada na conta de voz (código " + ev.code + "). Usando a voz padrão.");
+      endSession("Reconectando com a voz padrão…"); hintEl.textContent = "Voz feminina indisponível no momento — usando a voz padrão."; hintEl.classList.add("err");
+      setTimeout(wake, 600); return;
+    }
     if (mode === "connecting"){ hintEl.textContent = "O SINDICS recusou a conexão (código " + ev.code + "). Use o endereço oficial: sindicosincero-cmd.github.io/sindics"; hintEl.classList.add("err"); }
     if (inSession()) endSession("Conversa encerrada.");
   };
@@ -975,7 +1161,7 @@ wakeBtn.addEventListener("click", fecharMenu);
 document.addEventListener("keydown", e => {
   if (e.target.closest("button,input")) return;
   if (e.code === "Space"){ e.preventDefault(); inSession() ? endSession("Encerrado pelo teclado.") : (mode === "standby" && wake()); }
-  if (e.key === "Escape"){ DRAWERS.forEach(id => $(id).classList.remove("open")); $("menuBtn").setAttribute("aria-expanded","false"); fecharCalendario(); fecharDocumentacao(); fecharRadar(); fecharComunicado(); }
+  if (e.key === "Escape"){ DRAWERS.forEach(id => $(id).classList.remove("open")); $("menuBtn").setAttribute("aria-expanded","false"); fecharCalendario(); fecharDocumentacao(); fecharRadar(); fecharComunicado(); fecharLgpd(); if (perfilModo === "editar") fecharPerfil(); }
 });
 
 /* ======================= APLICATIVO INSTALÁVEL (voz liberada sem toque) ======================= */
@@ -990,6 +1176,7 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden && mo
 const loginMsg = $("loginMsg");
 function msg(t, err){ loginMsg.textContent = t || ""; loginMsg.style.color = err ? "var(--danger)" : "var(--muted)"; }
 function mostrarLogin(t, err){
+  if (perfilModo !== "criar") $("perfilOverlay").hidden = true; fecharLgpd();
   $("loginOverlay").hidden = false; $("newPwdForm").hidden = true; $("loginForm").hidden = false; $("forgotBtn").hidden = false;
   msg(t, err); setTimeout(() => $("email").focus(), 80);
 }
@@ -1095,11 +1282,22 @@ function controlarTela(a){
     case "imprimir_comunicado": if ($("comOverlay").hidden) throw new Error("Não há comunicado aberto na tela."); setTimeout(imprimirComunicado, 300); return "Janela de impressão aberta (dá para escolher Salvar como PDF).";
     case "copiar_comunicado": if ($("comOverlay").hidden) throw new Error("Não há comunicado aberto na tela."); return copiarComunicado().then(() => $("comCopiar").textContent.includes("✓") ? "Texto copiado." : "O navegador não deixou copiar por voz; peça para tocar em Copiar texto.");
     case "fechar_comunicado": fecharComunicado(); return "Comunicado fechado.";
+    case "abrir_lgpd": return abrirLgpd(a.aba === "condominio" ? "condominio" : "dados").then(() => a.aba === "condominio" ? "Roteiro de LGPD do condomínio aberto na tela." : "Área de Privacidade e LGPD aberta: dados do síndico, download, correção e pedidos.");
+    case "fechar_lgpd": fecharLgpd(); return "Área de privacidade fechada.";
+    case "abrir_cadastro": if (!PERFIL) throw new Error("Síndico não está logado."); abrirPerfil("editar", PERFIL); return "Cadastro do síndico aberto na tela para conferir e corrigir.";
     default: throw new Error("Ação de tela desconhecida.");
   }
 }
 async function executarComDados(nome, a, user){
   switch (nome){
+    case "preferencias_voz": {
+      const atual = PERFIL?.voz === "feminina" ? "feminina" : "masculina";
+      const nova = a.voz === "feminina" || a.voz === "masculina" ? a.voz : (atual === "feminina" ? "masculina" : "feminina");
+      if (nova === atual && !vozFalhou) return `A voz ${atual} já está em uso.`;
+      await trocarVoz(nova);
+      if (inSession()){ reiniciarAposFala = true; setTimeout(() => { if (reiniciarAposFala){ reiniciarAposFala = false; reiniciarComNovaVoz(); } }, 9000); }
+      return `Voz ${nova} salva como preferência. Diga só uma frase curta de despedida (ex.: "Trocando para a voz ${nova}."); a conversa reinicia sozinha em seguida já com a nova voz.`;
+    }
     case "agenda_criar": {
       const cond = a.condominio ? acharCondominio(a.condominio) : null;
       const ini = new Date(comFuso(a.inicio)); if (isNaN(ini)) throw new Error("Data e hora de início inválidas.");
@@ -1677,15 +1875,328 @@ $("comCopiar").addEventListener("click", copiarComunicado);
 $("comImprimir").addEventListener("click", imprimirComunicado);
 $("comFechar").addEventListener("click", fecharComunicado);
 
+/* ======================= VOZ DO ASSISTENTE ======================= */
+const VOZ_NOME = { masculina: "masculina", feminina: "feminina" };
+let vozFalhou = false;          // a voz feminina não abriu nesta página: usa a masculina
+let reiniciarAposFala = false;  // troca de voz pedida durante a conversa
+function rotuloVoz(){ $("vozBtn").textContent = "Voz: " + (PERFIL?.voz === "feminina" ? "feminina" : "masculina"); }
+async function trocarVoz(nova){
+  if (!PERFIL) throw new Error("Síndico não está logado.");
+  if (!VOZ_NOME[nova]) nova = PERFIL.voz === "feminina" ? "masculina" : "feminina";
+  const { data: { user } } = await sb.auth.getUser(); if (!user) throw new Error("Sessão expirada.");
+  const { error } = await sb.from("perfis").update({ voz: nova }).eq("id", user.id);
+  if (error) throw error;
+  PERFIL.voz = nova; vozFalhou = false; rotuloVoz();
+  addLog("s", "Voz do SINDICS: " + nova + ".");
+  return nova;
+}
+$("vozBtn").addEventListener("click", async () => {
+  try{
+    const nova = await trocarVoz();
+    if (inSession()){ endSession("Trocando a voz…"); setTimeout(wake, 700); }
+    else { hintEl.classList.remove("err"); hintEl.textContent = "Voz " + nova + " escolhida. Diga “SINDICS” para ouvir."; }
+  }catch(e){ hintEl.textContent = "Não foi possível trocar a voz: " + (e.message || e); hintEl.classList.add("err"); }
+});
+function reiniciarComNovaVoz(){
+  const w = () => { if (outCtx && playHead > outCtx.currentTime){ setTimeout(w, 300); return; } endSession("Trocando a voz…"); setTimeout(wake, 700); };
+  setTimeout(w, 500);
+}
+
+/* ======================= CADASTRO DO SÍNDICO ======================= */
+const TERMOS_V = "2026-10-26";
+let perfilModo = "criar";       // criar | completar | editar
+let perfilDepois = null;         // o que fazer depois de salvar
+const pfMsg = (t, err) => { $("pfMsg").textContent = t || ""; $("pfMsg").style.color = err ? "var(--danger)" : "var(--ok)"; };
+const soDig = v => (v || "").replace(/\D/g, "");
+function mascaraTel(v){
+  const d = soDig(v).slice(0, 11);
+  if (d.length <= 2) return d ? "(" + d : "";
+  if (d.length <= 6) return `(${d.slice(0,2)}) ${d.slice(2)}`;
+  if (d.length <= 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
+  return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+}
+const PF_CAMPOS = { pfNome:"nome", pfEmpresa:"empresa", pfCnpj:"cnpj", pfCep:"cep", pfEnd:"endereco", pfCidade:"cidade", pfUf:"uf", pfEmailC:"email_contato", pfTel:"telefone", pfAss:"assinatura" };
+function preencherPerfilForm(p = {}){
+  for (const [id, k] of Object.entries(PF_CAMPOS)){
+    let v = p[k] || "";
+    if (k === "cnpj") v = v ? mascaraCnpj(v) : "";
+    if (k === "cep") v = v ? soDig(v).replace(/^(\d{5})(\d{3})$/, "$1-$2") : "";
+    if (k === "telefone") v = v ? mascaraTel(v) : "";
+    $(id).value = v; $(id).removeAttribute("aria-invalid");
+  }
+}
+function abrirPerfil(modo, p = {}, aviso = ""){
+  perfilModo = modo;
+  const criar = modo === "criar";
+  $("pfAcesso").hidden = !criar;
+  $("pfTitulo").textContent = criar ? "Criar conta de síndico" : modo === "completar" ? "Complete seu cadastro" : "Meu cadastro";
+  $("pfIntro").textContent = aviso || (criar
+    ? "Preencha seus dados profissionais. Depois de confirmar o e-mail, seu acesso é liberado pelo administrador."
+    : modo === "completar" ? "Para continuar usando o SINDICS, precisamos dos seus dados profissionais completos e do seu aceite à Política de Privacidade."
+    : "Confira e corrija seus dados. As alterações valem na hora.");
+  $("pfSalvar").textContent = criar ? "Criar conta" : "Salvar cadastro";
+  $("pfFechar").hidden = modo === "completar";
+  $("pfSair").hidden = modo !== "completar";
+  ["pfEmail","pfSenha","pfSenha2"].forEach(id => { $(id).value = id === "pfEmail" ? ($("email").value || "") : ""; });
+  preencherPerfilForm(p);
+  if (!criar && !$("pfEmailC").value && p.email) $("pfEmailC").value = p.email;
+  $("pfAceite").checked = !criar && p.aceite_termos_versao === TERMOS_V;
+  pfMsg(""); fecharMenu();
+  $("perfilOverlay").hidden = false; $("perfilOverlay").querySelector(".perfil").scrollTop = 0;
+  setTimeout(() => $(criar ? "pfEmail" : "pfNome").focus(), 80);
+}
+function fecharPerfil(){ $("perfilOverlay").hidden = true; }
+function lerPerfilForm(){
+  const v = {};
+  for (const [id, k] of Object.entries(PF_CAMPOS)) v[k] = $(id).value.trim();
+  v.cnpj = soCnpj(v.cnpj); v.cep = soDig(v.cep); v.telefone = soDig(v.telefone); v.uf = v.uf.toUpperCase(); v.email_contato = v.email_contato.toLowerCase();
+  if (!v.assinatura && v.nome) v.assinatura = v.nome + " — Síndico";
+  return v;
+}
+function validarPerfil(v){
+  const erro = (id, t) => { $(id).setAttribute("aria-invalid", "true"); $(id).focus(); return t; };
+  Object.keys(PF_CAMPOS).forEach(id => $(id).removeAttribute("aria-invalid"));
+  if (v.nome.length < 3 || !/\s/.test(v.nome)) return erro("pfNome", "Informe seu nome completo (nome e sobrenome).");
+  if (v.empresa.length < 2) return erro("pfEmpresa", "Informe o nome da sua empresa.");
+  if (!cnpjValido(v.cnpj)) return erro("pfCnpj", "CNPJ da empresa inválido. Confira os números.");
+  if (v.cep.length !== 8) return erro("pfCep", "Informe o CEP com 8 números.");
+  if (!/^[A-Z]{2}$/.test(v.uf)) return erro("pfUf", "Informe a UF com 2 letras.");
+  if (v.endereco.length < 5 || !/\d/.test(v.endereco)) return erro("pfEnd", "Informe o endereço com rua e número.");
+  if (v.cidade.length < 2) return erro("pfCidade", "Informe a cidade.");
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.email_contato)) return erro("pfEmailC", "E-mail de contato inválido.");
+  if (v.telefone.length < 10 || v.telefone.length > 11) return erro("pfTel", "Telefone inválido: use DDD + número.");
+  if (!$("pfAceite").checked) return "Para continuar, marque o aceite da Política de Privacidade e dos Termos de Uso.";
+  return "";
+}
+$("pfCnpj").addEventListener("input", e => { e.target.value = mascaraCnpj(e.target.value); e.target.removeAttribute("aria-invalid"); });
+$("pfTel").addEventListener("input", e => { e.target.value = mascaraTel(e.target.value); e.target.removeAttribute("aria-invalid"); });
+$("pfUf").addEventListener("input", e => { e.target.value = e.target.value.replace(/[^a-z]/gi, "").toUpperCase(); });
+$("pfCep").addEventListener("input", async e => {
+  const v = soDig(e.target.value).slice(0, 8);
+  e.target.value = v.length > 5 ? v.slice(0, 5) + "-" + v.slice(5) : v;
+  if (v.length !== 8) return;
+  try{
+    pfMsg("Buscando endereço pelo CEP…");
+    const j = await (await fetch(`https://viacep.com.br/ws/${v}/json/`)).json();
+    if (j.erro){ pfMsg("CEP não encontrado. Preencha o endereço manualmente.", true); return; }
+    if (!$("pfEnd").value) $("pfEnd").value = [j.logradouro, j.bairro].filter(Boolean).join(", ") + (j.logradouro ? ", nº " : "");
+    $("pfCidade").value = j.localidade || ""; $("pfUf").value = j.uf || "";
+    pfMsg("Endereço preenchido. Complete o número.");
+    $("pfEnd").focus(); const len = $("pfEnd").value.length; $("pfEnd").setSelectionRange(len, len);
+  }catch(_){ pfMsg("Não consegui buscar o CEP agora. Preencha manualmente.", true); }
+});
+$("perfilForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const v = lerPerfilForm();
+  if (perfilModo === "criar"){
+    const email = $("pfEmail").value.trim().toLowerCase(), s1 = $("pfSenha").value, s2 = $("pfSenha2").value;
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ $("pfEmail").focus(); pfMsg("Informe um e-mail de login válido.", true); return; }
+    if (s1.length < 8){ $("pfSenha").focus(); pfMsg("A senha precisa ter pelo menos 8 caracteres.", true); return; }
+    if (s1 !== s2){ $("pfSenha2").focus(); pfMsg("As duas senhas não são iguais.", true); return; }
+    if (!v.email_contato) v.email_contato = email;
+    const err = validarPerfil(v); if (err){ pfMsg(err, true); return; }
+    $("pfSalvar").disabled = true; pfMsg("Criando sua conta…");
+    const { data, error } = await sb.auth.signUp({ email, password: s1, options: { emailRedirectTo: SITE_URL, data: { ...v, aceite_termos_versao: TERMOS_V } } });
+    $("pfSalvar").disabled = false; $("pfSenha").value = $("pfSenha2").value = "";
+    if (error){
+      const m = /registered|already/i.test(error.message) ? "Este e-mail já tem conta. Use Entrar ou Esqueci minha senha."
+        : /signups? not allowed|disabled/i.test(error.message) ? "O cadastro de novas contas está fechado no momento. Fale com o administrador do SINDICS."
+        : "Não foi possível criar a conta: " + error.message;
+      pfMsg(m, true); return;
+    }
+    fecharPerfil();
+    if (data.session){ await aposLogin(); return; }
+    $("email").value = email;
+    mostrarLogin("Conta criada! Enviamos um link de confirmação para " + email + ". Depois de confirmar, seu acesso fica aguardando a aprovação do administrador.");
+    return;
+  }
+  const err = validarPerfil(v); if (err){ pfMsg(err, true); return; }
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user){ fecharPerfil(); mostrarLogin("Sua sessão expirou. Entre novamente."); return; }
+  $("pfSalvar").disabled = true; pfMsg("Salvando…");
+  const agora = new Date().toISOString();
+  const patch = { ...v, cadastro_completo_em: PERFIL?.cadastro_completo_em || agora };
+  if (PERFIL?.aceite_termos_versao !== TERMOS_V){ patch.aceite_termos_em = agora; patch.aceite_termos_versao = TERMOS_V; }
+  const { error } = await sb.from("perfis").update(patch).eq("id", user.id);
+  $("pfSalvar").disabled = false;
+  if (error){ pfMsg(error.message || "Não foi possível salvar.", true); return; }
+  if (PERFIL) Object.assign(PERFIL, patch);
+  pfMsg("Cadastro salvo ✓");
+  const depois = perfilDepois; perfilDepois = null;
+  setTimeout(() => { fecharPerfil(); if (PERFIL) preencherCabecalho(PERFIL); if (depois) depois(); }, 500);
+});
+$("pfFechar").addEventListener("click", () => { fecharPerfil(); if (perfilModo === "criar") mostrarLogin(); });
+$("pfSair").addEventListener("click", async () => { fecharPerfil(); perfilDepois = null; await sb.auth.signOut(); mostrarLogin("Você saiu. Entre de novo quando quiser completar o cadastro."); });
+$("criarContaBtn").addEventListener("click", () => { msg(""); abrirPerfil("criar"); });
+$("perfilBtn").addEventListener("click", () => PERFIL && abrirPerfil("editar", PERFIL));
+
+/* ======================= PRIVACIDADE E LGPD ======================= */
+const TIPO_SOL = { exclusao:"Exclusão da conta", correcao:"Correção de dados", acesso:"Acesso aos dados", revogacao:"Revogação de consentimento", outro:"Outro assunto" };
+const STATUS_SOL = { aberta:"Recebida", em_andamento:"Em andamento", atendida:"Atendida", recusada:"Recusada" };
+const lgMsg = (t, err) => { $("lgMsg").textContent = t || ""; $("lgMsg").style.color = err ? "var(--danger)" : "var(--ok)"; };
+const CHECK_LGPD = [
+  { k:"mapa", t:"Mapear os dados tratados", d:"Liste o que o condomínio coleta: cadastro de moradores e inquilinos, visitantes e prestadores na portaria, imagens de câmeras, biometria ou reconhecimento facial, dados de funcionários.", b:"Art. 37" },
+  { k:"base", t:"Definir a base legal de cada uso", d:"Cobrança de cotas e assembleias: obrigação legal e execução da convenção. Câmeras para segurança: legítimo interesse. Biometria é dado sensível: só com consentimento ou outra base do art. 11, e ofereça alternativa (cartão, senha).", b:"Arts. 7º e 11" },
+  { k:"canal", t:"Criar canal de privacidade", d:"Um e-mail ou formulário para moradores exercerem seus direitos. Condomínio de pequeno porte pode dispensar a indicação de encarregado, mas precisa manter esse canal.", b:"Res. ANPD 2/2022, art. 11" },
+  { k:"aviso", t:"Publicar aviso de privacidade", d:"Informe no mural e na portaria quais dados são coletados, para quê, por quanto tempo e o canal de contato. Use o botão “Gerar aviso” acima.", b:"Arts. 6º, VI, e 9º" },
+  { k:"cftv", t:"Regras para as câmeras", d:"Placa de aviso nas áreas filmadas; nada de câmeras em banheiros e vestiários; acesso às gravações só por pessoas autorizadas; prazo de guarda definido (ex.: 30 dias); entrega de imagens só ao titular, à polícia ou por ordem judicial.", b:"Arts. 6º e 46" },
+  { k:"inadimplencia", t:"Não expor inadimplentes", d:"Não divulgue nomes ou unidades de devedores em murais, elevadores ou grupos. A cobrança é feita de forma individual; na prestação de contas, os dados ficam restritos aos condôminos.", b:"Art. 6º, III; CC art. 1.335" },
+  { k:"contratos", t:"Cláusula LGPD nos contratos", d:"Administradora, portaria remota, segurança, aplicativo do condomínio e contabilidade são operadores: o contrato deve dizer que só usam os dados para o serviço e protegem com segurança.", b:"Arts. 39 e 42" },
+  { k:"grupos", t:"Cuidado nos grupos e comunicados", d:"Não compartilhe documentos, telefones ou fotos de moradores em grupos de WhatsApp. Advertências e multas vão só para a unidade envolvida.", b:"Art. 6º, III" },
+  { k:"funcionarios", t:"Treinar funcionários e portaria", d:"Porteiros e zeladores não devem informar a estranhos quem mora, quem saiu ou quem recebeu visita. Faça um treinamento curto e registre.", b:"Art. 50" },
+  { k:"descarte", t:"Descarte e prazo de guarda", d:"Apague cadastros de visitantes, ex-moradores e ex-funcionários quando não forem mais necessários (salvo obrigação legal, como documentos trabalhistas e fiscais).", b:"Arts. 15 e 16" },
+  { k:"direitos", t:"Responder pedidos dos titulares", d:"Quando um morador pedir acesso aos próprios dados, responda de forma completa em até 15 dias.", b:"Arts. 18 e 19, II" },
+  { k:"incidente", t:"Plano para incidentes", d:"Vazamento de dados que possa causar dano relevante deve ser comunicado à ANPD e aos afetados em 3 dias úteis (6 para pequeno porte). Tenha um responsável e um roteiro.", b:"Art. 48; Res. ANPD 15/2024" },
+];
+let lgUid = null;
+const chaveCheck = () => "sindics-lgpd-" + (lgUid || "x") + "-" + ($("lgCondSel").value || "geral");
+function lerCheck(){ try{ return JSON.parse(localStorage.getItem(chaveCheck()) || "{}"); }catch(_){ return {}; } }
+function gravarCheck(o){ try{ localStorage.setItem(chaveCheck(), JSON.stringify(o)); }catch(_){} }
+function renderCheck(){
+  const feitos = lerCheck(), box = $("lgCheck"); box.innerHTML = "";
+  CHECK_LGPD.forEach(it => {
+    const l = document.createElement("label"); l.className = "lg-item" + (feitos[it.k] ? " feito" : "");
+    const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = !!feitos[it.k];
+    cb.onchange = () => { const f = lerCheck(); if (cb.checked) f[it.k] = hojeISO(); else delete f[it.k]; gravarCheck(f); renderCheck(); };
+    const st = document.createElement("strong"); st.textContent = it.t;
+    const sp = document.createElement("span"); sp.textContent = it.d;
+    const sm = document.createElement("small"); sm.textContent = (feitos[it.k] ? "Feito em " + dataBR(feitos[it.k]) + " · " : "") + it.b;
+    l.append(cb, st, sp, sm); box.append(l);
+  });
+  const n = CHECK_LGPD.filter(it => feitos[it.k]).length;
+  $("lgProg").textContent = `${n} de ${CHECK_LGPD.length} itens concluídos`;
+}
+function abaLgpd(qual){
+  const dados = qual !== "condominio";
+  $("lgDados").hidden = !dados; $("lgCond").hidden = dados;
+  $("lgAbaDados").setAttribute("aria-selected", String(dados)); $("lgAbaCond").setAttribute("aria-selected", String(!dados));
+}
+async function abrirLgpd(aba = "dados"){
+  if (!PERFIL) throw new Error("Síndico não está logado.");
+  const { data: { user } } = await sb.auth.getUser(); if (!user) throw new Error("Sessão expirada.");
+  lgUid = user.id;
+  DRAWERS.forEach(id => $(id).classList.remove("open")); fecharCalendario(); fecharDocumentacao(); fecharRadar();
+  const sel = $("lgCondSel"), atual = sel.value; sel.innerHTML = "";
+  const cs = PERFIL.condominios || [];
+  (cs.length ? cs : [{ id: "geral", nome: "Meu condomínio" }]).forEach(c => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.nome; sel.append(o); });
+  if (atual && [...sel.options].some(o => o.value === atual)) sel.value = atual;
+  abaLgpd(aba); renderCheck(); lgMsg("");
+  $("lgpdOverlay").hidden = false;
+  await carregarDadosLgpd(user);
+}
+function fecharLgpd(){ $("lgpdOverlay").hidden = true; }
+async function carregarDadosLgpd(user){
+  const [{ data: p }, { count: nCond }, { count: nDoc }, { count: nComp }, { count: nSes }, { data: sols }] = await Promise.all([
+    sb.from("perfis").select("*").eq("id", user.id).maybeSingle(),
+    sb.from("condominios").select("id", { count:"exact", head:true }).eq("sindico_id", user.id),
+    sb.from("documentos_legais").select("id", { count:"exact", head:true }).eq("sindico_id", user.id),
+    sb.from("compromissos").select("id", { count:"exact", head:true }).eq("sindico_id", user.id),
+    sb.from("sessoes").select("id", { count:"exact", head:true }).eq("sindico_id", user.id),
+    sb.from("lgpd_solicitacoes").select("*").eq("sindico_id", user.id).order("criado_em", { ascending:false }),
+  ]);
+  const dl = $("lgResumo"); dl.innerHTML = "";
+  const linha = (t, v) => { const a = document.createElement("dt"), b = document.createElement("dd"); a.textContent = t; b.textContent = v || "—"; dl.append(a, b); };
+  if (p){
+    linha("Nome", p.nome); linha("Empresa", p.empresa); linha("CNPJ", p.cnpj ? mascaraCnpj(p.cnpj) : "");
+    linha("Endereço", [p.endereco, p.cidade && p.uf ? p.cidade + "/" + p.uf : p.cidade, p.cep ? "CEP " + soDig(p.cep).replace(/^(\d{5})(\d{3})$/, "$1-$2") : ""].filter(Boolean).join(" · "));
+    linha("Login", p.email); linha("Contato", [p.email_contato, p.telefone ? mascaraTel(p.telefone) : ""].filter(Boolean).join(" · "));
+    linha("Voz", p.voz); linha("Aceite", p.aceite_termos_em ? "Política versão " + p.aceite_termos_versao + ", em " + new Date(p.aceite_termos_em).toLocaleDateString("pt-BR") : "pendente");
+  }
+  linha("Registros", `${nCond ?? 0} condomínio(s), ${nDoc ?? 0} documento(s) legal(is), ${nComp ?? 0} compromisso(s), ${nSes ?? 0} conversa(s)`);
+  if (p?.exclusao_solicitada_em) linha("Exclusão", "solicitada em " + new Date(p.exclusao_solicitada_em).toLocaleDateString("pt-BR"));
+  const lista = $("lgLista"); lista.innerHTML = "";
+  if (!(sols || []).length){ const v = document.createElement("p"); v.className = "dica"; v.textContent = "Nenhuma solicitação até agora."; lista.append(v); }
+  (sols || []).forEach(s => {
+    const d = document.createElement("div"); d.className = "lg-sol " + s.status;
+    const t = document.createElement("strong"); t.textContent = TIPO_SOL[s.tipo] || s.tipo;
+    const m = document.createElement("small"); m.textContent = `${STATUS_SOL[s.status] || s.status} · ${new Date(s.criado_em).toLocaleDateString("pt-BR")}${s.resposta ? " · Resposta: " + s.resposta : ""}`;
+    d.append(t, m); lista.append(d);
+  });
+  $("lgExcluir").disabled = !!p?.exclusao_solicitada_em;
+  if (p?.exclusao_solicitada_em) $("lgExcluir").textContent = "Exclusão já solicitada";
+}
+async function baixarMeusDados(){
+  const { data: { user } } = await sb.auth.getUser(); if (!user) throw new Error("Sessão expirada.");
+  lgMsg("Reunindo seus dados…");
+  const tabelas = ["perfis", "condominios", "documentos_legais", "compromissos", "sessoes", "lgpd_solicitacoes"];
+  const res = await Promise.all(tabelas.map(t => sb.from(t).select("*").eq(t === "perfis" ? "id" : "sindico_id", user.id)));
+  const pacote = { gerado_em: new Date().toISOString(), titular: user.email, observacao: "Exportação de dados pessoais do SINDICS (LGPD, art. 18, II e V). O áudio das conversas não é gravado; as transcrições ficam com a ElevenLabs por até 90 dias e podem ser pedidas pelo canal de privacidade.", dados: {} };
+  tabelas.forEach((t, i) => { pacote.dados[t] = res[i].data || []; });
+  const blob = new Blob([JSON.stringify(pacote, null, 2)], { type: "application/json" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `sindics-meus-dados-${hojeISO()}.json`;
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  lgMsg("Arquivo com seus dados baixado ✓");
+}
+async function pedirLgpd(tipo, detalhe){
+  const { data: { user } } = await sb.auth.getUser(); if (!user) throw new Error("Sessão expirada.");
+  const { error } = await sb.from("lgpd_solicitacoes").insert({ sindico_id: user.id, tipo, detalhe: detalhe || "", status: "aberta" });
+  if (error) throw error;
+  if (tipo === "exclusao") await sb.from("perfis").update({ exclusao_solicitada_em: new Date().toISOString() }).eq("id", user.id);
+  await carregarDadosLgpd(user);
+}
+let confirmaExcluir = 0;
+$("lgExcluir").addEventListener("click", async () => {
+  if (Date.now() - confirmaExcluir > 6000){ confirmaExcluir = Date.now(); $("lgExcluir").textContent = "Toque de novo para confirmar"; lgMsg("A exclusão apaga sua conta, seus condomínios, documentos e agenda em até 15 dias. Antes, você pode baixar seus dados.", true); setTimeout(() => { if ($("lgExcluir").textContent.startsWith("Toque")) $("lgExcluir").textContent = "Pedir exclusão da conta"; }, 6000); return; }
+  confirmaExcluir = 0; $("lgExcluir").disabled = true;
+  try{ await pedirLgpd("exclusao", "Pedido de exclusão feito pelo próprio síndico na área de Privacidade."); lgMsg("Pedido de exclusão registrado. Você receberá a confirmação no seu e-mail de contato."); }
+  catch(e){ $("lgExcluir").disabled = false; lgMsg("Não foi possível registrar: " + (e.message || e), true); }
+});
+$("lgForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const det = $("lgDetalhe").value.trim();
+  if (det.length < 5){ lgMsg("Descreva o pedido em poucas palavras.", true); $("lgDetalhe").focus(); return; }
+  try{ await pedirLgpd($("lgTipo").value, det); $("lgDetalhe").value = ""; lgMsg("Solicitação enviada. Resposta em até 15 dias."); }
+  catch(err){ lgMsg("Não foi possível enviar: " + (err.message || err), true); }
+});
+$("lgBaixar").addEventListener("click", () => baixarMeusDados().catch(e => lgMsg("Não foi possível baixar: " + (e.message || e), true)));
+$("lgCorrigir").addEventListener("click", () => { fecharLgpd(); abrirPerfil("editar", PERFIL); });
+$("lgAbaDados").addEventListener("click", () => abaLgpd("dados"));
+$("lgAbaCond").addEventListener("click", () => abaLgpd("condominio"));
+$("lgCondSel").addEventListener("change", renderCheck);
+$("lgFechar").addEventListener("click", fecharLgpd);
+$("lgpdOverlay").addEventListener("click", e => { if (e.target.id === "lgpdOverlay") fecharLgpd(); });
+$("lgpdBtn").addEventListener("click", () => abrirLgpd().catch(e => { hintEl.textContent = e.message; hintEl.classList.add("err"); }));
+function textoAvisoPrivacidade(){
+  return [
+    "O condomínio trata dados pessoais de moradores, funcionários, visitantes e prestadores de serviço apenas para a administração do prédio, a segurança das pessoas e o cumprimento da lei, conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018).",
+    "Quais dados: nome, documento, unidade, telefone e e-mail de moradores; nome e documento de visitantes e prestadores, registrados na portaria; imagens das câmeras de segurança das áreas comuns.",
+    "Para quê: cobrança das cotas condominiais, convocações e comunicados, controle de acesso, segurança e cumprimento da Convenção e do Regulamento Interno.",
+    "Por quanto tempo: as imagens das câmeras ficam guardadas pelo prazo técnico do sistema e são apagadas depois. Os registros de visitantes são eliminados quando deixam de ser necessários. Os demais dados ficam guardados enquanto durar a relação com o condomínio ou pelo prazo exigido em lei.",
+    "Com quem compartilhamos: somente com empresas que prestam serviço ao condomínio (administradora, portaria, segurança, contabilidade), obrigadas por contrato a proteger os dados, e com autoridades quando a lei exigir. Não divulgamos dados de moradores em murais ou grupos.",
+    "Seus direitos: você pode pedir acesso, correção ou eliminação dos seus dados e tirar dúvidas pelo canal abaixo. Pedidos de acesso são respondidos em até 15 dias.",
+    "Canal de privacidade: fale com a administração do condomínio (síndico) pelos meios oficiais de contato.",
+  ].join("\n\n");
+}
+$("lgAviso").addEventListener("click", async () => {
+  const id = $("lgCondSel").value, c = (PERFIL?.condominios || []).find(x => x.id === id);
+  fecharLgpd();
+  try{ await mostrarComunicado({ tipo: "aviso", titulo: "Aviso de Privacidade — Proteção de Dados (LGPD)", destinatario: "Moradores, funcionários e visitantes", condominio: c?.nome, corpo: textoAvisoPrivacidade() }); }
+  catch(e){ hintEl.textContent = e.message; hintEl.classList.add("err"); }
+});
+
 /* ======================= ADMINISTRAÇÃO (aprovar síndicos) ======================= */
 async function carregarAdmin(){
   const lista = $("admLista"); lista.innerHTML = "<p class='rs-t'>Carregando…</p>";
-  const [{ data: ps, error }, { data: cs }] = await Promise.all([
-    sb.from("perfis").select("id, nome, email, ativo, papel, plano, limite_sessoes_mes, criado_em").order("criado_em", { ascending:false }),
-    sb.from("condominios").select("id, sindico_id, nome")
+  const [{ data: ps, error }, { data: cs }, { data: sols }] = await Promise.all([
+    sb.from("perfis").select("id, nome, email, ativo, papel, plano, limite_sessoes_mes, criado_em, empresa, cnpj, telefone, email_contato, cidade, uf, cadastro_completo_em, exclusao_solicitada_em").order("criado_em", { ascending:false }),
+    sb.from("condominios").select("id, sindico_id, nome"),
+    sb.from("lgpd_solicitacoes").select("*").in("status", ["aberta", "em_andamento"]).order("criado_em")
   ]);
   if (error){ lista.textContent = "Erro: " + error.message; return; }
   lista.innerHTML = "";
+  if ((sols || []).length){
+    const box = document.createElement("div"); box.className = "adm-lgpd";
+    const h = document.createElement("h4"); h.textContent = `Pedidos LGPD em aberto (${sols.length}) · prazo 15 dias`; box.append(h);
+    sols.forEach(sl => {
+      const quem = ps.find(x => x.id === sl.sindico_id);
+      const prazo = new Date(new Date(sl.criado_em).getTime() + 15 * 86400000);
+      const it = document.createElement("small"); it.textContent = `${TIPO_SOL[sl.tipo] || sl.tipo} — ${quem?.nome || quem?.email || "síndico"} · pedido em ${new Date(sl.criado_em).toLocaleDateString("pt-BR")} · responder até ${prazo.toLocaleDateString("pt-BR")}${sl.detalhe ? " · " + sl.detalhe : ""}`;
+      const b = document.createElement("button"); b.type = "button"; b.textContent = "Marcar atendido"; b.style.cssText = "padding:6px 10px;font-size:10px;align-self:flex-start";
+      b.onclick = async () => { b.disabled = true; const { error } = await sb.from("lgpd_solicitacoes").update({ status: "atendida", atendido_em: new Date().toISOString() }).eq("id", sl.id); if (error) alertaAdm(error.message); carregarAdmin(); };
+      box.append(it, b);
+    });
+    lista.append(box);
+  }
   ps.forEach(p => {
     const card = document.createElement("div"); card.className = "adm";
     const conds = (cs || []).filter(c => c.sindico_id === p.id).map(c => c.nome);
@@ -1695,7 +2206,12 @@ async function carregarAdmin(){
     topo.append(n, st);
     const em = document.createElement("small"); em.textContent = `${p.email} · desde ${new Date(p.criado_em).toLocaleDateString("pt-BR")}`;
     const cd = document.createElement("small"); cd.textContent = conds.length ? "Condomínios: " + conds.join(", ") : "Nenhum condomínio cadastrado";
-    card.append(topo, em, cd);
+    const emp = document.createElement("small");
+    emp.textContent = p.cadastro_completo_em
+      ? `${p.empresa}${p.cnpj ? " · CNPJ " + mascaraCnpj(p.cnpj) : ""} · ${p.cidade}/${p.uf} · ${p.telefone ? mascaraTel(p.telefone) : ""} · ${p.email_contato}`
+      : "Cadastro profissional incompleto";
+    card.append(topo, em, emp, cd);
+    if (p.exclusao_solicitada_em){ const ex = document.createElement("small"); ex.style.color = "var(--danger)"; ex.textContent = "Pediu exclusão da conta em " + new Date(p.exclusao_solicitada_em).toLocaleDateString("pt-BR"); card.append(ex); }
     if (p.papel !== "admin"){
       const acoes = document.createElement("div"); acoes.className = "adm-acoes";
       const b = document.createElement("button"); b.type = "button"; b.textContent = p.ativo ? "Bloquear" : "Aprovar"; if (!p.ativo) b.className = "primary";
@@ -1931,14 +2447,21 @@ let iniciado = false;
 async function aposLogin(){
   const { data: { user } } = await sb.auth.getUser();
   if (!user){ mostrarLogin(); return; }
-  const { data: p } = await sb.from("perfis").select("nome, assinatura, empresa, papel, ativo").eq("id", user.id).maybeSingle();
+  const { data: p } = await sb.from("perfis").select("nome, assinatura, empresa, papel, ativo, email, cnpj, cep, endereco, cidade, uf, email_contato, telefone, voz, cadastro_completo_em, aceite_termos_em, aceite_termos_versao, exclusao_solicitada_em").eq("id", user.id).maybeSingle();
+  if (p && (!p.cadastro_completo_em || p.aceite_termos_versao !== TERMOS_V)){
+    PERFIL = { ...p, condominios: PERFIL?.condominios || [] };
+    $("loginOverlay").hidden = true; msg("");
+    perfilDepois = aposLogin;
+    abrirPerfil("completar", p, !p.cadastro_completo_em ? "" : "A Política de Privacidade do SINDICS foi atualizada. Confira seus dados e marque o aceite para continuar.");
+    return;
+  }
   if (!p || !p.ativo){
     await sb.auth.signOut();
     mostrarLogin("Cadastro recebido! Seu acesso está aguardando a aprovação do administrador. Você será avisado quando for liberado.", true);
     return;
   }
   const { data: cs } = await sb.from("condominios").select("id, nome, cidade, unidades, cnpj").eq("sindico_id", user.id).order("nome");
-  PERFIL = { ...p, condominios: cs || [] }; preencherCabecalho(PERFIL);
+  PERFIL = { ...p, condominios: cs || [] }; preencherCabecalho(PERFIL); rotuloVoz();
   $("admBtn").hidden = p.papel !== "admin";
   $("loginOverlay").hidden = true; msg("");
   try{ history.replaceState(null, "", location.pathname); }catch(_){}
