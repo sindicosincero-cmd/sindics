@@ -33,6 +33,9 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+#condBtn.pulsar{animation:pulsar 1.2s ease-in-out infinite;border-color:var(--accent,#5ad1ff)}
+@keyframes pulsar{0%,100%{box-shadow:0 0 0 0 rgba(90,209,255,.55)}50%{box-shadow:0 0 0 8px rgba(90,209,255,0)}}
+@media (prefers-reduced-motion:reduce){#condBtn.pulsar{animation:none;outline:2px solid #5ad1ff}}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;overflow:hidden}
 #gl{position:fixed;inset:0;width:100%;height:100%;display:block}
@@ -348,6 +351,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhqamNrdmx1eWRjZWptcnhvbHphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMwNDc3MDMsImV4cCI6MjEwODYyMzcwM30.7MtMPxBEaTkoNCqI2dt-2iLiugm_fkXVV6-TxdkTHR0";
 const FN_SESSAO = SUPABASE_URL + "/functions/v1/sessao-sindics";
+const FN_EXCLUIR = SUPABASE_URL + "/functions/v1/excluir-condominio";
 const SITE_URL = "https://sindicosincero-cmd.github.io/sindics/";
 const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }) : null;
 let PERFIL = null;
@@ -553,7 +557,7 @@ function resetIdle(){
 async function wake(){
   if (inSession()) return;
   if (!outCtx || !micStream){ $("tapOverlay").hidden = false; return; }
-  if (PERFIL && !(PERFIL.condominios || []).length){ abrirCondominios(null, "Antes de conversar com o SINDICS, cadastre o seu condomínio."); return; }
+  if ($("condDrawer").classList.contains("open") && !(PERFIL?.condominios || []).length) $("condDrawer").classList.remove("open"); // sem condomínio: cadastro pode ser por voz
   stopWake(); sndWake(); setMode("connecting"); wakeBtn.hidden = true; sleepBtn.hidden = false; youEl.textContent = "";
   captionEl.textContent = "";
   /* Pede ao servidor um acesso temporário (só para síndico logado e ativo) */
@@ -795,6 +799,53 @@ async function executarFerramenta(nome, a){
       if (error) throw error; if (!data) throw new Error("Documento não encontrado.");
       atualizarResumoTela();
       return { ok: true, mensagem: `${data.documento}: vence em ${dataBR(data.data_vencimento)}, aviso ${data.alertar_dias_antes} dias antes.` };
+    }
+    case "condominios_listar": {
+      const { data, error } = await sb.from("condominios").select("nome, cnpj, endereco, cidade, unidades, convencao_status, regulamento_status").eq("sindico_id", user.id).order("nome");
+      if (error) throw error;
+      const st = s => s === "pronto" ? "enviado e lido" : s === "erro" ? "erro de leitura, reenviar" : s === "pendente" ? "pendente" : "em leitura";
+      return { total: data.length, condominios: data.map(c => ({ nome: c.nome, cnpj: mascaraCnpj(c.cnpj || ""), endereco: [c.endereco, c.cidade].filter(Boolean).join(", "), apartamentos: c.unidades, convencao: st(c.convencao_status), regulamento: st(c.regulamento_status) })) };
+    }
+    case "condominio_cadastrar": {
+      const cnpj = soCnpj(a.cnpj);
+      if (!cnpjValido(cnpj)) throw new Error("CNPJ inválido. Peça para o síndico repetir os 14 números do CNPJ.");
+      const nomeC = String(a.nome || "").trim(); if (nomeC.length < 3) throw new Error("Informe o nome do condomínio.");
+      const unidades = Math.round(Number(a.unidades)); if (!(unidades >= 1 && unidades <= 99999)) throw new Error("Informe a quantidade de apartamentos.");
+      let endereco = String(a.endereco || "").trim(), cidade = String(a.cidade || "").trim(), uf = String(a.uf || "").trim().toUpperCase();
+      const cep = String(a.cep || "").replace(/\D/g, "");
+      if (cep){
+        if (cep.length !== 8) throw new Error("O CEP precisa ter 8 dígitos.");
+        let j; try{ j = await (await fetch(`https://viacep.com.br/ws/${cep}/json/`)).json(); }catch(_){ throw new Error("Não consegui consultar o CEP agora. Peça rua, bairro, cidade e estado."); }
+        if (j.erro) throw new Error("CEP não encontrado. Confirme o CEP ou peça rua, bairro, cidade e estado.");
+        endereco = [j.logradouro, j.bairro].filter(Boolean).join(", ") || endereco; cidade = j.localidade || cidade; uf = j.uf || uf;
+      }
+      const num = String(a.numero || "").trim();
+      if (!num && !/\d/.test(endereco)) throw new Error("Falta o número do endereço.");
+      if (num) endereco += `, nº ${num}`;
+      if (a.complemento) endereco += ` ${String(a.complemento).trim()}`;
+      if (endereco.length < 5 || cidade.length < 2 || !/^[A-Z]{2}$/.test(uf)) throw new Error("Endereço incompleto. Peça o CEP e o número, ou rua, bairro, cidade e estado.");
+      const { data, error } = await sb.from("condominios").insert({ cnpj, nome: nomeC, cep, unidades, endereco, cidade: `${cidade}/${uf}`, uf }).select("id").single();
+      if (error) throw new Error(/condominios_cnpj_unico|duplicate/i.test(error.message) ? "Este CNPJ já está cadastrado no SINDICS. Se o condomínio é do síndico, ele deve falar com o administrador." : error.message);
+      await recarregarCondominiosPerfil(); atualizarResumoTela();
+      if ($("condDrawer").classList.contains("open")) listarCondominios();
+      showPanel({ tipo: "checklist", titulo: `${nomeC} cadastrado`, itens: [
+        `CNPJ ${mascaraCnpj(cnpj)}`, `${endereco} — ${cidade}/${uf}`, `${unidades} apartamentos`,
+        "Pendente: Convenção em PDF", "Pendente: Regulamento Interno em PDF",
+        "Envie os PDFs em Condomínios › Editar" ] });
+      $("condBtn").classList.add("pulsar"); setTimeout(() => $("condBtn").classList.remove("pulsar"), 15000);
+      return { ok: true, id: data.id, mensagem: `${nomeC} cadastrado: CNPJ ${mascaraCnpj(cnpj)}, ${endereco}, ${cidade}/${uf}, ${unidades} apartamentos. Pendentes: Convenção e Regulamento Interno em PDF, que o síndico envia no botão Condomínios, opção Editar. Até lá, as respostas sobre regras desse condomínio seguem só a lei geral.` };
+    }
+    case "condominio_excluir": {
+      if (a.confirmado !== true) throw new Error("Exclusão não confirmada. Avise o que será apagado e peça para o síndico dizer 'confirmo a exclusão'.");
+      const cond = acharCondominio(a.condominio);
+      const { data: { session } } = await sb.auth.getSession(); if (!session) throw new Error("Sessão expirada.");
+      const r = await fetch(FN_EXCLUIR, { method: "POST", headers: { "Authorization": "Bearer " + session.access_token, "apikey": SUPABASE_ANON, "Content-Type": "application/json" }, body: JSON.stringify({ condominio_id: cond.id, confirmado: true }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.erro || "Não foi possível excluir agora (erro " + r.status + ").");
+      await recarregarCondominiosPerfil(); atualizarResumoTela();
+      if ($("condDrawer").classList.contains("open")) listarCondominios();
+      showPanel({ tipo: "texto", titulo: `${cond.nome} excluído`, itens: ["Cadastro, Convenção, Regulamento e PDFs removidos", j.prazos_removidos ? `${j.prazos_removidos} prazo(s) de documentos legais removido(s)` : "Nenhum prazo de documento legal vinculado", "Compromissos da agenda foram mantidos"] });
+      return { ok: true, mensagem: `Cadastro do ${cond.nome} excluído. ${j.prazos_removidos || 0} prazo(s) de documentos legais removidos; compromissos da agenda mantidos.` };
     }
     default: return "Ferramenta não reconhecida pela tela.";
   }
@@ -1093,7 +1144,7 @@ async function aposLogin(){
   atualizarResumoTela();
   if (!iniciado){ iniciado = true; start(); }
   if (!PERFIL.condominios.length)
-    abrirCondominios(null, "Bem-vindo ao SINDICS! Para começar, cadastre o seu condomínio com CNPJ, nome, endereço e quantidade de apartamentos.");
+    abrirCondominios(null, "Bem-vindo ao SINDICS! Cadastre o seu condomínio aqui (CNPJ, nome, endereço, apartamentos, Convenção e Regulamento em PDF) ou feche esta janela e diga “SINDICS” para cadastrar por voz.");
   else if (PERFIL.condominios.some(c => !c.cnpj))
     abrirCondominios(null, "Complete o cadastro: informe o CNPJ e o endereço dos condomínios marcados em âmbar.");
 }
