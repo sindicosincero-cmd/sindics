@@ -1,0 +1,41 @@
+{
+  "_sobre": "Configuração do agente de voz SINDICS na ElevenLabs. Exportado em 27/10/2026. Chaves de API NÃO ficam aqui (estão só nos segredos do Supabase).",
+  "agente_id": "agent_6201m5wqfm4xet39s7vtbkh5axex",
+  "idioma": "pt",
+  "primeira_fala": "{{abertura}}",
+  "modelo_linguagem": "deepseek-v41-flash",
+  "temperatura": 0,
+  "fuso": "America/Sao_Paulo",
+  "voz": {
+    "modelo_tts": "eleven_v4_turbo",
+    "voz_padrao_masculina": "rVRk0uJAtO8T38Gm03mf",
+    "voz_feminina": "KHmfNHtEjHhLK9eER20w",
+    "estabilidade": 0.5, "similaridade": 0.75, "velocidade": 1,
+    "otimizar_latencia": 3, "modo_expressivo": true
+  },
+  "reconhecimento_fala": {
+    "provedor": "scribe_realtime", "qualidade": "high",
+    "palavras_chave": ["SINDICS","síndico","condômino","condominial","Fit Casa","AVCB","CLCB","SPDA","PMOC","PGR","PCMSO","CNPJ","Radar Condominial","convenção","regulamento interno","brigada","RIA","comunicado","edital"]
+  },
+  "turnos": {
+    "tempo_de_turno_s": 7, "modelo": "turn_v3", "turno_especulativo": true,
+    "frases_de_espera": { "apos_s": 2.5, "frases": ["Um instante…", "Só confirmando aqui…", "Já te digo…"] }
+  },
+  "conversa": { "duracao_maxima_s": 600, "mensagem_ao_atingir": "Chegamos ao tempo máximo desta conversa. É só dizer SINDICS que eu volto e continuamos de onde paramos." },
+  "busca_em_documentos_rag": { "ativa": true, "modelo_embedding": "multilingual_e5_large_instruct", "distancia_maxima": 0.7, "trechos_maximos": 8, "tamanho_maximo": 12000 },
+  "base_de_conhecimento_fixa": [
+    { "id": "5iU2mzefR0ybqam03BNZ", "nome": "SINDICS — Base geral" },
+    { "id": "nCaVi3KN0A4mTWJ2Sm92", "nome": "SINDICS — LGPD no condomínio" }
+  ],
+  "base_de_conhecimento_por_condominio": "Regulamento e Convenção de cada condomínio são criados pela função processar-documento e enviados por conversa pela função sessao-sindics (conversation_config_override.agent.prompt.knowledge_base).",
+  "variaveis_dinamicas": ["abertura","alertas_detalhe","condominios","documentacao_resumo","empresa","perfil_usuario","primeiro_acesso","radar_oferecido","resumo_alertas","saudacao","sindico_assinatura","sindico_nome","voz"],
+  "ferramenta_nativa_end_call": "Encerre a conversa logo depois de se despedir, sempre que o síndico indicar que terminou (\"encerrar por hoje\", \"pode encerrar\", \"pode descansar\", \"obrigado, boa noite\", \"tchau\", \"até amanhã\", \"é só isso\", \"não, obrigado\"). Também encerre se ficar mais de duas vezes seguidas sem resposta depois de perguntar se ele ainda precisa de algo. Não repita despedidas.",
+  "seguranca": {
+    "exige_token_assinado": true,
+    "origens_permitidas": ["sindics.com.br", "www.sindics.com.br", "sindicosincero-cmd.github.io"],
+    "exige_cabecalho_origem": true,
+    "substituicoes_permitidas_pelo_app": ["tts.voice_id", "agent.prompt.knowledge_base", "conversation.text_only"]
+  },
+  "privacidade": { "grava_voz": false, "retencao_transcricao_dias": 90 },
+  "limites": { "conversas_simultaneas": 3, "conversas_por_dia": 150, "fila_de_espera_s": 180 }
+}
