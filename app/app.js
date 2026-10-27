@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "4.1.0";
+  window.SINDICS_V = "4.1.1";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -1312,11 +1312,13 @@ function abrirPerfil(modo, p = {}, aviso = ""){
   $("pfAcesso").hidden = !criar;
   const gestor = modo === "gestor" || (modo === "editar" && p.papel === "gestor");
   $("pfBlocoEmpresa").hidden = $("pfBlocoAss").hidden = gestor;
+  $("pfTratLabel").textContent = gestor ? "Como você gostaria de ser chamado? *" : "Como o SINDICS deve chamar você";
+  $("pfTratDica").textContent = gestor ? "É assim que o SINDICS vai falar com você. Ex.: Sr. Marcos, Dona Ana, Paulo." : "Se ficar em branco, uso seu primeiro nome.";
   $("pfTitulo").textContent = criar ? "Criar conta de síndico" : modo === "completar" ? "Complete seu cadastro" : modo === "gestor" ? "Seu acesso de gestor" : "Meu cadastro";
   $("pfIntro").textContent = aviso || (criar
     ? "Preencha seus dados profissionais. Depois de confirmar o e-mail, seu acesso é liberado pelo administrador."
     : modo === "completar" ? "Para continuar usando o SINDICS, precisamos dos seus dados profissionais completos e do seu aceite à Política de Privacidade."
-    : modo === "gestor" ? "Bem-vindo à equipe. Confirme seus dados de contato e o aceite da Política de Privacidade para começar."
+    : modo === "gestor" ? "Bem-vindo à equipe. Confirme seus dados de contato, diga como gostaria de ser chamado e marque o aceite da Política de Privacidade para começar."
     : "Confira e corrija seus dados. As alterações valem na hora.");
   $("pfSalvar").textContent = criar ? "Criar conta" : "Salvar cadastro";
   $("pfFechar").hidden = modo === "completar" || modo === "gestor";
@@ -1327,7 +1329,7 @@ function abrirPerfil(modo, p = {}, aviso = ""){
   $("pfAceite").checked = !criar && p.aceite_termos_versao === TERMOS_V;
   pfMsg(""); fecharMenu();
   $("perfilOverlay").hidden = false; $("perfilOverlay").querySelector(".perfil").scrollTop = 0;
-  setTimeout(() => $(criar ? "pfEmail" : "pfNome").focus(), 80);
+  setTimeout(() => $(criar ? "pfEmail" : gestor && p.nome && !p.tratamento ? "pfTrat" : "pfNome").focus(), 80);
 }
 function fecharPerfil(){ $("perfilOverlay").hidden = true; }
 function lerPerfilForm(){
@@ -1344,6 +1346,7 @@ function validarPerfil(v){
   if (perfilModo === "gestor" || (perfilModo === "editar" && souGestor())){
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.email_contato)) return erro("pfEmailC", "E-mail de contato inválido.");
     if (v.telefone.length < 10 || v.telefone.length > 11) return erro("pfTel", "Telefone inválido: use DDD + número.");
+    if (v.tratamento.length < 2) return erro("pfTrat", "Diga como você gostaria de ser chamado pelo SINDICS.");
     if (!$("pfAceite").checked) return "Para continuar, marque o aceite da Política de Privacidade e dos Termos de Uso.";
     return "";
   }
@@ -2308,10 +2311,10 @@ async function aposLogin(){
   $("equipeBtn").hidden = p?.papel === "gestor";
   if (p && p.papel === "gestor"){
     // gestor: cadastro simples (nome, telefone e aceite) e acesso só pelos vínculos ativos com síndicos
-    if (p.aceite_termos_versao !== TERMOS_V || !p.telefone){
+    if (p.aceite_termos_versao !== TERMOS_V || !p.telefone || !(p.tratamento || "").trim()){
       PERFIL = { ...p, condominios: [] }; $("loginOverlay").hidden = true; msg("");
       perfilDepois = aposLogin;
-      abrirPerfil("gestor", p, "Bem-vindo à equipe! Confirme seus dados e o aceite da Política de Privacidade para começar.");
+      abrirPerfil("gestor", p, p.aceite_termos_versao === TERMOS_V && p.telefone ? "Antes de continuar: como você gostaria de ser chamado pelo SINDICS?" : "Bem-vindo à equipe! Confirme seus dados, diga como gostaria de ser chamado e marque o aceite da Política de Privacidade para começar.");
       return;
     }
     const { data: vinc } = await sb.from("gestores").select("sindico_id, sindico_nome, condominios").eq("gestor_id", user.id).eq("status", "ativo");
