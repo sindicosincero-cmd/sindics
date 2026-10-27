@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "3.8.1";
+  window.SINDICS_V = "3.8.2";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -51,24 +51,91 @@ function net(){ const on = navigator.onLine; $("netDot").style.background = on ?
 addEventListener("online", net); addEventListener("offline", net); net();
 
 /* ======================= SONS DE INTERFACE ======================= */
-let sfxCtx = null, hum = null;
+/* Sons sintetizados na hora (sem arquivos): camadas suaves com reverberação, no estilo de interface de nave.
+   O mesmo motor gera a prévia em áudio (renderSomPrevia) para ouvir fora do sistema. */
+let sfxCtx = null, hum = null, motorSom = null;
 function sfx(){ if (!sfxCtx) sfxCtx = new AudioContext(); return sfxCtx; }
-function tone(freqs, dur=.35, gain=.06, type="sine", delay=0){
-  try{
-    const c = sfx(); const t = c.currentTime + delay;
-    freqs.forEach((f,i) => {
-      const o = c.createOscillator(), g = c.createGain();
-      o.type = type; o.frequency.setValueAtTime(f, t + i*.07);
-      g.gain.setValueAtTime(0, t + i*.07); g.gain.linearRampToValueAtTime(gain, t + i*.07 + .02);
-      g.gain.exponentialRampToValueAtTime(.0001, t + i*.07 + dur);
-      o.connect(g); g.connect(c.destination); o.start(t + i*.07); o.stop(t + i*.07 + dur + .05);
-    });
-  }catch(_){}
+function impulsoReverb(c, seg = 3, queda = 2.6){
+  const n = Math.floor(c.sampleRate * seg), buf = c.createBuffer(2, n, c.sampleRate);
+  for (let ch = 0; ch < 2; ch++){ const d = buf.getChannelData(ch); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, queda); }
+  return buf;
 }
-const sndWake = () => tone([523, 784, 1047], .45, .05, "sine");
-const sndSleep = () => tone([880, 587, 392], .45, .045, "sine");
-const sndPanel = () => tone([1568], .12, .025, "triangle");
-const sndBoot = () => { tone([110], 1.2, .05, "sawtooth"); tone([440, 660, 880, 1320], .3, .03, "square", .4); };
+function montarMotor(c){
+  const comp = c.createDynamicsCompressor(); comp.threshold.value = -20; comp.knee.value = 18; comp.ratio.value = 3; comp.attack.value = .01; comp.release.value = .3;
+  const master = c.createGain(); master.gain.value = 1.3; master.connect(comp); comp.connect(c.destination);
+  const rev = c.createConvolver(); rev.buffer = impulsoReverb(c);
+  const wet = c.createGain(); wet.gain.value = .5; rev.connect(wet); wet.connect(master);
+  const dry = c.createGain(); dry.gain.value = .75; dry.connect(master);
+  const bus = c.createGain(); bus.connect(dry); bus.connect(rev);
+  const ruido = c.createBuffer(1, c.sampleRate * 2, c.sampleRate); const nd = ruido.getChannelData(0); for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+  return { c, bus, rev, ruido };
+}
+function motor(){ const c = sfx(); if (!motorSom || motorSom.c !== c) motorSom = montarMotor(c); return motorSom; }
+/* vozes */
+function vPad(m, f, t0, dur, ganho, pan = 0){
+  const { c } = m, g = c.createGain(), lp = c.createBiquadFilter(), p = c.createStereoPanner ? c.createStereoPanner() : null;
+  lp.type = "lowpass"; lp.frequency.setValueAtTime(600, t0); lp.frequency.linearRampToValueAtTime(2400, t0 + dur * .6); lp.Q.value = .4;
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(ganho, t0 + dur * .35); g.gain.setTargetAtTime(0, t0 + dur * .55, dur * .18);
+  [["sine", -5], ["triangle", 5]].forEach(([tipo, det]) => { const o = c.createOscillator(); o.type = tipo; o.frequency.value = f; o.detune.value = det; o.connect(lp); o.start(t0); o.stop(t0 + dur + 1.5); });
+  lp.connect(g); if (p){ p.pan.value = pan; g.connect(p); p.connect(m.bus); } else g.connect(m.bus);
+}
+function vSino(m, f, t0, ganho, dur = 1.8, pan = 0){
+  const { c } = m, car = c.createOscillator(), mod = c.createOscillator(), mg = c.createGain(), g = c.createGain(), p = c.createStereoPanner ? c.createStereoPanner() : null;
+  car.frequency.value = f; mod.frequency.value = f * 3.5;
+  mg.gain.setValueAtTime(f * 1.4, t0); mg.gain.exponentialRampToValueAtTime(f * .02, t0 + dur * .5);
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(ganho, t0 + .008); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+  mod.connect(mg); mg.connect(car.frequency); car.connect(g);
+  if (p){ p.pan.value = pan; g.connect(p); p.connect(m.rev); p.connect(m.bus); } else { g.connect(m.bus); }
+  car.start(t0); mod.start(t0); car.stop(t0 + dur + .1); mod.stop(t0 + dur + .1);
+}
+function vAr(m, t0, dur, ganho, f0, f1){
+  const { c } = m, src = c.createBufferSource(), bp = c.createBiquadFilter(), g = c.createGain();
+  src.buffer = m.ruido; src.loop = true; bp.type = "bandpass"; bp.Q.value = 1.4;
+  bp.frequency.setValueAtTime(f0, t0); bp.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(ganho, t0 + dur * .6); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+  src.connect(bp); bp.connect(g); g.connect(m.bus); src.start(t0); src.stop(t0 + dur + .05);
+}
+function vSub(m, t0, dur, ganho, f0, f1){
+  const { c } = m, o = c.createOscillator(), g = c.createGain();
+  o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(f1, t0 + dur * .7);
+  g.gain.setValueAtTime(0, t0); g.gain.linearRampToValueAtTime(ganho, t0 + dur * .4); g.gain.exponentialRampToValueAtTime(.0001, t0 + dur);
+  o.connect(g); g.connect(m.bus); o.start(t0); o.stop(t0 + dur + .05);
+}
+/* composições */
+const SONS = {
+  // ignição: grave que sobe, ar que abre, acorde suspenso e um brilho de cristal no final
+  boot(m, t){
+    vSub(m, t, 2.2, .07, 41.2, 73.4);
+    vAr(m, t + .05, 1.6, .035, 300, 7000);
+    [[146.83, -.3], [220, .3], [329.63, -.15], [369.99, .15], [554.37, 0]].forEach(([f, pan], i) => vPad(m, f, t + .55 + i * .06, 2.8, .022, pan));
+    [[1174.66, -.4], [1479.98, .4], [1760, -.2], [2217.46, .2]].forEach(([f, pan], i) => vSino(m, f, t + 1.15 + i * .11, .018, 2.2, pan));
+    vSino(m, 587.33, t + 1.95, .03, 2.6); vSino(m, 880, t + 1.97, .022, 2.6);
+  },
+  wake(m, t){ vAr(m, t, .45, .025, 900, 6000); vSino(m, 880, t + .05, .03, 1.4, -.2); vSino(m, 1318.51, t + .14, .026, 1.6, .2); },
+  sleep(m, t){ vSino(m, 1318.51, t, .022, 1.3, .2); vSino(m, 880, t + .12, .022, 1.5, -.2); vSino(m, 587.33, t + .26, .02, 1.8); vAr(m, t, .6, .015, 5000, 500); },
+  panel(m, t){ vSino(m, 2093, t, .012, .7, (Math.random() - .5) * .6); },
+  // alarme de agenda: três chamadas claras, sem estridência
+  alarme(m, t){ [0, .6, 1.2].forEach(d => { vSino(m, 1046.5, t + d, .05, .9, -.2); vSino(m, 1318.51, t + d + .09, .045, .9, .2); vSino(m, 1567.98, t + d + .18, .04, 1.1); }); },
+};
+function tocar(nome){ try{ const m = motor(); SONS[nome](m, m.c.currentTime + .02); }catch(_){} }
+const sndWake = () => tocar("wake");
+const sndSleep = () => tocar("sleep");
+const sndPanel = () => tocar("panel");
+const sndBoot = () => tocar("boot");
+/* Prévia em arquivo (só para ouvir/testar): renderiza os sons num WAV */
+async function renderSomPrevia(nomes = ["boot", "wake", "sleep"], gap = 1.2){
+  const durs = { boot: 5, wake: 2, sleep: 2.5, panel: 1, alarme: 2.6 };
+  const total = nomes.reduce((t, n) => t + durs[n] + gap, 0), rate = 44100;
+  const c = new OfflineAudioContext(2, Math.ceil(total * rate), rate), m = montarMotor(c);
+  let t = .1; nomes.forEach(n => { SONS[n](m, t); t += durs[n] + gap; });
+  const buf = await c.startRendering(), L = buf.getChannelData(0), R = buf.getChannelData(1), n = L.length;
+  const dv = new DataView(new ArrayBuffer(44 + n * 4)); const w = (o, s) => [...s].forEach((ch, i) => dv.setUint8(o + i, ch.charCodeAt(0)));
+  w(0, "RIFF"); dv.setUint32(4, 36 + n * 4, true); w(8, "WAVE"); w(12, "fmt "); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 2, true);
+  dv.setUint32(24, rate, true); dv.setUint32(28, rate * 4, true); dv.setUint16(32, 4, true); dv.setUint16(34, 16, true); w(36, "data"); dv.setUint32(40, n * 4, true);
+  for (let i = 0; i < n; i++){ dv.setInt16(44 + i * 4, Math.max(-1, Math.min(1, L[i])) * 32767, true); dv.setInt16(46 + i * 4, Math.max(-1, Math.min(1, R[i])) * 32767, true); }
+  let pico = 0; for (let i = 0; i < n; i++) pico = Math.max(pico, Math.abs(L[i]), Math.abs(R[i]));
+  return { wav: new Uint8Array(dv.buffer), pico };
+}
 function toggleHum(){
   const c = sfx();
   if (hum){ hum.g.gain.linearRampToValueAtTime(0, c.currentTime + .6); const h = hum; setTimeout(()=>{ try{ h.o1.stop(); h.o2.stop(); }catch(_){} }, 800); hum = null; sfxBtn.setAttribute("aria-pressed","false"); return; }
@@ -774,7 +841,7 @@ function faltaTexto(min){
   if (min < 1440){ const h = Math.floor(min / 60), m = min % 60; return `Em ${h}h${m ? String(m).padStart(2, "0") : ""}`; }
   const d = Math.round(min / 1440); return d === 1 ? "Amanhã" : `Em ${d} dias`;
 }
-const sndAlarme = () => [0, .55, 1.1].forEach(t => tone([880, 1175, 1568], .22, .07, "triangle", t));
+const sndAlarme = () => tocar("alarme");
 function dispararAlarme(c){
   const falta = faltaTexto(Math.round((Date.parse(c.inicio) - Date.now()) / 60000));
   const cond = nomeCondPorId(c.condominio_id);
