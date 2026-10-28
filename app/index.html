@@ -279,6 +279,11 @@ button.perigo:hover{background:var(--danger);color:var(--bg)}
 .eq-conds label{display:flex;gap:8px;align-items:center;font-family:var(--body);font-size:13.5px;letter-spacing:0;text-transform:none;color:var(--fg);margin:0}
 .eq-conds input{width:16px!important;height:16px;accent-color:var(--cyan)}
 .eq-acoes{display:flex;gap:6px;flex-wrap:wrap}
+.mem-filtro{display:flex;gap:6px} .mem-filtro button{padding:6px 12px;font-size:10px}
+.mem-item .mem-tipo{align-self:flex-start;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:2px 8px;border:1px solid currentColor}
+.mem-item .mem-tipo.pendencia{color:var(--amber)} .mem-item .mem-tipo.decisao{color:var(--ok)} .mem-item .mem-tipo.preferencia{color:var(--violet)} .mem-item .mem-tipo.contexto{color:var(--cyan)}
+.mem-item p{margin:0;font-size:14px;line-height:1.45;overflow-wrap:anywhere}
+.mem-item.concluida p{text-decoration:line-through;opacity:.6}
 .eq-acoes button{padding:6px 10px;font-size:10px}
 .eq-sub{margin-top:6px}
 #opDrawer textarea{width:100%;resize:vertical;font:inherit;background:transparent;color:var(--fg);border:1px solid var(--line-strong);padding:9px 10px}
@@ -581,6 +586,7 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
       <button id="wakeBtn" class="primary" type="button">Chamar agora</button>
       <button id="sleepBtn" type="button" hidden>Descansar</button>
       <button id="opBtn" type="button">Operação do dia</button>
+      <button id="memBtn" type="button">Memória</button>
       <button id="calBtn" type="button">Calendário</button>
       <button id="docBtn" type="button">Documentação legal</button>
       <button id="radarBtn" type="button">Radar condominial</button>
@@ -735,6 +741,31 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
       <div id="eqConds" class="eq-conds"></div>
       <p class="cmsg" id="eqMsg" role="status"></p>
       <button id="eqEnviar" class="primary" type="submit">Enviar convite</button>
+    </form>
+  </div>
+</aside>
+
+<aside class="drawer" id="memDrawer" aria-label="Memória do SINDICS">
+  <h2>Memória do SINDICS <button id="closeMem" type="button">Fechar</button></h2>
+  <div class="log">
+    <p class="dica">O que o SINDICS lembra de uma conversa para outra: decisões, pendências, suas preferências e o contexto de cada condomínio. Você pode concluir ou apagar qualquer item. Nunca guarde aqui nome, CPF ou telefone de morador.</p>
+    <div class="mem-filtro" role="group" aria-label="Filtro">
+      <button type="button" class="primary" data-f="aberta">Abertas</button>
+      <button type="button" data-f="concluida">Concluídas</button>
+    </div>
+    <div id="memLista" class="eq-lista"></div>
+    <form id="memForm" class="cform" novalidate>
+      <p class="rs-t">Anotar na memória</p>
+      <label for="memTipo">Tipo</label>
+      <select id="memTipo"><option value="pendencia">Pendência</option><option value="decisao">Decisão</option><option value="preferencia">Preferência</option><option value="contexto">Contexto</option></select>
+      <label for="memTexto">O que o SINDICS deve lembrar *</label>
+      <textarea id="memTexto" rows="3" maxlength="400" placeholder="Ex.: Cotar impermeabilização da laje com 3 fornecedores antes da assembleia de dezembro."></textarea>
+      <div class="c2">
+        <div><label for="memCond">Condomínio</label><select id="memCond"></select></div>
+        <div><label for="memPrazo">Prazo</label><input id="memPrazo" type="date"></div>
+      </div>
+      <p class="cmsg" id="memMsg" role="status"></p>
+      <button class="primary" type="submit">Guardar</button>
     </form>
   </div>
 </aside>
@@ -973,6 +1004,6 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
   <span id="tapMsg">Toque em qualquer lugar para ligar som e microfone. Depois disso ele fica em prontidão sozinho.</span>
 </div>
 
-<script src="app.js?v=4.2.2"></script>
+<script src="app.js?v=4.3.0"></script>
 </body>
 </html>

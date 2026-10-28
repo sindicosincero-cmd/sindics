@@ -146,6 +146,19 @@ Deno.serve(async (req: Request) => {
   const restantesHoje = hojeComps.filter((c) => Date.parse(c.inicio) >= agora - 30 * 60000);
   const amanhaComps = (comps || []).filter((c) => fmtData(new Date(c.inicio)) === amanha);
 
+  // ---- Memória do SINDICS (o que ficou combinado nas conversas anteriores) ----
+  const qMem = admin.from("memorias").select("id, tipo, texto, prazo, condominio_id, criado_em, autor_nome").eq("situacao", "aberta");
+  const { data: mems } = await (ehGestor ? qMem.or(`autor_id.eq.${uid},condominio_id.in.(${ids.join(",")})`) : qMem.eq("sindico_id", uid))
+    .order("criado_em", { ascending: false }).limit(60);
+  const ORDEM_MEM: Record<string, number> = { preferencia: 0, pendencia: 1, decisao: 2, contexto: 3 };
+  const ROT_MEM: Record<string, string> = { preferencia: "Preferência", pendencia: "Pendência", decisao: "Decisão", contexto: "Contexto" };
+  const memOrd = (mems || []).slice().sort((a, b) => (ORDEM_MEM[a.tipo] - ORDEM_MEM[b.tipo]) || String(a.prazo || "9999").localeCompare(String(b.prazo || "9999")));
+  const memoria = memOrd.length
+    ? memOrd.map((m) => `- [${m.id.slice(0, 8)}] ${ROT_MEM[m.tipo] || m.tipo}${m.condominio_id ? " (" + (nomeCond.get(m.condominio_id) || "condomínio") + ")" : ""}${m.prazo ? ", prazo " + dataBR(m.prazo) : ""}, desde ${dataBR(fmtData(new Date(m.criado_em)))}: ${m.texto}`).join("\n")
+    : "Nada guardado ainda.";
+  const pendUrgentes = (mems || []).filter((m) => m.tipo === "pendencia" && m.prazo && diasEntre(hoje, m.prazo) <= 2)
+    .sort((a, b) => String(a.prazo).localeCompare(String(b.prazo)));
+
   const linhaDoc = (d: typeof emAlerta[number]) => {
     const onde = d.condominio_id ? ` (${nomeCond.get(d.condominio_id) || "condomínio"})` : "";
     const st = d.faltam < 0 ? `VENCIDO há ${-d.faltam} dia(s)` : d.faltam === 0 ? "vence HOJE" : `vence em ${d.faltam} dia(s)`;
@@ -178,6 +191,11 @@ Deno.serve(async (req: Request) => {
       const c = amanhaComps[0];
       pontos.push(amanhaComps.length === 1 ? `amanhã você tem ${c.titulo} às ${horaFala(c.inicio)}` : `amanhã você tem ${n(amanhaComps.length, true)} agendas, a primeira às ${horaFala(c.inicio)}`);
     }
+  }
+  if (pontos.length < 2 && pendUrgentes.length) {
+    const m = pendUrgentes[0], f = diasEntre(hoje, m.prazo);
+    const curto = m.texto.length > 70 ? m.texto.slice(0, 70).replace(/\s+\S*$/, "") + "…" : m.texto.replace(/[.!]+$/, "");
+    pontos.push(`${f < 0 ? "ficou atrasada" : f === 0 ? "vence hoje" : f === 1 ? "vence amanhã" : "vence em dois dias"} a pendência: ${curto}`);
   }
   if (pontos.length < 2 && docsPendentes.length) {
     pontos.push(docsPendentes.length === 1
@@ -239,7 +257,7 @@ Deno.serve(async (req: Request) => {
     },
     dynamic_variables: {
       sindico_nome: nome, sindico_assinatura: perfil.assinatura, empresa: empresaConta, condominios: texto, perfil_usuario: perfilUsuario,
-      abertura, alertas_detalhe, primeiro_acesso: primeiroAcesso ? "sim" : "não", saudacao,
+      abertura, alertas_detalhe, memoria, primeiro_acesso: primeiroAcesso ? "sim" : "não", saudacao,
       voz: perfil.voz === "feminina" ? "feminina" : "masculina",
       radar_oferecido: oferecerRadar && condominios.length && !primeiroAcesso && !avisoAssinatura ? "sim" : "não",
       resumo_alertas: "",

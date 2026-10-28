@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "4.2.2";
+  window.SINDICS_V = "4.3.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -32,7 +32,7 @@ const SLEEP_RE = /(pode descansar|pode desligar|pode encerrar|encerr(ar|a|e)( (a
 const IDLE_MS = 60000;
 /* Legenda das respostas do SINDICS na tela. false = só voz (as falas continuam no Registro). */
 const SHOW_CAPTION = false;
-const TOOL_LABEL = { indicadores_economicos:"Consultando Banco Central", noticias_brasil:"Buscando notícias", knowledge_base:"Consultando documentos do condomínio", knowledge_base_rag:"Consultando documentos do condomínio", mostrar_na_tela:"Montando painel" };
+const TOOL_LABEL = { indicadores_economicos:"Consultando Banco Central", noticias_brasil:"Buscando notícias", knowledge_base:"Consultando documentos do condomínio", knowledge_base_rag:"Consultando documentos do condomínio", mostrar_na_tela:"Montando painel", memoria:"Consultando a memória" };
 
 const $ = id => document.getElementById(id);
 const stateEl=$("state"), toolEl=$("tool"), captionEl=$("caption"), youEl=$("you"), logEl=$("log"), hintEl=$("hint");
@@ -180,7 +180,7 @@ function aplicarTema(t){
 }
 
 /* ======================= MENU (recolhido; abre ao tocar ou por voz) ======================= */
-const DRAWERS = ["menuDrawer","drawer","condDrawer","admDrawer","equipeDrawer","opDrawer"];
+const DRAWERS = ["menuDrawer","drawer","condDrawer","admDrawer","equipeDrawer","opDrawer","memDrawer"];
 function abrirMenu(){ DRAWERS.forEach(id => $(id).classList.remove("open")); $("menuDrawer").classList.add("open"); $("menuBtn").setAttribute("aria-expanded","true"); $("menuBtn").classList.remove("pulsar"); }
 function fecharMenu(){ $("menuDrawer").classList.remove("open"); $("menuBtn").setAttribute("aria-expanded","false"); }
 function abrirGaveta(id){ fecharMenu(); $(id).classList.add("open"); }
@@ -763,6 +763,42 @@ async function executarComDados(nome, a, user){
       if (error) throw error; if (!data) throw new Error("Documento não encontrado.");
       atualizarResumoTela();
       return { ok: true, mensagem: `${data.documento}: vence em ${dataBR(data.data_vencimento)}, aviso ${data.alertar_dias_antes} dias antes.` };
+    }
+    case "memoria": {
+      const { data: { user } } = await sb.auth.getUser(); if (!user) throw new Error("Sessão expirada.");
+      const acao = a.acao || "listar";
+      if (acao === "registrar"){
+        if (!["decisao","pendencia","preferencia","contexto"].includes(a.tipo)) throw new Error("Informe o tipo: decisao, pendencia, preferencia ou contexto.");
+        const texto = String(a.texto || "").trim().slice(0, 400);
+        if (texto.length < 3) throw new Error("Texto da memória vazio.");
+        const cond = a.condominio ? acharCondominio(a.condominio) : null;
+        if (souGestor() && !cond) throw new Error("Diga a qual condomínio esta memória se refere.");
+        const prazo = /^\d{4}-\d{2}-\d{2}$/.test(String(a.prazo || "")) ? a.prazo : null;
+        const { data, error } = await sb.from("memorias").insert({ tipo: a.tipo, texto, condominio_id: cond ? cond.id : null, prazo, origem: "voz", sindico_id: user.id }).select("id").single();
+        if (error) throw error;
+        if ($("memDrawer").classList.contains("open")) listarMemoria();
+        return { ok: true, id: data.id.slice(0, 8), mensagem: "Guardado na memória." };
+      }
+      const { data: todas, error } = await sb.from("memorias").select("id, tipo, texto, prazo, situacao, condominio_id, criado_em, autor_nome").order("criado_em", { ascending: false }).limit(200);
+      if (error) throw error;
+      if (acao === "listar"){
+        const lista = (todas || []).filter(m => (a.incluir_concluidas || m.situacao === "aberta") && (!a.tipo || m.tipo === a.tipo) && (!a.condominio || m.condominio_id === acharCondominio(a.condominio).id));
+        return { total: lista.length, memorias: lista.slice(0, 40).map(m => ({ id: m.id.slice(0, 8), tipo: m.tipo, texto: m.texto, prazo: m.prazo ? dataBR(m.prazo) : null, situacao: m.situacao, condominio: m.condominio_id ? nomeCondPorId(m.condominio_id) : "todos", desde: dataBR(isoDia(new Date(m.criado_em))), por: m.autor_nome })) };
+      }
+      const alvo = (todas || []).find(m => m.id.startsWith(String(a.id || "").replace(/[\[\]\s]/g, "").toLowerCase()));
+      if (!a.id || !alvo) throw new Error("Memória não encontrada. Use a ação listar para ver os ids.");
+      if (acao === "concluir"){
+        const { error: e2 } = await sb.from("memorias").update({ situacao: "concluida" }).eq("id", alvo.id); if (e2) throw e2;
+        if ($("memDrawer").classList.contains("open")) listarMemoria();
+        return { ok: true, mensagem: "Marcada como concluída: " + alvo.texto };
+      }
+      if (acao === "apagar"){
+        const { error: e3, count } = await sb.from("memorias").delete({ count: "exact" }).eq("id", alvo.id); if (e3) throw e3;
+        if (!count) throw new Error("Só quem registrou ou o síndico titular pode apagar esta memória.");
+        if ($("memDrawer").classList.contains("open")) listarMemoria();
+        return { ok: true, mensagem: "Apagada da memória." };
+      }
+      throw new Error("Ação de memória desconhecida.");
     }
     case "operacao_registrar": {
       const cond = a.condominio ? acharCondominio(a.condominio) : ((PERFIL?.condominios || []).length === 1 ? PERFIL.condominios[0] : null);
@@ -1530,7 +1566,7 @@ async function carregarDadosLgpd(user){
 async function baixarMeusDados(){
   const { data: { user } } = await sb.auth.getUser(); if (!user) throw new Error("Sessão expirada.");
   lgMsg("Reunindo seus dados…");
-  const tabelas = ["perfis", "condominios", "documentos_legais", "compromissos", "sessoes", "lgpd_solicitacoes"];
+  const tabelas = ["perfis", "condominios", "documentos_legais", "compromissos", "sessoes", "lgpd_solicitacoes", "memorias"];
   const res = await Promise.all(tabelas.map(t => sb.from(t).select("*").eq(t === "perfis" ? "id" : "sindico_id", user.id)));
   const pacote = { gerado_em: new Date().toISOString(), titular: user.email, observacao: "Exportação de dados pessoais do SINDICS (LGPD, art. 18, II e V). O áudio das conversas não é gravado; as transcrições ficam com a ElevenLabs por até 90 dias e podem ser pedidas pelo canal de privacidade.", dados: {} };
   tabelas.forEach((t, i) => { pacote.dados[t] = res[i].data || []; });
@@ -1949,6 +1985,59 @@ $("eqForm").addEventListener("submit", async e => {
   try{ const j = await chamarEquipe({ acao: "convidar", nome, email, condominios }); eqMsg(j.mensagem); caixaSenhaTemp($("eqMsg"), j.senha_temporaria, j.validade_horas); $("eqNome").value = $("eqEmail").value = ""; caixasCondominios($("eqConds")); await listarEquipe(); }
   catch(err){ eqMsg(err.message, true); }
   $("eqEnviar").disabled = false;
+});
+
+/* ======================= MEMÓRIA DO SINDICS ======================= */
+const MEM_TIPO = { pendencia:"Pendência", decisao:"Decisão", preferencia:"Preferência", contexto:"Contexto" };
+let memFiltro = "aberta";
+const memMsg = (t, err) => { $("memMsg").textContent = t || ""; $("memMsg").style.color = err ? "var(--danger)" : "var(--ok)"; };
+async function abrirMemoria(){
+  abrirGaveta("memDrawer"); memMsg("");
+  const sel = $("memCond"); sel.innerHTML = "";
+  if (!souGestor()){ const o = document.createElement("option"); o.value = ""; o.textContent = "Todos / geral"; sel.append(o); }
+  (PERFIL?.condominios || []).forEach(c => { const o = document.createElement("option"); o.value = c.id; o.textContent = c.nome; sel.append(o); });
+  await listarMemoria();
+}
+async function listarMemoria(){
+  const box = $("memLista"); box.innerHTML = "";
+  const { data, error } = await sb.from("memorias").select("id, tipo, texto, prazo, situacao, condominio_id, autor_nome, criado_em, concluida_em, sindico_id, autor_id")
+    .eq("situacao", memFiltro).order(memFiltro === "aberta" ? "criado_em" : "concluida_em", { ascending: false }).limit(150);
+  if (error){ box.textContent = "Erro: " + error.message; return; }
+  if (!data.length){ const p = document.createElement("p"); p.className = "rs-t"; p.textContent = memFiltro === "aberta" ? "Nada guardado ainda. Durante as conversas, o SINDICS anota aqui as decisões e pendências importantes." : "Nenhum item concluído."; box.append(p); return; }
+  const { data: { user } } = await sb.auth.getUser();
+  data.forEach(m => {
+    const card = document.createElement("div"); card.className = "eq-card mem-item " + m.situacao;
+    const tg = document.createElement("span"); tg.className = "mem-tipo " + m.tipo; tg.textContent = MEM_TIPO[m.tipo] || m.tipo;
+    const t = document.createElement("p"); t.textContent = m.texto;
+    const info = document.createElement("small");
+    info.textContent = [m.condominio_id ? nomeCondPorId(m.condominio_id) : "Geral", m.prazo ? "prazo " + dataBR(m.prazo) : "", "por " + m.autor_nome + " em " + dataBR(isoDia(new Date(m.criado_em)))].filter(Boolean).join(" · ");
+    const acoes = document.createElement("div"); acoes.className = "eq-acoes";
+    const bC = document.createElement("button"); bC.type = "button"; bC.className = "primary"; bC.textContent = m.situacao === "aberta" ? "Concluir" : "Reabrir";
+    bC.onclick = async () => { bC.disabled = true; const { error } = await sb.from("memorias").update({ situacao: m.situacao === "aberta" ? "concluida" : "aberta" }).eq("id", m.id); if (error) memMsg(error.message, true); listarMemoria(); };
+    acoes.append(bC);
+    if (user && (m.sindico_id === user.id || m.autor_id === user.id)){
+      const bX = document.createElement("button"); bX.type = "button"; bX.className = "perigo"; bX.textContent = "Apagar";
+      bX.onclick = async () => { if (!await confirmarNaTela("APAGAR DA MEMÓRIA", "O SINDICS deixa de lembrar: “" + m.texto + "”.", "Apagar")) return; const { error } = await sb.from("memorias").delete().eq("id", m.id); if (error) memMsg(error.message, true); listarMemoria(); };
+      acoes.append(bX);
+    }
+    card.append(tg, t, info, acoes); box.append(card);
+  });
+}
+document.querySelectorAll(".mem-filtro button").forEach(b => b.addEventListener("click", () => {
+  memFiltro = b.dataset.f; document.querySelectorAll(".mem-filtro button").forEach(x => x.classList.toggle("primary", x === b)); listarMemoria();
+}));
+$("memBtn").addEventListener("click", abrirMemoria);
+$("closeMem").addEventListener("click", () => $("memDrawer").classList.remove("open"));
+$("memForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const texto = $("memTexto").value.trim(); if (texto.length < 3){ memMsg("Escreva o que o SINDICS deve lembrar.", true); $("memTexto").focus(); return; }
+  const { data: { user } } = await sb.auth.getUser(); if (!user) return;
+  const cond = $("memCond").value || null;
+  if (souGestor() && !cond){ memMsg("Escolha o condomínio.", true); return; }
+  const { error } = await sb.from("memorias").insert({ tipo: $("memTipo").value, texto, condominio_id: cond, prazo: $("memPrazo").value || null, origem: "tela", sindico_id: user.id });
+  if (error){ memMsg(error.message, true); return; }
+  $("memTexto").value = ""; $("memPrazo").value = ""; memMsg("Guardado ✓");
+  if (memFiltro !== "aberta") document.querySelector('.mem-filtro button[data-f="aberta"]').click(); else listarMemoria();
 });
 
 /* ======================= CONFIRMAÇÃO NA TELA (ações que não têm volta) ======================= */

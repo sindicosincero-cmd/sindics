@@ -20,7 +20,7 @@ Este repositório guarda o **projeto completo**: o site, o aplicativo, o código
 | `supabase/functions/` | Funções do servidor (ver abaixo) | Supabase Edge Functions |
 | `supabase/templates/` | Modelos dos e-mails de convite e de senha (com a senha temporária do gestor). Só podem ser aplicados no Supabase depois de configurar um servidor de e-mail próprio (SMTP) | Supabase → Authentication → Emails |
 | `agente/prompt.md` | Instruções de comportamento da voz | ElevenLabs |
-| `agente/ferramentas.json` | As 20 ferramentas que a voz usa | ElevenLabs |
+| `agente/ferramentas.json` | As 21 ferramentas que a voz usa (incluindo a memória entre conversas) | ElevenLabs |
 | `agente/configuracao.json` | Voz, modelo, reconhecimento de fala, privacidade, segurança e limites | ElevenLabs |
 | `.github/workflows/vendor.yml` | Rotina que baixa e confere as bibliotecas de `app/vendor/` | GitHub Actions |
 
