@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "4.4.0";
+  window.SINDICS_V = "4.4.1";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -1941,11 +1941,11 @@ function caixaSenhaTemp(depoisDe, senha, horas){
   depoisDe.parentElement.querySelectorAll(".eq-senha").forEach(x => x.remove());
   if (!senha) return;
   const box = document.createElement("div"); box.className = "eq-senha";
-  const t = document.createElement("small"); t.textContent = `Senha temporária (vale ${horas || 72} horas; o gestor cria a própria senha no primeiro acesso):`;
+  const t = document.createElement("small"); t.textContent = `Senha temporária (vale ${horas || 72} horas; no primeiro acesso a pessoa cria a própria senha):`;
   const c = document.createElement("code"); c.textContent = senha;
   const b = document.createElement("button"); b.type = "button"; b.textContent = "Copiar acesso";
   b.onclick = async () => {
-    const texto = `Seu acesso ao SINDICS\nEndereço: ${SITE_URL}\nSenha temporária: ${senha}\n(Use o seu e-mail de convite. No primeiro acesso, crie a sua senha pessoal.)`;
+    const texto = `Seu acesso ao SINDICS\nEndereço: ${SITE_URL}\nSenha temporária: ${senha}\n(Entre com o seu e-mail cadastrado. No primeiro acesso, crie a sua senha pessoal.)`;
     try{ await navigator.clipboard.writeText(texto); b.textContent = "Copiado ✓"; }catch(_){ b.textContent = "Selecione e copie"; }
   };
   const d = document.createElement("small"); d.textContent = "Ela também vai no e-mail do convite. Por segurança, não fica guardada aqui: ao fechar, ela some.";
@@ -2154,10 +2154,13 @@ async function carregarAdmin(){
     it.textContent = `${a.nome} · ${a.email} · R$ ${Number(a.valor).toFixed(2).replace(".", ",")} · ${sit}${a.ultimo_pagamento_em ? " · último pagamento " + new Date(a.ultimo_pagamento_em).toLocaleDateString("pt-BR") : ""}${(a.status === "ativa" || a.status === "atrasada") && !a.sindico_id ? " · conta ainda não criada" : ""}`;
     if (a.status === "atrasada") it.style.color = atraso >= DIAS_BLOQUEIO ? "var(--danger)" : "var(--amber)";
     boxA.append(it);
+    if (a.acesso_msg){ const am = document.createElement("small"); am.textContent = "Acesso: " + a.acesso_msg; am.style.color = /não saiu|não foi/.test(a.acesso_msg) ? "var(--amber)" : "var(--muted)"; boxA.append(am); }
     if (a.status === "ativa" || a.status === "atrasada"){
       const bR = document.createElement("button"); bR.type = "button"; bR.textContent = a.sindico_id ? "Reenviar acesso" : "Criar conta e enviar convite"; bR.style.cssText = "padding:5px 9px;font-size:9.5px;align-self:flex-start";
-      bR.onclick = async () => { bR.disabled = true; try{ const j = await chamarAssinar({ acao: "reenviar_convite", assinatura_id: a.id }); bR.textContent = j.mensagem; }catch(e){ bR.textContent = e.message; bR.disabled = false; } };
-      boxA.append(bR);
+      const mR = document.createElement("small");
+      bR.onclick = async () => { bR.disabled = true; try{ const j = await chamarAssinar({ acao: "reenviar_convite", assinatura_id: a.id }); mR.textContent = j.mensagem; mR.style.color = "var(--ok)"; caixaSenhaTemp(mR, j.senha_temporaria, j.validade_horas); }catch(e){ mR.textContent = e.message; mR.style.color = "var(--danger)"; } bR.disabled = false; };
+      const wR = document.createElement("div"); wR.style.cssText = "display:flex;flex-direction:column;gap:4px";
+      wR.append(bR, mR); boxA.append(wR);
     }
   });
   if (!(asss || []).length){ const v = document.createElement("small"); v.textContent = "Nenhuma assinatura ainda. Depois de colocar a chave do Asaas no servidor, toque em Conectar Asaas uma vez."; boxA.append(v); }

@@ -4,6 +4,16 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const SITE_URL = "https://sindics.com.br/app/";
 const r200 = (t = "ok") => new Response(t, { status: 200 });
+// Senha temporária do primeiro acesso: vai no e-mail, vale 72 horas e precisa ser trocada ao entrar.
+const VALIDADE_TEMP_H = 72;
+function senhaTemporaria(): string {
+  const M = "ABCDEFGHJKLMNPQRSTUVWXYZ", m = "abcdefghijkmnpqrstuvwxyz", d = "23456789", todos = M + m + d;
+  const r = crypto.getRandomValues(new Uint32Array(12));
+  const c = Array.from(r, (x, i) => (i === 0 ? M : i === 1 ? m : i === 2 ? d : todos)[x % (i === 0 ? M.length : i === 1 ? m.length : i === 2 ? d.length : todos.length)]);
+  for (let i = c.length - 1; i > 0; i--) { const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1); [c[i], c[j]] = [c[j], c[i]]; }
+  const t = c.join(""); return `${t.slice(0, 4)}-${t.slice(4, 8)}-${t.slice(8)}`;
+}
+const metaTemp = (senha: string) => ({ senha_temporaria: senha, trocar_senha: true, senha_temp_expirada: false, senha_temp_expira: new Date(Date.now() + VALIDADE_TEMP_H * 3600000).toISOString() });
 
 function asaas() {
   const key = (Deno.env.get("ASAAS_API_KEY") || "").trim();
@@ -99,18 +109,38 @@ async function processar(admin: any, ev: any) {
   }
 }
 
-/* Primeiro pagamento: cria (ou libera) a conta do síndico e envia o convite para ele criar a senha. */
+/* Primeiro pagamento: cria a conta do síndico e envia por e-mail o acesso com uma senha temporária
+   (válida por 72 horas; no primeiro acesso ele cria a senha pessoal). Pagamentos seguintes só mantêm a conta liberada. */
 async function liberarConta(admin: any, a: any) {
-  let uid: string | null = a.sindico_id;
+  let uid: string | null = a.sindico_id, nova = false, msg = "";
   if (!uid) {
     const { data: p } = await admin.from("perfis").select("id").ilike("email", a.email).maybeSingle();
     uid = p?.id || null;
   }
   if (!uid) {
-    const { data, error } = await admin.auth.admin.inviteUserByEmail(a.email, { redirectTo: SITE_URL, data: { nome: a.nome, telefone: a.telefone, email_contato: a.email } });
-    if (error) throw error;
-    uid = data.user.id;
+    nova = true;
+    const senha = senhaTemporaria();
+    const meta = { nome: a.nome, telefone: a.telefone, email_contato: a.email, convite: "assinante", ...metaTemp(senha) };
+    const { data, error } = await admin.auth.admin.inviteUserByEmail(a.email, { redirectTo: SITE_URL, data: meta });
+    if (error) {
+      // e-mail não saiu: cria a conta mesmo assim; o administrador reenvia o acesso pelo painel
+      console.error("convite assinante", a.email, error.message);
+      const { data: cu, error: ec } = await admin.auth.admin.createUser({ email: a.email, password: senha, email_confirm: true, user_metadata: meta });
+      if (ec || !cu?.user) throw ec || error;
+      uid = cu.user.id; msg = "Conta criada, mas o e-mail com o acesso não saiu. Use Reenviar acesso.";
+    } else {
+      uid = data.user.id;
+      const { error: ep } = await admin.auth.admin.updateUserById(uid, { password: senha, email_confirm: true });
+      if (ep) { console.error("senha temporaria", ep.message); msg = "Convite enviado, mas a senha temporária não foi ativada. Use Reenviar acesso."; }
+      else msg = "Acesso enviado por e-mail com senha temporária (válida por 72 horas).";
+    }
   }
-  await admin.from("perfis").update({ ativo: true, plano: a.plano || "essencial" }).eq("id", uid);
-  if (a.sindico_id !== uid) await admin.from("assinaturas").update({ sindico_id: uid }).eq("id", a.id);
+  const { data: pf } = await admin.from("perfis").select("papel").eq("id", uid).maybeSingle();
+  const patchPerfil: Record<string, unknown> = { ativo: true };
+  if (pf?.papel !== "admin") patchPerfil.plano = a.plano || "essencial";
+  await admin.from("perfis").update(patchPerfil).eq("id", uid);
+  const patchAss: Record<string, unknown> = {};
+  if (a.sindico_id !== uid) patchAss.sindico_id = uid;
+  if (nova) patchAss.acesso_msg = msg + " " + new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  if (Object.keys(patchAss).length) await admin.from("assinaturas").update(patchAss).eq("id", a.id);
 }

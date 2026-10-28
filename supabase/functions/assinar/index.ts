@@ -11,6 +11,16 @@ const PLANOS: Record<string, { nome: string; valor: number; max: number }> = {
   profissional: { nome: "Profissional", valor: Number(Deno.env.get("SINDICS_VALOR_PROFISSIONAL") || "899"), max: 1000 },
 };
 const TZ = "America/Sao_Paulo";
+// Senha temporária do primeiro acesso (mesma regra do convite automático): 72 horas, troca obrigatória ao entrar.
+const VALIDADE_TEMP_H = 72;
+function senhaTemporaria(): string {
+  const M = "ABCDEFGHJKLMNPQRSTUVWXYZ", m = "abcdefghijkmnpqrstuvwxyz", d = "23456789", todos = M + m + d;
+  const r = crypto.getRandomValues(new Uint32Array(12));
+  const c = Array.from(r, (x, i) => (i === 0 ? M : i === 1 ? m : i === 2 ? d : todos)[x % (i === 0 ? M.length : i === 1 ? m.length : i === 2 ? d.length : todos.length)]);
+  for (let i = c.length - 1; i > 0; i--) { const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1); [c[i], c[j]] = [c[j], c[i]]; }
+  const t = c.join(""); return `${t.slice(0, 4)}-${t.slice(4, 8)}-${t.slice(8)}`;
+}
+const metaTemp = (senha: string) => ({ senha_temporaria: senha, trocar_senha: true, senha_temp_expirada: false, senha_temp_expira: new Date(Date.now() + VALIDADE_TEMP_H * 3600000).toISOString() });
 const SITE_URL = "https://sindics.com.br/app/";
 
 function cors(origin: string | null) {
@@ -159,18 +169,41 @@ Deno.serve(async (req: Request) => {
       if (a.status !== "ativa" && a.status !== "atrasada") return json({ erro: "Essa assinatura ainda não tem pagamento confirmado." }, 400, origin);
       let uid: string | null = a.sindico_id;
       if (!uid) { const { data: pf } = await admin.from("perfis").select("id").ilike("email", a.email).maybeSingle(); uid = pf?.id || null; }
+      const quando = new Date().toLocaleString("pt-BR", { timeZone: TZ });
       if (uid) {
-        await admin.from("perfis").update({ ativo: true, plano: a.plano || "essencial" }).eq("id", uid);
+        const { data: pf } = await admin.from("perfis").select("papel").eq("id", uid).maybeSingle();
+        await admin.from("perfis").update(pf?.papel === "admin" ? { ativo: true } : { ativo: true, plano: a.plano || "essencial" }).eq("id", uid);
         await admin.from("assinaturas").update({ sindico_id: uid }).eq("id", a.id);
+        // quem ainda não criou a própria senha recebe uma senha temporária nova (a anterior deixa de valer)
+        const { data: gu } = await admin.auth.admin.getUserById(uid);
+        const meta = gu?.user?.user_metadata || {};
+        let senha = "";
+        if (gu?.user && (!gu.user.last_sign_in_at || meta.trocar_senha)) {
+          senha = senhaTemporaria();
+          const { error: ep } = await admin.auth.admin.updateUserById(uid, { password: senha, email_confirm: true, user_metadata: { ...meta, ...metaTemp(senha) } });
+          if (ep) { console.error("senha temporaria", ep.message); senha = ""; }
+        }
         const { error } = await admin.auth.resetPasswordForEmail(a.email, { redirectTo: SITE_URL });
-        if (error) return json({ erro: "Conta liberada, mas o e-mail não saiu: " + error.message }, 502, origin);
-        return json({ ok: true, mensagem: "Conta liberada. Enviei um link para o síndico criar a senha." }, 200, origin);
+        await admin.from("assinaturas").update({ acesso_msg: (senha ? "Nova senha temporária gerada" : "Link de senha reenviado") + (error ? "; o e-mail não saiu" : " por e-mail") + ". " + quando }).eq("id", a.id);
+        if (error && !senha) return json({ erro: "Conta liberada, mas o e-mail não saiu: " + error.message }, 502, origin);
+        return json({ ok: true, senha_temporaria: senha || undefined, validade_horas: VALIDADE_TEMP_H, mensagem: senha
+          ? (error ? "O e-mail não saiu, mas a senha temporária abaixo já vale: repasse ao síndico." : "Enviei o acesso por e-mail. A senha temporária abaixo também vale, se precisar repassar.")
+          : "Conta liberada. Enviei um link para o síndico criar a senha." }, 200, origin);
       }
-      const { data, error } = await admin.auth.admin.inviteUserByEmail(a.email, { redirectTo: SITE_URL, data: { nome: a.nome, telefone: a.telefone, email_contato: a.email } });
-      if (error) return json({ erro: "O convite não saiu: " + error.message }, 502, origin);
-      await admin.from("perfis").update({ ativo: true, plano: a.plano || "essencial" }).eq("id", data.user.id);
-      await admin.from("assinaturas").update({ sindico_id: data.user.id }).eq("id", a.id);
-      return json({ ok: true, mensagem: "Convite enviado para " + a.email + "." }, 200, origin);
+      const senha = senhaTemporaria();
+      const meta = { nome: a.nome, telefone: a.telefone, email_contato: a.email, convite: "assinante", ...metaTemp(senha) };
+      const { data, error } = await admin.auth.admin.inviteUserByEmail(a.email, { redirectTo: SITE_URL, data: meta });
+      let novoId = data?.user?.id || null;
+      if (error) {
+        const { data: cu, error: ec } = await admin.auth.admin.createUser({ email: a.email, password: senha, email_confirm: true, user_metadata: meta });
+        if (ec || !cu?.user) return json({ erro: "Não consegui criar o acesso: " + (ec?.message || error.message) }, 502, origin);
+        novoId = cu.user.id;
+      } else {
+        await admin.auth.admin.updateUserById(novoId, { password: senha, email_confirm: true });
+      }
+      await admin.from("perfis").update({ ativo: true, plano: a.plano || "essencial" }).eq("id", novoId);
+      await admin.from("assinaturas").update({ sindico_id: novoId, acesso_msg: (error ? "Conta criada; o e-mail não saiu" : "Acesso enviado por e-mail") + " com senha temporária. " + quando }).eq("id", a.id);
+      return json({ ok: true, senha_temporaria: senha, validade_horas: VALIDADE_TEMP_H, mensagem: error ? "O e-mail não saiu, mas a conta foi criada: repasse a senha temporária abaixo ao síndico." : "Acesso enviado para " + a.email + ". A senha temporária abaixo também vale." }, 200, origin);
     }
 
     return json({ erro: "Ação desconhecida." }, 400, origin);
