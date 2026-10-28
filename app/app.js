@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "4.2.0";
+  window.SINDICS_V = "4.2.1";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -220,11 +220,11 @@ function showPanel(p){
   const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.textContent = "×"; x.setAttribute("aria-label", "Fechar painel"); x.onclick = () => card.remove(); h.append(x);
   const t = document.createElement("p"); t.className = "t"; t.textContent = p.titulo || "";
   const ul = document.createElement("ul");
-  (Array.isArray(p.itens) ? p.itens : []).slice(0,6).forEach(x => { const li = document.createElement("li"); li.textContent = String(x); ul.append(li); });
+  (Array.isArray(p.itens) ? p.itens : []).slice(0,30).forEach(x => { const li = document.createElement("li"); li.textContent = String(x); ul.append(li); });
   card.append(h, t, ul);
   if (p.resultado){ const r = document.createElement("div"); r.className = "res"; r.textContent = p.resultado; card.append(r); }
   if (p.fonte){ const f = document.createElement("div"); f.className = "src"; f.textContent = "Fonte: " + p.fonte; card.append(f); }
-  box.prepend(card);
+  box.prepend(card); box.scrollTop = 0;
   while (box.children.length > 3) box.lastChild.remove();
   sndPanel(); core.pulse = 1;
   card.style.opacity = 0;

@@ -139,7 +139,10 @@ main > .center{grid-column:2;grid-row:1} main > #panels{grid-column:3;grid-row:1
 .ind small{grid-column:1/-1;font-family:var(--mono);font-size:10px;color:var(--muted)}
 .spark{grid-column:1/-1;width:100%;height:30px;margin-top:4px}
 
-#panels{gap:12px}
+#panels{gap:12px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;scrollbar-width:thin;scrollbar-color:var(--line-strong) transparent;padding-right:4px;pointer-events:auto}
+#panels::-webkit-scrollbar{width:6px} #panels::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:3px}
+#panels .card{flex-shrink:0}
+#panels .card .t{overflow-wrap:anywhere}
 .card .t{font-family:var(--display);font-weight:600;font-size:15px;letter-spacing:.06em;margin:0 0 8px;color:var(--fg)}
 .card ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
 .card li{font-size:13.5px;line-height:1.4;padding-left:14px;position:relative;overflow-wrap:anywhere}
@@ -498,7 +501,7 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
 @media (max-width:860px){
   main{grid-template-columns:1fr;grid-template-rows:1fr auto;align-items:end}
   main > .center{grid-column:1}
-  #panels{position:fixed;left:max(14px, env(safe-area-inset-left, 0px));right:max(14px, env(safe-area-inset-right, 0px));top:calc(70px + env(safe-area-inset-top,0px));max-height:38vh;z-index:5}
+  #panels{position:fixed;left:max(14px, env(safe-area-inset-left, 0px));right:max(14px, env(safe-area-inset-right, 0px));top:calc(70px + env(safe-area-inset-top,0px));max-height:min(52vh, calc(100dvh - 300px));z-index:5}
   #panels .holo:not(:first-child){display:none}
   .center{padding-bottom:2vh}
   .iconbtn .lbl{display:none}
@@ -970,6 +973,6 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
   <span id="tapMsg">Toque em qualquer lugar para ligar som e microfone. Depois disso ele fica em prontidão sozinho.</span>
 </div>
 
-<script src="app.js?v=4.2.0"></script>
+<script src="app.js?v=4.2.1"></script>
 </body>
 </html>
