@@ -32,7 +32,7 @@ Este repositório guarda o **projeto completo**: o site, o aplicativo, o código
 | `processar-documento` | Recebe o texto do Regulamento/Convenção (lido do PDF no aparelho) e ensina o SINDICS |
 | `excluir-condominio` | Exclusão completa de um condomínio, a pedido do síndico |
 | `radar-condominial` | Radar Condominial (notícias do setor) e busca de notícias |
-| `assinar` | Assinatura pelos planos Essencial e Profissional via Asaas; link de pagamento; conexão do webhook |
+| `assinar` | Assinatura via Asaas pelos planos Essencial (até 500 apartamentos) e Profissional (501 a 1.000), contando a soma dos apartamentos de todos os condomínios; link de pagamento; conexão do webhook |
 | `asaas-webhook` | Recebe do Asaas pagamentos, atrasos e cancelamentos e libera ou bloqueia o acesso |
 | `equipe` | Convida, reenvia acesso e remove gestores auxiliares. O convite leva uma senha temporária (72 horas, troca obrigatória no primeiro acesso); uma rotina de hora em hora invalida as senhas temporárias vencidas |
 

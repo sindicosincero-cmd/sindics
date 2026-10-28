@@ -1,5 +1,5 @@
 /* ===== Ajuste aqui ===== */
-const PLANOS = { essencial: { nome: "Essencial", preco: "R$ 450" }, profissional: { nome: "Profissional", preco: "R$ 899" } };
+const PLANOS = { essencial: { nome: "Essencial", preco: "R$ 550" }, profissional: { nome: "Profissional", preco: "R$ 899" } };
 const WHATSAPP = "";   // só números, com DDI e DDD. Ex.: "5511999999999" (usado no "Fale com a nossa equipe")
 const MENSAGEM = "Olá! Tenho uma dúvida sobre o SINDICS, a inteligência condominial por voz.";
 const FN_ASSINAR = "https://hjjckvluydcejmrxolza.supabase.co/functions/v1/assinar";

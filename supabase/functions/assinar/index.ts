@@ -5,10 +5,10 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const ORIGENS = ["https://sindics.com.br", "https://www.sindics.com.br", "https://sindicosincero-cmd.github.io"];
-// Planos (mensalidade fixa por faixa de condomínios). Acima de 10 condomínios: sob consulta, fora do autoatendimento.
+// Planos (mensalidade fixa pelo total de apartamentos da carteira). Acima de 1.000 apartamentos: sob consulta, fora do autoatendimento.
 const PLANOS: Record<string, { nome: string; valor: number; max: number }> = {
-  essencial: { nome: "Essencial", valor: Number(Deno.env.get("SINDICS_VALOR_ESSENCIAL") || "450"), max: 5 },
-  profissional: { nome: "Profissional", valor: Number(Deno.env.get("SINDICS_VALOR_PROFISSIONAL") || "899"), max: 10 },
+  essencial: { nome: "Essencial", valor: Number(Deno.env.get("SINDICS_VALOR_ESSENCIAL") || "550"), max: 500 },
+  profissional: { nome: "Profissional", valor: Number(Deno.env.get("SINDICS_VALOR_PROFISSIONAL") || "899"), max: 1000 },
 };
 const TZ = "America/Sao_Paulo";
 const SITE_URL = "https://sindics.com.br/app/";
@@ -77,7 +77,7 @@ Deno.serve(async (req: Request) => {
       if (!(doc.length === 11 ? cpfValido(doc) : cnpjValido(doc))) return json({ erro: "CPF ou CNPJ inválido. Confira os números." }, 400, origin);
       if (tel.length < 10 || tel.length > 11) return json({ erro: "Informe o WhatsApp com DDD." }, 400, origin);
       const plano = PLANOS[String(b.plano || "essencial")] ? String(b.plano || "essencial") : "";
-      if (!plano) return json({ erro: "Plano inválido. Para mais de 10 condomínios, fale com a nossa equipe." }, 400, origin);
+      if (!plano) return json({ erro: "Plano inválido. Para mais de 1.000 apartamentos, fale com a nossa equipe." }, 400, origin);
       const VALOR = PLANOS[plano].valor;
       if (b.aceite !== true) return json({ erro: "Para assinar, aceite a Política de Privacidade e os Termos de Uso." }, 400, origin);
 
@@ -100,7 +100,7 @@ Deno.serve(async (req: Request) => {
       const cliente = achados?.data?.[0] || await chamar("POST", "/customers", { name: nome, cpfCnpj: doc, email, mobilePhone: tel, externalReference: "sindics" });
       const ass = await chamar("POST", "/subscriptions", {
         customer: cliente.id, billingType: "UNDEFINED", value: VALOR, nextDueDate: hojeSP(), cycle: "MONTHLY",
-        description: `SINDICS — Inteligência Condominial · Plano ${PLANOS[plano].nome} (até ${PLANOS[plano].max} condomínios)`, externalReference: linha.id,
+        description: `SINDICS — Inteligência Condominial · Plano ${PLANOS[plano].nome} (até ${PLANOS[plano].max.toLocaleString("pt-BR")} apartamentos)`, externalReference: linha.id,
       });
       let link = "";
       for (let i = 0; i < 5 && !link; i++) {
