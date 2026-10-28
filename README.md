@@ -13,6 +13,7 @@ Este repositório guarda o **projeto completo**: o site, o aplicativo, o código
 |---|---|---|
 | `index.html`, `pagina.js` | Landing page de vendas (planos e assinatura) | GitHub Pages — sindics.com.br |
 | `app/` | O SINDICS: tela, voz, agenda, documentação legal, regras, comunicados, Operação do dia, relatório mensal, equipe, LGPD | GitHub Pages — sindics.com.br/app |
+| `app/gestao.js` | Gestão e Orçamento: previsão orçamentária, índices do Banco Central, projeção da taxa condominial e calendário legal | GitHub Pages |
 | `app/vendor/` | Bibliotecas de terceiros copiadas para o próprio site (com verificação de integridade) | — |
 | `privacidade.html` | Política de Privacidade e Termos de Uso | sindics.com.br/privacidade.html |
 | `assets/` | Tema claro/escuro e redirecionamentos | — |
@@ -20,7 +21,7 @@ Este repositório guarda o **projeto completo**: o site, o aplicativo, o código
 | `supabase/functions/` | Funções do servidor (ver abaixo) | Supabase Edge Functions |
 | `supabase/templates/` | Modelos dos e-mails de convite e de senha (com a senha temporária do gestor). Só podem ser aplicados no Supabase depois de configurar um servidor de e-mail próprio (SMTP) | Supabase → Authentication → Emails |
 | `agente/prompt.md` | Instruções de comportamento da voz | ElevenLabs |
-| `agente/ferramentas.json` | As 21 ferramentas que a voz usa (incluindo a memória entre conversas) | ElevenLabs |
+| `agente/ferramentas.json` | As 22 ferramentas que a voz usa (incluindo a memória entre conversas e Gestão e Orçamento) | ElevenLabs |
 | `agente/configuracao.json` | Voz, modelo, reconhecimento de fala, privacidade, segurança e limites | ElevenLabs |
 | `.github/workflows/vendor.yml` | Rotina que baixa e confere as bibliotecas de `app/vendor/` | GitHub Actions |
 

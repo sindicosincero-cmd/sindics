@@ -340,6 +340,21 @@
     "id": "string — id curto entre colchetes",
     "incluir_concluidas": "boolean"
    }
+  },
+  {
+   "id": "tool_3801m62bnpj2eh0bqgj132kef2kh",
+   "nome": "gestao_orcamento",
+   "tipo": "client",
+   "timeout": 30,
+   "descricao": "Gestão e Orçamento: resumo da previsão orçamentária ligada aos índices (IPCA, IGP-M, INPC, INCC), reajuste necessário da taxa, calendário legal; abrir a tela; agendar o calendário legal.",
+   "obrigatorios": [
+    "acao"
+   ],
+   "parametros": {
+    "acao": "enum [resumo, abrir, agendar_calendario]",
+    "condominio": "string",
+    "mostrar": "boolean"
+   }
   }
  ]
 }

@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "4.3.0";
+  window.SINDICS_V = "4.4.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -763,6 +763,21 @@ async function executarComDados(nome, a, user){
       if (error) throw error; if (!data) throw new Error("Documento não encontrado.");
       atualizarResumoTela();
       return { ok: true, mensagem: `${data.documento}: vence em ${dataBR(data.data_vencimento)}, aviso ${data.alertar_dias_antes} dias antes.` };
+    }
+    case "gestao_orcamento": {
+      if (!window.Gestao) throw new Error("Módulo de gestão não carregado. Recarregue a página.");
+      const cond = a.condominio ? acharCondominio(a.condominio) : ((PERFIL?.condominios || []).length === 1 ? PERFIL.condominios[0] : null);
+      if (!cond) throw new Error("Diga de qual condomínio. Disponíveis: " + (PERFIL?.condominios || []).map(c => c.nome).join(", ") + ".");
+      const acao = a.acao || "resumo";
+      if (acao === "abrir"){ await Gestao.abrir(cond.nome); return "Gestão e Orçamento do " + cond.nome + " aberto na tela."; }
+      if (acao === "agendar_calendario"){
+        const { cond: c, orc } = await Gestao.carregar(cond.id);
+        const r = await Gestao.agendarCalendario(c, orc);
+        return { ok: true, criados: r.criados, ja_existiam: r.existentes, datas: (r.itens || []).map(x => ({ data: dataBR(x.data), o_que: x.titulo })), mensagem: r.criados ? "Datas colocadas na agenda com aviso 7 dias antes." : (r.existentes ? "Essas datas já estavam na agenda." : "Faltam dados: data da última assembleia, fim do mandato ou mês do dissídio (Condomínios › Editar).") };
+      }
+      const r = await Gestao.resumo(cond);
+      if (a.mostrar) await Gestao.abrir(cond.nome);
+      return r;
     }
     case "memoria": {
       const { data: { user } } = await sb.auth.getUser(); if (!user) throw new Error("Sessão expirada.");
@@ -1566,7 +1581,7 @@ async function carregarDadosLgpd(user){
 async function baixarMeusDados(){
   const { data: { user } } = await sb.auth.getUser(); if (!user) throw new Error("Sessão expirada.");
   lgMsg("Reunindo seus dados…");
-  const tabelas = ["perfis", "condominios", "documentos_legais", "compromissos", "sessoes", "lgpd_solicitacoes", "memorias"];
+  const tabelas = ["perfis", "condominios", "documentos_legais", "compromissos", "sessoes", "lgpd_solicitacoes", "memorias", "orcamentos"];
   const res = await Promise.all(tabelas.map(t => sb.from(t).select("*").eq(t === "perfis" ? "id" : "sindico_id", user.id)));
   const pacote = { gerado_em: new Date().toISOString(), titular: user.email, observacao: "Exportação de dados pessoais do SINDICS (LGPD, art. 18, II e V). O áudio das conversas não é gravado; as transcrições ficam com a ElevenLabs por até 90 dias e podem ser pedidas pelo canal de privacidade.", dados: {} };
   tabelas.forEach((t, i) => { pacote.dados[t] = res[i].data || []; });
@@ -2211,7 +2226,7 @@ let condEditId = null; // id do condomínio em edição
 const cMsg = (t, err) => { $("cMsg").textContent = t || ""; $("cMsg").style.color = err ? "var(--danger)" : "var(--ok)"; };
 
 function limparFormCond(){
-  ["cCnpj","cNome","cCep","cUnid","cEnd","cCidade","cUf","cConv","cReg"].forEach(id => { $(id).value = ""; $(id).removeAttribute("aria-invalid"); });
+  ["cCnpj","cNome","cCep","cUnid","cEnd","cCidade","cUf","cConv","cReg","cAta","cAtaData","cMandato","cDissidio"].forEach(id => { $(id).value = ""; $(id).removeAttribute("aria-invalid"); });
   condEditId = null; $("cCancelar").hidden = true; $("cSalvar").textContent = "Salvar condomínio";
   $("condForm").hidden = souGestor(); // gestor só edita condomínios autorizados; não cadastra novos
   $("cRegObr").hidden = false;
@@ -2222,7 +2237,7 @@ function limparFormCond(){
 
 /* ---------- Leitura dos PDFs (texto + OCR quando escaneado) ---------- */
 const FN_DOC = SUPABASE_URL + "/functions/v1/processar-documento";
-const TIPO_NOME = { convencao: "Convenção", regulamento: "Regulamento Interno" };
+const TIPO_NOME = { convencao: "Convenção", regulamento: "Regulamento Interno", ata: "Ata da assembleia" };
 const STATUS_TXT = { pendente: "aguardando PDF", enviado: "enviado", processando: "lendo…", pronto: "lido ✓", erro: "não lido" };
 const scriptsCarregados = {};
 function carregarScript(src){
@@ -2270,6 +2285,20 @@ async function extrairTextoPDF(file, rotulo){
   return { texto, paginas: total, ocr };
 }
 
+/* Remove dados pessoais antes de guardar (atas): CPF, RG, telefone, e-mail e nomes ligados a unidade ou tratamento. */
+function limparDadosPessoais(t, ata){
+  let s = String(t || "")
+    .replace(/\b\d{3}\.?\d{3}\.?\d{3}[-\s]?\d{2}\b/g, "[CPF removido]")
+    .replace(/\b(RG|R\.G\.)\s*(n[ºo°.]?\s*)?[\d.\-xX]{5,}/gi, "[RG removido]")
+    .replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, "[e-mail removido]")
+    .replace(/(\(?\b\d{2}\)?\s?)?\b9?\d{4}[-\s]?\d{4}\b/g, m => /\d{8,}/.test(m.replace(/\D/g, "")) ? "[telefone removido]" : m);
+  if (!ata) return s;
+  const NOME = "[A-ZÁÉÍÓÚÂÊÔÃÕÇ][a-záéíóúâêôãõçü]+(?:\\s+(?:d[aeo]s?\\s+)?[A-ZÁÉÍÓÚÂÊÔÃÕÇ][a-záéíóúâêôãõçü]+)+";
+  s = s.replace(new RegExp("\\b(apto\\.?|apartamento|unidade|ap\\.?|casa|sala)\\s*(n[ºo°.]?\\s*)?([\\w-]{1,8})\\s*[-–—:,]?\\s*(?:\\(?\\s*)" + NOME, "gi"), (m, u, _n, num) => `${u} ${num} [nome removido]`);
+  s = s.replace(new RegExp("\\b(Sr\\.?|Sra\\.?|Srs\\.?|Srta\\.?|Dr\\.?|Dra\\.?|senhor|senhora|cond[ôo]min[oa]|morador[a]?|propriet[áa]ri[oa]|inquilin[oa])\\s+" + NOME, "g"), (m, t) => `${t} [nome removido]`);
+  return s;
+}
+
 async function processarDocumento(condId, donoId, tipo, file){
   const rotulo = TIPO_NOME[tipo];
   if (file.size > 30 * 1024 * 1024) throw new Error(`${rotulo}: o arquivo passa de 30 MB.`);
@@ -2281,7 +2310,8 @@ async function processarDocumento(condId, donoId, tipo, file){
     const up = await sb.storage.from("documentos-condominio").upload(`${donoId}/${condId}/${tipo}.pdf`, file, { upsert: true, contentType: "application/pdf" });
     if (up.error) console.warn("upload", up.error.message);
   }
-  const { texto, paginas, ocr } = await extrairTextoPDF(file, rotulo);
+  let { texto, paginas, ocr } = await extrairTextoPDF(file, rotulo);
+  if (tipo === "ata"){ progresso(95, `${rotulo}: removendo dados pessoais…`); texto = limparDadosPessoais(texto, true); }
   progresso(96, `${rotulo}: ensinando o SINDICS…`);
   const r = await fetch(FN_DOC, { method: "POST", headers: { "Authorization": "Bearer " + session.access_token, "apikey": SUPABASE_ANON, "Content-Type": "application/json" },
     body: JSON.stringify({ condominio_id: condId, tipo, texto, paginas, ocr }) });
@@ -2293,7 +2323,7 @@ async function processarDocumento(condId, donoId, tipo, file){
 async function listarCondominios(){
   const { data: { user } } = await sb.auth.getUser(); if (!user) return [];
   const dono = condAlvo ? condAlvo.id : user.id;
-  const qL = sb.from("condominios").select("id, sindico_id, nome, cnpj, endereco, cidade, uf, cep, unidades, convencao_status, regulamento_status, convencao_msg, regulamento_msg, lat, lng, local_definido_em");
+  const qL = sb.from("condominios").select("id, sindico_id, nome, cnpj, endereco, cidade, uf, cep, unidades, convencao_status, regulamento_status, convencao_msg, regulamento_msg, ata_status, ata_msg, ata_data, mandato_fim, dissidio_mes, lat, lng, local_definido_em");
   const { data, error } = await (condAlvo ? qL.eq("sindico_id", dono) : filtroCond(qL, user.id)).order("nome");
   const box = $("condLista"); box.innerHTML = "";
   if (error){ box.textContent = "Erro ao carregar: " + error.message; return []; }
@@ -2307,17 +2337,18 @@ async function listarCondominios(){
     const b = document.createElement("button"); b.type = "button"; b.textContent = "Editar";
     b.onclick = () => {
       $("condForm").hidden = false; condEditId = c.id; $("cCnpj").value = c.cnpj ? mascaraCnpj(c.cnpj) : ""; $("cNome").value = c.nome; $("cCep").value = c.cep ? c.cep.replace(/^(\d{5})(\d{3})$/, "$1-$2") : "";
+      $("cAtaData").value = c.ata_data || ""; $("cMandato").value = c.mandato_fim || ""; $("cDissidio").value = c.dissidio_mes ? String(c.dissidio_mes) : "";
       $("cUnid").value = c.unidades || ""; $("cEnd").value = c.endereco || ""; $("cCidade").value = (c.cidade || "").replace(/\/[A-Z]{2}$/, ""); $("cUf").value = c.uf || (c.cidade || "").split("/")[1] || "";
       $("condFormTitulo").textContent = "Editar " + c.nome; $("cSalvar").textContent = "Salvar alterações"; $("cCancelar").hidden = false; cMsg(""); $("cCnpj").focus();
       $("cRegObr").hidden = c.regulamento_status !== "pronto" ? false : true;
       $("cDocDica").textContent = "Anexe um PDF só se quiser enviar ou substituir aquele documento. Os que já foram lidos continuam valendo.";
     };
     const st = document.createElement("div"); st.className = "docst";
-    [["regulamento", c.regulamento_status || "pendente"], ["convencao", c.convencao_status || "pendente"]].forEach(([t, s]) => {
-      const opc = t === "convencao" && s === "pendente";
-      const sp = document.createElement("span"); sp.className = opc ? "opcional" : s; sp.textContent = `${TIPO_NOME[t]}: ${opc ? "opcional, não enviada" : (STATUS_TXT[s] || s)}`; st.append(sp);
+    [["regulamento", c.regulamento_status || "pendente"], ["convencao", c.convencao_status || "pendente"], ["ata", c.ata_status || "pendente"]].forEach(([t, s]) => {
+      const opc = t !== "regulamento" && s === "pendente";
+      const sp = document.createElement("span"); sp.className = opc ? "opcional" : s; sp.textContent = `${TIPO_NOME[t]}: ${opc ? (t === "ata" ? "não enviada" : "opcional, não enviada") : (s === "pronto" && t !== "regulamento" ? "lida ✓" : (STATUS_TXT[s] || s))}${t === "ata" && c.ata_data && s === "pronto" ? " (" + dataBR(c.ata_data) + ")" : ""}`; st.append(sp);
     });
-    const msgs = [["convencao", c.convencao_status, c.convencao_msg], ["regulamento", c.regulamento_status, c.regulamento_msg]]
+    const msgs = [["convencao", c.convencao_status, c.convencao_msg], ["regulamento", c.regulamento_status, c.regulamento_msg], ["ata", c.ata_status, c.ata_msg]]
       .filter(([, s, m]) => s === "erro" && m).map(([t, , m]) => { const sm = document.createElement("small"); sm.className = "docmsg"; sm.textContent = `${TIPO_NOME[t]}: ${m}`; return sm; });
     const loc = document.createElement("div"); loc.className = "cond-local";
     const lt = document.createElement("small"); lt.textContent = c.lat != null ? "Localização definida ✓ (confere a presença nos registros)" : "Localização não definida: os registros não conferem presença";
@@ -2367,7 +2398,7 @@ $("condForm").addEventListener("submit", async e => {
   const marca = (id, ok) => { if (ok) $(id).removeAttribute("aria-invalid"); else { $(id).setAttribute("aria-invalid", "true"); erros.push(id); } };
   marca("cCnpj", cnpjValido(v.cnpj)); marca("cNome", v.nome.length >= 3); marca("cUnid", v.unidades >= 1);
   marca("cEnd", v.endereco.length >= 5); marca("cCidade", v.cidade.length >= 2); marca("cUf", /^[A-Z]{2}$/.test(v.uf));
-  const fConv = $("cConv").files[0] || null, fReg = $("cReg").files[0] || null;
+  const fConv = $("cConv").files[0] || null, fReg = $("cReg").files[0] || null, fAta = $("cAta").files[0] || null;
   // só o Regulamento Interno é obrigatório; a Convenção é opcional
   if (!condEditId || !$("cRegObr").hidden) marca("cReg", !!fReg);
   if (erros.length){
@@ -2376,7 +2407,9 @@ $("condForm").addEventListener("submit", async e => {
             : "Preencha os campos obrigatórios marcados em vermelho.";
     cMsg(m, true); $(erros[0]).focus(); return;
   }
-  const registro = { cnpj: v.cnpj, nome: v.nome, cep: v.cep, unidades: v.unidades, endereco: v.endereco, cidade: `${v.cidade}/${v.uf}`, uf: v.uf };
+  const registro = { cnpj: v.cnpj, nome: v.nome, cep: v.cep, unidades: v.unidades, endereco: v.endereco, cidade: `${v.cidade}/${v.uf}`, uf: v.uf,
+    ata_data: $("cAtaData").value || null, mandato_fim: $("cMandato").value || null, dissidio_mes: $("cDissidio").value ? Number($("cDissidio").value) : null };
+  if (fAta && !registro.ata_data){ cMsg("Informe a data da assembleia da ata anexada.", true); $("cAtaData").focus(); return; }
   $("cSalvar").disabled = true; cMsg("Salvando…");
   const { data: { user } } = await sb.auth.getUser();
   const donoId = condAlvo ? condAlvo.id : user.id;
@@ -2395,7 +2428,7 @@ $("condForm").addEventListener("submit", async e => {
   }
   // Lê os PDFs, um de cada vez
   const falhas = [];
-  for (const [tipo, f] of [["regulamento", fReg], ["convencao", fConv]]){
+  for (const [tipo, f] of [["regulamento", fReg], ["convencao", fConv], ["ata", fAta]]){
     if (!f) continue;
     cMsg("");
     try{ await processarDocumento(condId, donoId, tipo, f); }
@@ -2405,7 +2438,7 @@ $("condForm").addEventListener("submit", async e => {
   if (falhas.length){
     cMsg("Dados salvos, mas houve problema com os documentos: " + falhas.join(" | ") + " Você pode reenviar em Editar.", true);
   } else {
-    cMsg(fConv || fReg ? "Pronto! O SINDICS já conhece as regras deste condomínio." : (condEditId ? "Alterações salvas." : "Condomínio cadastrado!"));
+    cMsg(fConv || fReg || fAta ? "Pronto! O SINDICS já leu os documentos deste condomínio." : (condEditId ? "Alterações salvas." : "Condomínio cadastrado!"));
     setTimeout(() => { $("cProg").hidden = true; }, 2500);
   }
   const msgFinal = $("cMsg").textContent, corFinal = $("cMsg").style.color;

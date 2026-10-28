@@ -279,6 +279,8 @@ button.perigo:hover{background:var(--danger);color:var(--bg)}
 .eq-conds label{display:flex;gap:8px;align-items:center;font-family:var(--body);font-size:13.5px;letter-spacing:0;text-transform:none;color:var(--fg);margin:0}
 .eq-conds input{width:16px!important;height:16px;accent-color:var(--cyan)}
 .eq-acoes{display:flex;gap:6px;flex-wrap:wrap}
+.c-gestao{border:1px solid var(--line);padding:10px 12px 12px;margin:10px 0 4px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.c-gestao legend{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan);padding:0 6px}
 .mem-filtro{display:flex;gap:6px} .mem-filtro button{padding:6px 12px;font-size:10px}
 .mem-item .mem-tipo{align-self:flex-start;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:2px 8px;border:1px solid currentColor}
 .mem-item .mem-tipo.pendencia{color:var(--amber)} .mem-item .mem-tipo.decisao{color:var(--ok)} .mem-item .mem-tipo.preferencia{color:var(--violet)} .mem-item .mem-tipo.contexto{color:var(--cyan)}
@@ -367,10 +369,47 @@ button.perigo:hover{background:var(--danger);color:var(--bg)}
 .com-folha .ass strong{display:block;font-family:var(--body);font-size:14px}
 .com-folha .ass small{display:block;font-family:var(--body);font-size:12px;color:#4a4f57}
 .com-dica{font-family:var(--mono);font-size:11px;color:#9fb3c8;text-align:center;margin:0}
+.com-barra select{padding:8px 10px;font-size:13px;background:#0b1422;color:#d9e6f5;border:1px solid rgba(63,208,255,.5);max-width:100%}
+.com-wrap > .com-folha{flex-shrink:0}
+.ges-folha h3{margin-top:28px}
+.ges-docs{display:flex;flex-wrap:wrap;gap:8px}
+.ges-docs span{font-size:12.5px;padding:4px 10px;border:1px solid #d8dbe0;border-radius:999px}
+.ges-docs .ok{color:#1d6b3a;border-color:#8cc9a2;background:#eef8f1} .ges-docs .falta{color:#8a5a00;border-color:#e6c27a;background:#fdf6e7}
+.ges-nota{font-size:12.5px;color:#4a4f57;margin:8px 0} .ges-alerta{font-size:13px;color:#b3261e;font-weight:600;margin:10px 0}
+.ges-msg{font-size:12.5px;color:#1b6fa8;margin:6px 0;min-height:1em}
+.ges-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:8px 0}
+.ges-campo{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:#4a4f57}
+.ges-folha input,.ges-folha select,.ges-folha textarea{font:inherit;font-size:13px;color:#1b1d21;background:#fff;border:1px solid #c9ced6;padding:6px 8px;width:100%;min-width:0;box-sizing:border-box}
+.ges-import{border:1px dashed #9db4c8;padding:12px;display:flex;flex-direction:column;gap:8px;margin:10px 0;background:#f6f9fc}
+.ges-import textarea{min-height:64px}
+.ges-check{display:flex;gap:8px;align-items:center;font-size:12.5px} .ges-check input{width:auto}
+.ges-folha button{font-family:var(--body);font-size:12px;letter-spacing:.04em;text-transform:none;padding:8px 12px;background:#fff;color:#1b6fa8;border:1px solid #1b6fa8;cursor:pointer;align-self:flex-start}
+.ges-folha button.primary{background:#1b6fa8;color:#fff}
+.ges-folha button.x{padding:2px 8px;color:#b3261e;border-color:#e3b3ae}
+.ges-acoes{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.ges-tab{width:100%;border-collapse:collapse;font-size:12.5px;margin:6px 0;table-layout:fixed}
+.ges-tab th{text-align:left;font-weight:600;color:#4a4f57;border-bottom:1px solid #d8dbe0;padding:6px 4px;font-size:11.5px}
+.ges-tab td{border-bottom:1px solid #eef0f2;padding:4px;vertical-align:middle;overflow-wrap:anywhere}
+.ges-tab .num{text-align:right;width:120px} .ges-tab td.num input{text-align:right}
+.ges-tab th:nth-child(2),.ges-tab td:nth-child(2){width:24%} .ges-tab th:nth-child(3),.ges-tab td:nth-child(3){width:17%}
+.ges-tab th.ges-nao-imprimir,.ges-tab td.ges-nao-imprimir{width:34px}
+.ges-proj td:nth-child(2){font-size:11.5px;color:#4a4f57} .ges-proj tfoot td{font-weight:700;border-top:1px solid #1b1d21}
+.ges-idx{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:6px 0 10px}
+.ges-idx div{border:1px solid #d8dbe0;padding:8px} .ges-idx b{display:block;font-size:18px} .ges-idx span{font-size:11px;color:#4a4f57}
+.ges-carregando{font-size:13px;color:#4a4f57}
+@media (max-width:700px){ .ges-idx{grid-template-columns:repeat(2,minmax(0,1fr))} .ges-tab{table-layout:auto} .ges-tab .num{width:auto} .ges-tab th:nth-child(3),.ges-tab td:nth-child(3){display:none} .rel-kpis{grid-template-columns:repeat(2,minmax(0,1fr))} }
 @media print{
   @page{margin:18mm 16mm}
   body.imprimindo{background:#fff!important;overflow:visible!important}
   body.imprimindo > *:not(#comOverlay){display:none!important}
+  body.imprimindo-ges{background:#fff!important;overflow:visible!important}
+  body.imprimindo-ges > *:not(#gesOverlay){display:none!important}
+  body.imprimindo-ges #gesOverlay{position:static;inset:auto;overflow:visible;background:none;backdrop-filter:none;padding:0;display:block}
+  body.imprimindo-ges .com-barra, body.imprimindo-ges .com-dica, body.imprimindo-ges .ges-nao-imprimir{display:none!important}
+  body.imprimindo-ges .ges-folha{width:auto;min-height:0;box-shadow:none;padding:0;font-size:10.5pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body.imprimindo-ges .ges-folha input, body.imprimindo-ges .ges-folha select{border:0;padding:0;background:none;appearance:none;-webkit-appearance:none}
+  body.imprimindo-ges .rel-kpis{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  body.imprimindo-ges .ges-tab tr, body.imprimindo-ges .rel-item{break-inside:avoid}
   body.imprimindo-rel{background:#fff!important;overflow:visible!important}
   body.imprimindo-rel > *:not(#relOverlay){display:none!important}
   body.imprimindo-rel #relOverlay{position:static;inset:auto;overflow:visible;background:none;backdrop-filter:none;padding:0;display:block}
@@ -587,6 +626,7 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
       <button id="sleepBtn" type="button" hidden>Descansar</button>
       <button id="opBtn" type="button">Operação do dia</button>
       <button id="memBtn" type="button">Memória</button>
+      <button id="gestaoBtn" type="button">Gestão e Orçamento</button>
       <button id="calBtn" type="button">Calendário</button>
       <button id="docBtn" type="button">Documentação legal</button>
       <button id="radarBtn" type="button">Radar condominial</button>
@@ -645,6 +685,20 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
       <label for="cConv">Convenção de Condomínio (PDF) <small class="opc">opcional</small></label>
       <input id="cConv" type="file" accept="application/pdf,.pdf">
       <p class="dica" id="cDocDica">O SINDICS lê o Regulamento Interno e passa a conhecer as regras de convivência do condomínio. A Convenção é opcional: envie quando quiser. PDFs escaneados também funcionam, só demoram um pouco mais.</p>
+      <fieldset class="c-gestao">
+        <legend>Gestão e Orçamento</legend>
+        <p class="dica">Com a Convenção, a ata da última assembleia e a previsão orçamentária, o SINDICS libera o módulo Gestão e Orçamento: liga o orçamento aos índices de reajuste e monta o calendário legal do condomínio.</p>
+        <label for="cAta">Ata da última assembleia (PDF)</label>
+        <input id="cAta" type="file" accept="application/pdf,.pdf">
+        <p class="dica">O SINDICS guarda só as deliberações: CPF, RG, telefones, e-mails e nomes de moradores que aparecem com a unidade ou com “Sr./Sra.” são removidos antes de salvar. Se a ata tiver lista de presença, prefira enviar sem ela.</p>
+        <div class="c2">
+          <div><label for="cAtaData">Data dessa assembleia</label><input id="cAtaData" type="date"></div>
+          <div><label for="cMandato">Fim do mandato do síndico</label><input id="cMandato" type="date"></div>
+        </div>
+        <label for="cDissidio">Mês da data-base dos funcionários (dissídio)</label>
+        <select id="cDissidio"><option value="">Não sei / sem funcionários próprios</option><option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option><option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option><option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option></select>
+        <p class="dica">A previsão orçamentária é cadastrada em Menu › Gestão e Orçamento, onde o SINDICS lê o PDF ou a planilha e você confere os valores.</p>
+      </fieldset>
       <div class="prog" id="cProg" hidden><div class="prog-barra"><i id="cProgBar"></i></div><span id="cProgTxt"></span></div>
       <p class="cmsg" id="cMsg" role="status"></p>
       <div class="c2b">
@@ -697,6 +751,16 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
     <div class="rd-corpo" id="rdCorpo"></div>
     <p class="rd-nota">Notícias públicas do setor condominial reunidas automaticamente (Google Notícias). Toque numa manchete para ler a matéria completa no veículo.</p>
   </section>
+</div>
+
+<div class="com-wrap" id="gesOverlay" hidden role="dialog" aria-label="Gestão e Orçamento">
+  <div class="com-barra">
+    <select id="gesCond" aria-label="Condomínio"></select>
+    <button id="gesImprimir" type="button" class="primary">Baixar PDF / imprimir</button>
+    <button id="gesFechar" type="button">Fechar</button>
+  </div>
+  <article class="com-folha rel-folha ges-folha" id="gesFolha"></article>
+  <p class="com-dica">Na janela de impressão, escolha “Salvar como PDF” para levar a projeção à assembleia ou ao conselho.</p>
 </div>
 
 <div class="com-wrap" id="relOverlay" hidden role="dialog" aria-label="Relatório operacional">
@@ -1004,6 +1068,7 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
   <span id="tapMsg">Toque em qualquer lugar para ligar som e microfone. Depois disso ele fica em prontidão sozinho.</span>
 </div>
 
-<script src="app.js?v=4.3.0"></script>
+<script src="app.js?v=4.4.0"></script>
+<script src="gestao.js?v=4.4.0"></script>
 </body>
 </html>

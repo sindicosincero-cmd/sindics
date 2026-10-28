@@ -1,12 +1,12 @@
-// SINDICS — recebe o texto extraído da Convenção ou do Regulamento Interno de um condomínio,
+// SINDICS — recebe o texto extraído da Convenção, do Regulamento Interno ou da ata de assembleia de um condomínio,
 // cria o documento na base de conhecimento da ElevenLabs, liga ao agente e registra no condomínio.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const AGENT_ID = "agent_6201m5wqfm4xet39s7vtbkh5axex";
 const ORIGENS = ["https://sindics.com.br", "https://www.sindics.com.br", "https://sindicosincero-cmd.github.io"];
 const EL = "https://api.elevenlabs.io/v1/convai";
-const TIPOS: Record<string, string> = { convencao: "Convenção de Condomínio", regulamento: "Regulamento Interno" };
-const MIN_CHARS = 1500;      // menos que isso, o PDF provavelmente não foi lido
+const TIPOS: Record<string, string> = { convencao: "Convenção de Condomínio", regulamento: "Regulamento Interno", ata: "Ata da última assembleia" };
+const MIN_CHARS: Record<string, number> = { convencao: 1500, regulamento: 1500, ata: 400 }; // menos que isso, o PDF provavelmente não foi lido
 const MAX_CHARS = 400_000;   // proteção contra envios exagerados
 
 function cors(origin: string | null) {
@@ -41,7 +41,11 @@ Deno.serve(async (req: Request) => {
   try { body = await req.json(); } catch (_) { return json({ erro: "Envio inválido." }, 400, origin); }
   const tipo = String(body.tipo || "");
   if (!TIPOS[tipo]) return json({ erro: "Tipo de documento inválido." }, 400, origin);
-  const texto = String(body.texto || "").replace(/\u0000/g, "").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+  // dados pessoais saem antes de guardar (o aplicativo também limpa; aqui é a segunda barreira)
+  const texto = String(body.texto || "").replace(/\u0000/g, "").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim()
+    .replace(/\b\d{3}\.?\d{3}\.?\d{3}[-\s]?\d{2}\b/g, "[CPF removido]")
+    .replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, "[e-mail removido]")
+    .replace(/(\(?\b\d{2}\)?\s?)?\b9?\d{4}[-\s]?\d{4}\b/g, (m) => /\d{8,}/.test(m.replace(/\D/g, "")) ? "[telefone removido]" : m);
 
   const { data: perfil } = await admin.from("perfis").select("ativo, papel").eq("id", uid).maybeSingle();
   if (!perfil?.ativo) return json({ erro: "Conta não liberada." }, 403, origin);
@@ -59,7 +63,7 @@ Deno.serve(async (req: Request) => {
     admin.from("condominios").update({ [colStatus]: status, [colMsg]: msg, ...extra }).eq("id", cond.id);
   // o gatilho de validação roda como service_role (auth.uid() nulo), então o servidor pode atualizar esses campos.
 
-  if (texto.length < MIN_CHARS) {
+  if (texto.length < MIN_CHARS[tipo]) {
     await marcar("erro", "Não foi possível ler o texto deste PDF. Envie uma versão mais nítida ou o arquivo original (não escaneado).");
     return json({ erro: "O PDF parece estar ilegível: quase nenhum texto foi encontrado. Envie uma versão mais nítida ou o arquivo original." }, 422, origin);
   }
@@ -74,6 +78,7 @@ Deno.serve(async (req: Request) => {
   // 1) cria o documento de texto na base de conhecimento
   const nomeDoc = `${cond.nome} — ${TIPOS[tipo]}`;
   const cabecalho = `CONDOMÍNIO ${cond.nome.toUpperCase()} — ${TIPOS[tipo].toUpperCase()}\nCNPJ: ${cond.cnpj || "não informado"}. Endereço: ${cond.endereco || ""}, ${cond.cidade || ""}. ${cond.unidades || ""} apartamentos.\n` +
+    (tipo === "ata" ? `Ata da assembleia realizada em ${cond.ata_data ? cond.ata_data.split("-").reverse().join("/") : "data não informada"}. Use para consultar o que foi deliberado (aprovações, valores, prazos, obras, eleições). Dados pessoais de moradores foram removidos.\n` : "") +
     `Documento enviado pelo síndico em PDF e lido automaticamente${body.ocr ? " (com reconhecimento de texto em imagem; pode haver pequenos erros de leitura)" : ""}.\n\n`;
   const rc = await fetch(`${EL}/knowledge-base/text`, {
     method: "POST", headers: { ...H, "Content-Type": "application/json" },
@@ -118,14 +123,13 @@ Deno.serve(async (req: Request) => {
   // 4) registra no condomínio
   const ids = new Set<string>((cond.kb_doc_ids || []).filter((x: string) => x !== antigo));
   ids.add(novoId);
-  const outro = tipo === "convencao" ? "regulamento" : "convencao";
-  const prontos = [TIPOS[tipo], cond[`${outro}_status`] === "pronto" ? TIPOS[outro] : null].filter(Boolean).sort();
+  const prontos = Object.keys(TIPOS).filter((t) => t === tipo || cond[`${t}_status`] === "pronto").map((t) => TIPOS[t]);
   await admin.from("condominios").update({
     [colStatus]: "pronto",
     [colMsg]: `Lido em ${new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}${body.paginas ? " — " + body.paginas + " páginas" : ""}${body.ocr ? ", com reconhecimento de imagem" : ""}.`,
     [colKb]: novoId,
     kb_doc_ids: [...ids],
-    documentos: prontos.join(" e "),
+    documentos: prontos.join(", "),
   }).eq("id", cond.id);
 
   // 5) remove a versão anterior da base (se existir)
