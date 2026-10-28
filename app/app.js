@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "4.2.1";
+  window.SINDICS_V = "4.2.2";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -1302,7 +1302,7 @@ function reiniciarComNovaVoz(){
 }
 
 /* ======================= CADASTRO DO SÍNDICO ======================= */
-const TERMOS_V = "2026-10-27";
+const TERMOS_V = "2026-10-28";
 let perfilModo = "criar";       // criar | completar | editar
 let perfilDepois = null;         // o que fazer depois de salvar
 const pfMsg = (t, err) => { $("pfMsg").textContent = t || ""; $("pfMsg").style.color = err ? "var(--danger)" : "var(--ok)"; };
@@ -1996,7 +1996,7 @@ async function pagarAgora(botao){
   }catch(e){
     if (janela) janela.close();
     hintEl.textContent = "Pagamento: " + e.message; hintEl.classList.add("err");
-    if ($("bloqueioOverlay") && !$("bloqueioOverlay").hidden) $("bloqueioMsg").textContent = e.message + " Se precisar, escreva para sindicanciaethics@gmail.com.";
+    if ($("bloqueioOverlay") && !$("bloqueioOverlay").hidden) $("bloqueioMsg").textContent = e.message + " Se precisar, escreva para contato@sindics.com.br.";
   }
   if (botao){ botao.disabled = false; botao.textContent = txt; }
 }
@@ -2375,7 +2375,7 @@ async function aposLogin(){
     if (s.bloqueado){
       $("loginOverlay").hidden = true; msg("");
       mostrarBloqueio(s.status === "cancelada"
-        ? "Sua assinatura do SINDICS foi cancelada. Para voltar a usar, fale com a nossa equipe em sindicanciaethics@gmail.com."
+        ? "Sua assinatura do SINDICS foi cancelada. Para voltar a usar, fale com a nossa equipe em contato@sindics.com.br."
         : `Sua assinatura está em atraso há ${s.atraso} dias e o acesso foi suspenso. Regularize o pagamento e o SINDICS volta na hora.`);
       if (s.status === "cancelada") $("bloqueioPagar").hidden = $("bloqueioRever").hidden = true;
       return;

@@ -6,7 +6,7 @@ const FN_ASSINAR = "https://hjjckvluydcejmrxolza.supabase.co/functions/v1/assina
 /* ======================== */
 const contato = WHATSAPP
   ? "https://wa.me/" + WHATSAPP + "?text=" + encodeURIComponent(MENSAGEM)
-  : "mailto:sindicanciaethics@gmail.com?subject=" + encodeURIComponent("Dúvida sobre o SINDICS") + "&body=" + encodeURIComponent(MENSAGEM);
+  : "mailto:contato@sindics.com.br?subject=" + encodeURIComponent("Dúvida sobre o SINDICS") + "&body=" + encodeURIComponent(MENSAGEM);
 document.querySelectorAll(".js-contato").forEach(a => { a.href = contato; if (WHATSAPP){ a.target = "_blank"; a.rel = "noopener"; } });
 
 /* ---------- Assinatura ---------- */
