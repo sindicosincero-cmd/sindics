@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "4.6.1";
+  window.SINDICS_V = "4.7.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -35,7 +35,7 @@ const SLEEP_RE = /(pode descansar|pode desligar|pode encerrar|encerr(ar|a|e)( (a
 const IDLE_MS = 60000;
 /* Legenda das respostas do SINDICS na tela. false = só voz (as falas continuam no Registro). */
 const SHOW_CAPTION = false;
-const TOOL_LABEL = { indicadores_economicos:"Consultando Banco Central", noticias_brasil:"Buscando notícias", knowledge_base:"Consultando documentos do condomínio", knowledge_base_rag:"Consultando documentos do condomínio", mostrar_na_tela:"Montando painel", memoria:"Consultando a memória" };
+const TOOL_LABEL = { indicadores_economicos:"Consultando Banco Central", noticias_brasil:"Buscando notícias", knowledge_base:"Consultando documentos do condomínio", knowledge_base_rag:"Consultando documentos do condomínio", mostrar_na_tela:"Montando painel", memoria:"Consultando a memória", previsao_tempo:"Consultando a previsão do tempo", pesquisar_internet:"Pesquisando na internet" };
 
 const $ = id => document.getElementById(id);
 const stateEl=$("state"), toolEl=$("tool"), captionEl=$("caption"), youEl=$("you"), logEl=$("log"), hintEl=$("hint");
@@ -212,7 +212,7 @@ function addLog(who, text){
   s.textContent = who === "a" ? "SINDICS" : who === "u" ? "VOCÊ" : new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
   p.append(s, document.createTextNode(text)); logEl.append(p); logEl.scrollTop = logEl.scrollHeight;
 }
-const TYPE_TAG = {noticias:"Notícias", calculo:"Cálculo", regra:"Regra", indicador:"Indicador", checklist:"Checklist", texto:"Info", alarme:"Alarme"};
+const TYPE_TAG = {tempo:"Tempo", internet:"Internet", noticias:"Notícias", calculo:"Cálculo", regra:"Regra", indicador:"Indicador", checklist:"Checklist", texto:"Info", alarme:"Alarme"};
 function limparTela(){ $("panels").innerHTML = ""; }
 function showPanel(p){
   const box = $("panels");
@@ -419,7 +419,7 @@ function garantirCanalVoz(uid){
     .subscribe(); }catch(_){ canalVoz = null; }
 }
 function avisarQueAssumi(){ try{ canalVoz && canalVoz.send({ type: "broadcast", event: "assumi", payload: { aparelho: APARELHO } }); }catch(_){} }
-let acordando = false;
+let acordando = false, tempoHojeP = null;
 async function wake(){
   if (inSession() || acordando) return;
   acordando = true;
@@ -447,6 +447,7 @@ async function acordar(){
     const { data: { session } } = await sb.auth.getSession();
     if (!session){ endSession("Sessão expirada."); mostrarLogin("Sua sessão expirou. Entre novamente."); return; }
     garantirCanalVoz(session.user?.id);
+    tempoHojeP = window.Internet ? Internet.tempoHoje() : Promise.resolve("Previsão indisponível agora.");
     const r = await fetch(FN_SESSAO, { method:"POST", headers:{ "Authorization":"Bearer " + session.access_token, "apikey": SUPABASE_ANON, "Content-Type":"application/json" }, body: JSON.stringify({ aparelho: APARELHO }) });
     acesso = await r.json().catch(() => ({}));
     if (r.status === 409 && acesso.outro_aparelho){ endSession("Outro aparelho atendeu o chamado."); hintEl.textContent = "Já estou atendendo em outro aparelho ou aba desta conta."; hintEl.classList.remove("err"); return; }
@@ -460,7 +461,7 @@ async function acordar(){
   captionEl.textContent = "Conectando…";
   /* Voz escolhida pelo síndico. Se a feminina falhar ao conectar, tenta de novo com a padrão. */
   const usarVoz = acesso.voz === "feminina" && acesso.voice_id && !vozFalhou;
-  const dv = { ...acesso.dynamic_variables, voz: usarVoz ? "feminina" : "masculina" };
+  const dv = { ...acesso.dynamic_variables, voz: usarVoz ? "feminina" : "masculina", tempo_hoje: await (tempoHojeP || Promise.resolve("Previsão indisponível agora.")) };
   const override = { agent: { prompt: { knowledge_base: acesso.knowledge_base || [] } } };
   if (usarVoz) override.tts = { voice_id: acesso.voice_id };
   let conectou = false;
@@ -666,6 +667,25 @@ async function executarFerramenta(nome, a){
   /* Comandos só de tela: respondem na hora, sem consultar o servidor */
   if (nome === "mostrar_na_tela"){ showPanel(a); return "Painel exibido na tela."; }
   if (nome === "tela_controlar") return controlarTela(a);
+  if (nome === "previsao_tempo"){
+    const t = await Internet.tempo(a.local, a.dias);
+    showPanel({ tipo: "tempo", titulo: "Tempo · " + t.local, itens: [
+      `Agora: ${t.agora.temperatura} °C (sensação ${t.agora.sensacao} °C), ${t.agora.ceu}, umidade ${t.agora.umidade}%`,
+      ...t.dias.map(x => `${x.dia[0].toUpperCase() + x.dia.slice(1)}: ${x.min}–${x.max} °C, ${x.ceu}${x.chance_chuva != null ? " · chuva " + x.chance_chuva + "%" : ""}${x.chuva_mm ? " (" + String(x.chuva_mm).replace(".", ",") + " mm)" : ""}${x.rajada_kmh >= 40 ? " · rajadas " + x.rajada_kmh + " km/h" : ""}`),
+      ...t.avisos_para_o_condominio.map(v => "⚠ " + v)], fonte: "Open-Meteo" });
+    return t;
+  }
+  if (nome === "pesquisar_internet"){
+    const r = await Internet.pesquisar(a.consulta, async q => {
+      const { data: { session } } = await sb.auth.getSession(); if (!session) return [];
+      const rr = await fetch(FN_RADAR, { method: "POST", headers: { "Authorization": "Bearer " + session.access_token, "apikey": SUPABASE_ANON, "Content-Type": "application/json" }, body: JSON.stringify({ consulta: q }) });
+      const j = await rr.json().catch(() => ({})); return rr.ok ? (j.itens || []).map(i => ({ titulo: i.titulo, fonte: i.fonte, data: i.data || i.publicado || "" })) : [];
+    });
+    if (r.encontrado !== false) showPanel({ tipo: "internet", titulo: "Pesquisa: " + r.consulta, itens: [
+      ...(r.enciclopedia || []).map(e => `${e.titulo}: ${e.resumo.slice(0, 220)}${e.resumo.length > 220 ? "…" : ""}`),
+      ...(r.noticias_recentes || []).slice(0, 3).map(n => `${n.titulo} — ${n.fonte}`)], fonte: [(r.enciclopedia || []).length ? "Wikipédia" : "", (r.noticias_recentes || []).length ? "Google Notícias" : ""].filter(Boolean).join(" e ") });
+    return r;
+  }
   const { data: { user } } = await sb.auth.getUser();
   if (!user) throw new Error("Sessão expirada; o síndico precisa entrar de novo.");
   return executarComDados(nome, a, user);

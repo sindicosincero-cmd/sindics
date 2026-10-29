@@ -1,360 +1,385 @@
 {
- "_sobre": "Ferramentas do agente de voz SINDICS na ElevenLabs (agent_6201m5wqfm4xet39s7vtbkh5axex). Tipo 'client' = executada no aplicativo (app/app.js, função executarComDados/controlarTela). Exportado em 27/10/2026.",
- "ferramentas": [
-  {
-   "id": "tool_4901m5x88pggebparma37bbrrsa1",
-   "nome": "agenda_criar",
-   "tipo": "client",
-   "timeout": 15,
-   "descricao": "Marca um compromisso na agenda do síndico (vistoria, assembleia, reunião com fornecedor, visita técnica etc.) com alarme de aviso. Antes de chamar, confirme título, data, hora e com quanto tempo de antecedência avisar (padrão 30 minutos). Use o fuso de São Paulo (-03:00).",
-   "obrigatorios": [
-    "titulo",
-    "inicio"
-   ],
-   "parametros": {
-    "titulo": "string — Descrição curta do compromisso, ex.: 'Vistoria da bomba de recalque'",
-    "inicio": "string — Data e hora de início no formato ISO com fuso, ex.: 2026-11-03T14:30:00-03:00",
-    "duracao_minutos": "integer — Duração em minutos. Se o síndico não disser, use 60.",
-    "lembrete_minutos": "integer — Quantos minutos antes o alarme toca. Padrão 30. Exemplos: 15, 60 (1 hora), 1440 (1 dia), 2880 (2 dias). 0 = sem alarme.",
-    "condominio": "string — Nome do condomínio relacionado, se houver. Deve ser um dos condomínios do síndico.",
-    "local": "string — Local, se informado",
-    "observacoes": "string — Observações, se houver"
-   }
-  },
-  {
-   "id": "tool_9401m5x88sxyebzsdypmq53veads",
-   "nome": "agenda_listar",
-   "tipo": "client",
-   "timeout": 15,
-   "descricao": "Lista os compromissos do síndico num período. Use para 'o que tenho hoje', 'minha semana', 'tenho algo na sexta?'. Retorna cada compromisso com id, que serve para remarcar ou cancelar.",
-   "obrigatorios": [
-    "data_inicio",
-    "data_fim"
-   ],
-   "parametros": {
-    "data_inicio": "string — Primeiro dia do período, formato AAAA-MM-DD",
-    "data_fim": "string — Último dia do período (inclusive), formato AAAA-MM-DD",
-    "incluir_cancelados": "boolean — true para incluir cancelados. Padrão false."
-   }
-  },
-  {
-   "id": "tool_4001m5x88x1yfcq81p4ztj1jt4az",
-   "nome": "agenda_alterar",
-   "tipo": "client",
-   "timeout": 15,
-   "descricao": "Remarca, cancela, conclui ou ajusta o alarme de um compromisso. Primeiro use agenda_listar para obter o id. Confirme com o síndico antes de cancelar. Ao remarcar, o alarme volta a valer para a nova data.",
-   "obrigatorios": [
-    "id",
-    "acao"
-   ],
-   "parametros": {
-    "id": "string — id do compromisso, vindo de agenda_listar",
-    "acao": "enum [remarcar, cancelar, concluir, alarme]",
-    "novo_inicio": "string — Só para remarcar: nova data e hora ISO com fuso -03:00",
-    "duracao_minutos": "integer — Só para remarcar: nova duração, se mudou",
-    "lembrete_minutos": "integer — Para acao 'alarme' (ou junto com remarcar): minutos de antecedência do alarme. 0 desliga o alarme."
-   }
-  },
-  {
-   "id": "tool_1301m5x892spfm9beaa3316t1jv3",
-   "nome": "documento_cadastrar",
-   "tipo": "client",
-   "timeout": 15,
-   "descricao": "Cadastra (ou atualiza, se já existir) um documento legal do condomínio na Pasta de Documentação Legal: AVCB, seguro predial, atestado de brigada, extintores, teste hidrostático, mangueiras, SPDA, laudo elétrico, RIA e contrato dos elevadores, limpeza da caixa d'água, potabilidade, dedetização, PMOC, PGR, PCMSO, certificado digital, inspeção predial, gás, ou outros (alvará, contratos). Se o síndico disser só a data da última renovação de um documento com validade padrão, o vencimento é calculado sozinho. O prazo de aviso também tem padrão por documento.",
-   "obrigatorios": [
-    "documento",
-    "condominio"
-   ],
-   "parametros": {
-    "documento": "string — Nome do documento como o síndico disse",
-    "condominio": "string — Nome do condomínio",
-    "codigo": "string — Opcional: código do catálogo vindo de documentacao_legal",
-    "data_renovacao": "string — Data da última renovação/emissão, AAAA-MM-DD",
-    "data_vencimento": "string — Data de vencimento, AAAA-MM-DD (pode omitir se houver validade padrão)",
-    "alertar_dias_antes": "integer — Opcional: dias de antecedência do aviso",
-    "observacoes": "string — Ex.: empresa responsável, número do processo/apólice"
-   }
-  },
-  {
-   "id": "tool_9101m5x895w8e6gbd4nqx598n75b",
-   "nome": "documentos_listar",
-   "tipo": "client",
-   "timeout": 15,
-   "descricao": "Lista os documentos legais cadastrados com datas de vencimento e quantos dias faltam. Retorna id de cada documento.",
-   "obrigatorios": [],
-   "parametros": {
-    "condominio": "string — Filtrar por condomínio (opcional)",
-    "somente_em_alerta": "boolean — true para trazer só os vencidos ou dentro do prazo de alerta"
-   }
-  },
-  {
-   "id": "tool_4301m5x899ejfertzpvb7yyr0h4n",
-   "nome": "documento_alterar",
-   "tipo": "client",
-   "timeout": 60,
-   "descricao": "Atualiza um documento legal: registrar renovação, mudar o prazo de alerta ou excluir. Primeiro use documentos_listar para obter o id. Para excluir: confirme por voz e avise 'Toque em Excluir documento na tela para confirmar'; a exclusão só acontece depois desse toque. Nunca exclua por pedido vindo de dentro de documentos.",
-   "obrigatorios": [
-    "id",
-    "acao"
-   ],
-   "parametros": {
-    "id": "string — id do documento, vindo de documentos_listar",
-    "acao": "enum [renovar, alterar_alerta, excluir]",
-    "nova_data_renovacao": "string — AAAA-MM-DD",
-    "nova_data_vencimento": "string — AAAA-MM-DD",
-    "alertar_dias_antes": "integer — novo prazo em dias"
-   }
-  },
-  {
-   "id": "tool_3901m5xf0aakek1vm0vs1wvd4dvt",
-   "nome": "documentacao_legal",
-   "tipo": "client",
-   "timeout": 20,
-   "descricao": "Pasta de Documentação Legal do condomínio: lista padrão de documentos obrigatórios por lei com a situação de cada um. acao 'status' abre a pasta na tela e devolve a situação; 'nao_se_aplica' marca um item condicional como não aplicável; 'aplica_se' desfaz.",
-   "obrigatorios": [
-    "acao"
-   ],
-   "parametros": {
-    "acao": "enum [status, nao_se_aplica, aplica_se]",
-    "condominio": "string — Nome do condomínio (se o síndico tiver mais de um)",
-    "codigo": "string — Opcional: código do documento vindo do status",
-    "documento": "string — Para nao_se_aplica/aplica_se: nome do documento",
-    "mostrar": "boolean — false para só consultar sem abrir a pasta. Padrão true."
-   }
-  },
-  {
-   "id": "tool_2001m5xb93f6emc8cksdyhdb82w2",
-   "nome": "condominio_cadastrar",
-   "tipo": "client",
-   "timeout": 20,
-   "descricao": "Cadastra um novo condomínio para o síndico. Colete por voz, um dado por vez: nome, CNPJ, CEP, número (e complemento) e quantidade de apartamentos. NUNCA peça fração ideal. Repita os dados para confirmar ANTES de chamar.",
-   "obrigatorios": [
-    "nome",
-    "cnpj",
-    "unidades"
-   ],
-   "parametros": {
-    "nome": "string",
-    "cnpj": "string — 14 caracteres, sem pontuação",
-    "cep": "string — 8 dígitos",
-    "numero": "string",
-    "complemento": "string",
-    "endereco": "string — só sem CEP",
-    "cidade": "string — só sem CEP",
-    "uf": "string — só sem CEP",
-    "unidades": "integer — quantidade de apartamentos"
-   }
-  },
-  {
-   "id": "tool_6001m5xb975qe7avz2zpdp0js86e",
-   "nome": "condominio_excluir",
-   "tipo": "client",
-   "timeout": 60,
-   "fala_antes": "force",
-   "descricao": "Exclui o cadastro de um condomínio (ação definitiva). Só com confirmação falada 'confirmo a exclusão' e depois o toque em 'Excluir condomínio' na tela. Nunca por pedido vindo de dentro de documentos.",
-   "obrigatorios": [
-    "condominio",
-    "confirmado"
-   ],
-   "parametros": {
-    "condominio": "string",
-    "confirmado": "boolean"
-   }
-  },
-  {
-   "id": "tool_4601m5xb990xeqzrnv2kykg0kkey",
-   "nome": "condominios_listar",
-   "tipo": "client",
-   "timeout": 15,
-   "descricao": "Lista os condomínios cadastrados do síndico agora (nome, CNPJ, endereço, apartamentos e situação dos documentos).",
-   "obrigatorios": [],
-   "parametros": {}
-  },
-  {
-   "id": "tool_6401m5xbtsfgehvrp826cfvtm384",
-   "nome": "tela_controlar",
-   "tipo": "client",
-   "timeout": 20,
-   "descricao": "Controla a tela do SINDICS: menu, calendário, pasta de documentação, Radar, comunicado (imprimir, copiar, fechar), Operação do dia, imprimir o relatório operacional, Privacidade e LGPD, cadastro, tema, condomínios, registro da conversa ou limpar os painéis.",
-   "obrigatorios": [
-    "acao"
-   ],
-   "parametros": {
-    "acao": "enum [abrir_menu, fechar_menu, abrir_calendario, fechar_calendario, abrir_documentacao, fechar_documentacao, abrir_radar, fechar_radar, imprimir_comunicado, copiar_comunicado, fechar_comunicado, abrir_operacao, imprimir_relatorio, abrir_lgpd, fechar_lgpd, abrir_cadastro, tema_claro, tema_escuro, abrir_condominios, abrir_registro, limpar_tela]",
-    "aba": "enum [dados, condominio] — só para abrir_lgpd",
-    "condominio": "string — só para abrir_documentacao e abrir_operacao",
-    "data": "string — só para abrir_calendario: AAAA-MM ou AAAA-MM-DD"
-   }
-  },
-  {
-   "id": "tool_9801m5wt8cyge9abs9xzskq51p45",
-   "nome": "mostrar_na_tela",
-   "tipo": "client",
-   "timeout": 5,
-   "espera_resposta": false,
-   "descricao": "Mostra um painel na tela enquanto o SINDICS fala: notícias, cálculo (com resultado), regra do condomínio (com fonte), indicadores ou checklist.",
-   "obrigatorios": [
-    "tipo",
-    "titulo",
-    "itens"
-   ],
-   "parametros": {
-    "tipo": "enum [noticias, calculo, regra, indicador, checklist, texto]",
-    "titulo": "string — até 6 palavras",
-    "itens": "array de string — máximo 6",
-    "resultado": "string — opcional",
-    "fonte": "string — opcional"
-   }
-  },
-  {
-   "id": "tool_9401m5xf0eb2f7vrzhfxx1098yah",
-   "nome": "radar_condominial",
-   "tipo": "client",
-   "timeout": 40,
-   "fala_antes": "force",
-   "descricao": "Radar Condominial: edição do dia com as notícias do setor, separadas por tema, em tela cheia como um jornal.",
-   "obrigatorios": [],
-   "parametros": {
-    "atualizar": "boolean — true só se o síndico pedir para atualizar agora"
-   }
-  },
-  {
-   "id": "tool_9701m5xf0smhe1btv3gpgtjfs784",
-   "nome": "noticias_buscar",
-   "tipo": "client",
-   "timeout": 20,
-   "descricao": "Busca rápida de notícias recentes (48h) sobre qualquer assunto: economia, Selic, cidade, energia, água etc.",
-   "obrigatorios": [
-    "consulta"
-   ],
-   "parametros": {
-    "consulta": "string — 1 a 4 palavras-chave"
-   }
-  },
-  {
-   "id": "tool_1101m5xf0p74e37t2g7jmg1ymzs2",
-   "nome": "comunicado_exibir",
-   "tipo": "client",
-   "timeout": 15,
-   "descricao": "Mostra comunicado, circular, aviso, advertência, notificação, multa, edital, convocação ou ata em tela inteira, com cabeçalho do condomínio e assinatura automáticos.",
-   "obrigatorios": [
-    "tipo",
-    "titulo",
-    "corpo"
-   ],
-   "parametros": {
-    "tipo": "enum [comunicado, circular, aviso, advertencia, notificacao, multa, edital, convocacao, ata, outro]",
-    "titulo": "string",
-    "corpo": "string — texto completo sem cabeçalho nem assinatura",
-    "condominio": "string",
-    "destinatario": "string — nunca nome de morador em comunicado coletivo",
-    "data": "string — AAAA-MM-DD"
-   }
-  },
-  {
-   "id": "tool_5901m5xh8k9gftjasjeecjct78rj",
-   "nome": "preferencias_voz",
-   "tipo": "client",
-   "timeout": 15,
-   "descricao": "Troca a voz do SINDICS entre masculina e feminina, salva a preferência e reinicia a conversa com a nova voz.",
-   "obrigatorios": [
-    "voz"
-   ],
-   "parametros": {
-    "voz": "enum [masculina, feminina]"
-   }
-  },
-  {
-   "id": "tool_0101m5ytnt3hemhafgtamccswrv7",
-   "nome": "operacao_registrar",
-   "tipo": "client",
-   "timeout": 40,
-   "descricao": "Registra no diário operacional o que foi feito ou aconteceu, com data, hora, autor e conferência de localização. Também marca uma pendência como resolvida (resolver_pendencia_id). O registro não pode ser editado depois.",
-   "obrigatorios": [
-    "tipo",
-    "descricao"
-   ],
-   "parametros": {
-    "tipo": "enum [vistoria, manutencao, ocorrencia, atendimento, prestador, limpeza, seguranca, administrativo, outro]",
-    "descricao": "string — nunca nome, CPF ou telefone de morador",
-    "condominio": "string",
-    "unidade": "string — só o número",
-    "situacao": "enum [resolvido, pendente]",
-    "resolver_pendencia_id": "string — id vindo de operacao_consultar"
-   }
-  },
-  {
-   "id": "tool_6101m5ytnwyhfkk9kz24230ag13b",
-   "nome": "operacao_consultar",
-   "tipo": "client",
-   "timeout": 20,
-   "descricao": "Consulta o diário operacional (hoje ou mês) e as pendências em aberto, com id. Abre a Operação do dia na tela.",
-   "obrigatorios": [],
-   "parametros": {
-    "condominio": "string",
-    "periodo": "enum [hoje, mes]"
-   }
-  },
-  {
-   "id": "tool_3101m5ytp01deg1tf9enxmvvfsp4",
-   "nome": "relatorio_operacional",
-   "tipo": "client",
-   "timeout": 45,
-   "descricao": "Gera e abre na tela o relatório operacional mensal de um condomínio, pronto para baixar em PDF, e devolve os números principais.",
-   "obrigatorios": [],
-   "parametros": {
-    "condominio": "string",
-    "mes": "string — AAAA-MM"
-   }
-  },
-  {
-   "id": "tool_8501m5wrym7aeg3sn3yzzy0fwwaq",
-   "nome": "indicadores_economicos",
-   "tipo": "webhook",
-   "timeout": 15,
-   "descricao": "Consulta indicadores oficiais do Banco Central (SGS). Códigos: 433 IPCA mensal; 13522 IPCA 12 meses; 189 IGP-M mensal; 192 INCC-M mensal; 432 Selic meta; 4389 CDI; 1 dólar comercial; 1619 salário mínimo. Sempre informe a data de referência.",
-   "api": {
-    "metodo": "GET",
-    "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{codigo}/dados/ultimos/{quantidade}?formato=json"
-   },
-   "parametros": {
-    "codigo": "string — código da série",
-    "quantidade": "integer — 1 a 24"
-   }
-  },
-  {
-   "id": "tool_4801m62amk4wef2sg1q976e5syrr",
-   "nome": "memoria",
-   "tipo": "client",
-   "timeout": 20,
-   "descricao": "Memória do SINDICS entre conversas: registrar decisões, pendências, preferências e contexto; concluir, apagar ou listar. Nunca dados pessoais de moradores.",
-   "obrigatorios": [
-    "acao"
-   ],
-   "parametros": {
-    "acao": "enum [registrar, concluir, apagar, listar]",
-    "tipo": "enum [decisao, pendencia, preferencia, contexto]",
-    "texto": "string — até 300 caracteres",
-    "condominio": "string",
-    "prazo": "string AAAA-MM-DD",
-    "id": "string — id curto entre colchetes",
-    "incluir_concluidas": "boolean"
-   }
-  },
-  {
-   "id": "tool_3801m62bnpj2eh0bqgj132kef2kh",
-   "nome": "gestao_orcamento",
-   "tipo": "client",
-   "timeout": 30,
-   "descricao": "Gestão e Orçamento: resumo da previsão orçamentária ligada aos índices (IPCA, IGP-M, INPC, INCC), reajuste necessário da taxa, calendário legal; abrir a tela; agendar o calendário legal.",
-   "obrigatorios": [
-    "acao"
-   ],
-   "parametros": {
-    "acao": "enum [resumo, abrir, agendar_calendario]",
-    "condominio": "string",
-    "mostrar": "boolean"
-   }
-  }
- ]
+  "_sobre": "Ferramentas do agente de voz SINDICS na ElevenLabs (agent_6201m5wqfm4xet39s7vtbkh5axex). Tipo 'client' = executada no aplicativo (app/app.js, função executarComDados/controlarTela). Exportado em 27/10/2026.",
+  "ferramentas": [
+    {
+      "id": "tool_4901m5x88pggebparma37bbrrsa1",
+      "nome": "agenda_criar",
+      "tipo": "client",
+      "timeout": 15,
+      "descricao": "Marca um compromisso na agenda do síndico (vistoria, assembleia, reunião com fornecedor, visita técnica etc.) com alarme de aviso. Antes de chamar, confirme título, data, hora e com quanto tempo de antecedência avisar (padrão 30 minutos). Use o fuso de São Paulo (-03:00).",
+      "obrigatorios": [
+        "titulo",
+        "inicio"
+      ],
+      "parametros": {
+        "titulo": "string — Descrição curta do compromisso, ex.: 'Vistoria da bomba de recalque'",
+        "inicio": "string — Data e hora de início no formato ISO com fuso, ex.: 2026-11-03T14:30:00-03:00",
+        "duracao_minutos": "integer — Duração em minutos. Se o síndico não disser, use 60.",
+        "lembrete_minutos": "integer — Quantos minutos antes o alarme toca. Padrão 30. Exemplos: 15, 60 (1 hora), 1440 (1 dia), 2880 (2 dias). 0 = sem alarme.",
+        "condominio": "string — Nome do condomínio relacionado, se houver. Deve ser um dos condomínios do síndico.",
+        "local": "string — Local, se informado",
+        "observacoes": "string — Observações, se houver"
+      }
+    },
+    {
+      "id": "tool_9401m5x88sxyebzsdypmq53veads",
+      "nome": "agenda_listar",
+      "tipo": "client",
+      "timeout": 15,
+      "descricao": "Lista os compromissos do síndico num período. Use para 'o que tenho hoje', 'minha semana', 'tenho algo na sexta?'. Retorna cada compromisso com id, que serve para remarcar ou cancelar.",
+      "obrigatorios": [
+        "data_inicio",
+        "data_fim"
+      ],
+      "parametros": {
+        "data_inicio": "string — Primeiro dia do período, formato AAAA-MM-DD",
+        "data_fim": "string — Último dia do período (inclusive), formato AAAA-MM-DD",
+        "incluir_cancelados": "boolean — true para incluir cancelados. Padrão false."
+      }
+    },
+    {
+      "id": "tool_4001m5x88x1yfcq81p4ztj1jt4az",
+      "nome": "agenda_alterar",
+      "tipo": "client",
+      "timeout": 15,
+      "descricao": "Remarca, cancela, conclui ou ajusta o alarme de um compromisso. Primeiro use agenda_listar para obter o id. Confirme com o síndico antes de cancelar. Ao remarcar, o alarme volta a valer para a nova data.",
+      "obrigatorios": [
+        "id",
+        "acao"
+      ],
+      "parametros": {
+        "id": "string — id do compromisso, vindo de agenda_listar",
+        "acao": "enum [remarcar, cancelar, concluir, alarme]",
+        "novo_inicio": "string — Só para remarcar: nova data e hora ISO com fuso -03:00",
+        "duracao_minutos": "integer — Só para remarcar: nova duração, se mudou",
+        "lembrete_minutos": "integer — Para acao 'alarme' (ou junto com remarcar): minutos de antecedência do alarme. 0 desliga o alarme."
+      }
+    },
+    {
+      "id": "tool_1301m5x892spfm9beaa3316t1jv3",
+      "nome": "documento_cadastrar",
+      "tipo": "client",
+      "timeout": 15,
+      "descricao": "Cadastra (ou atualiza, se já existir) um documento legal do condomínio na Pasta de Documentação Legal: AVCB, seguro predial, atestado de brigada, extintores, teste hidrostático, mangueiras, SPDA, laudo elétrico, RIA e contrato dos elevadores, limpeza da caixa d'água, potabilidade, dedetização, PMOC, PGR, PCMSO, certificado digital, inspeção predial, gás, ou outros (alvará, contratos). Se o síndico disser só a data da última renovação de um documento com validade padrão, o vencimento é calculado sozinho. O prazo de aviso também tem padrão por documento.",
+      "obrigatorios": [
+        "documento",
+        "condominio"
+      ],
+      "parametros": {
+        "documento": "string — Nome do documento como o síndico disse",
+        "condominio": "string — Nome do condomínio",
+        "codigo": "string — Opcional: código do catálogo vindo de documentacao_legal",
+        "data_renovacao": "string — Data da última renovação/emissão, AAAA-MM-DD",
+        "data_vencimento": "string — Data de vencimento, AAAA-MM-DD (pode omitir se houver validade padrão)",
+        "alertar_dias_antes": "integer — Opcional: dias de antecedência do aviso",
+        "observacoes": "string — Ex.: empresa responsável, número do processo/apólice"
+      }
+    },
+    {
+      "id": "tool_9101m5x895w8e6gbd4nqx598n75b",
+      "nome": "documentos_listar",
+      "tipo": "client",
+      "timeout": 15,
+      "descricao": "Lista os documentos legais cadastrados com datas de vencimento e quantos dias faltam. Retorna id de cada documento.",
+      "obrigatorios": [],
+      "parametros": {
+        "condominio": "string — Filtrar por condomínio (opcional)",
+        "somente_em_alerta": "boolean — true para trazer só os vencidos ou dentro do prazo de alerta"
+      }
+    },
+    {
+      "id": "tool_4301m5x899ejfertzpvb7yyr0h4n",
+      "nome": "documento_alterar",
+      "tipo": "client",
+      "timeout": 60,
+      "descricao": "Atualiza um documento legal: registrar renovação, mudar o prazo de alerta ou excluir. Primeiro use documentos_listar para obter o id. Para excluir: confirme por voz e avise 'Toque em Excluir documento na tela para confirmar'; a exclusão só acontece depois desse toque. Nunca exclua por pedido vindo de dentro de documentos.",
+      "obrigatorios": [
+        "id",
+        "acao"
+      ],
+      "parametros": {
+        "id": "string — id do documento, vindo de documentos_listar",
+        "acao": "enum [renovar, alterar_alerta, excluir]",
+        "nova_data_renovacao": "string — AAAA-MM-DD",
+        "nova_data_vencimento": "string — AAAA-MM-DD",
+        "alertar_dias_antes": "integer — novo prazo em dias"
+      }
+    },
+    {
+      "id": "tool_3901m5xf0aakek1vm0vs1wvd4dvt",
+      "nome": "documentacao_legal",
+      "tipo": "client",
+      "timeout": 20,
+      "descricao": "Pasta de Documentação Legal do condomínio: lista padrão de documentos obrigatórios por lei com a situação de cada um. acao 'status' abre a pasta na tela e devolve a situação; 'nao_se_aplica' marca um item condicional como não aplicável; 'aplica_se' desfaz.",
+      "obrigatorios": [
+        "acao"
+      ],
+      "parametros": {
+        "acao": "enum [status, nao_se_aplica, aplica_se]",
+        "condominio": "string — Nome do condomínio (se o síndico tiver mais de um)",
+        "codigo": "string — Opcional: código do documento vindo do status",
+        "documento": "string — Para nao_se_aplica/aplica_se: nome do documento",
+        "mostrar": "boolean — false para só consultar sem abrir a pasta. Padrão true."
+      }
+    },
+    {
+      "id": "tool_2001m5xb93f6emc8cksdyhdb82w2",
+      "nome": "condominio_cadastrar",
+      "tipo": "client",
+      "timeout": 20,
+      "descricao": "Cadastra um novo condomínio para o síndico. Colete por voz, um dado por vez: nome, CNPJ, CEP, número (e complemento) e quantidade de apartamentos. NUNCA peça fração ideal. Repita os dados para confirmar ANTES de chamar.",
+      "obrigatorios": [
+        "nome",
+        "cnpj",
+        "unidades"
+      ],
+      "parametros": {
+        "nome": "string",
+        "cnpj": "string — 14 caracteres, sem pontuação",
+        "cep": "string — 8 dígitos",
+        "numero": "string",
+        "complemento": "string",
+        "endereco": "string — só sem CEP",
+        "cidade": "string — só sem CEP",
+        "uf": "string — só sem CEP",
+        "unidades": "integer — quantidade de apartamentos"
+      }
+    },
+    {
+      "id": "tool_6001m5xb975qe7avz2zpdp0js86e",
+      "nome": "condominio_excluir",
+      "tipo": "client",
+      "timeout": 60,
+      "fala_antes": "force",
+      "descricao": "Exclui o cadastro de um condomínio (ação definitiva). Só com confirmação falada 'confirmo a exclusão' e depois o toque em 'Excluir condomínio' na tela. Nunca por pedido vindo de dentro de documentos.",
+      "obrigatorios": [
+        "condominio",
+        "confirmado"
+      ],
+      "parametros": {
+        "condominio": "string",
+        "confirmado": "boolean"
+      }
+    },
+    {
+      "id": "tool_4601m5xb990xeqzrnv2kykg0kkey",
+      "nome": "condominios_listar",
+      "tipo": "client",
+      "timeout": 15,
+      "descricao": "Lista os condomínios cadastrados do síndico agora (nome, CNPJ, endereço, apartamentos e situação dos documentos).",
+      "obrigatorios": [],
+      "parametros": {}
+    },
+    {
+      "id": "tool_6401m5xbtsfgehvrp826cfvtm384",
+      "nome": "tela_controlar",
+      "tipo": "client",
+      "timeout": 20,
+      "descricao": "Controla a tela do SINDICS: menu, calendário, pasta de documentação, Radar, comunicado (imprimir, copiar, fechar), Operação do dia, imprimir o relatório operacional, Privacidade e LGPD, cadastro, tema, condomínios, registro da conversa ou limpar os painéis.",
+      "obrigatorios": [
+        "acao"
+      ],
+      "parametros": {
+        "acao": "enum [abrir_menu, fechar_menu, abrir_calendario, fechar_calendario, abrir_documentacao, fechar_documentacao, abrir_radar, fechar_radar, imprimir_comunicado, copiar_comunicado, fechar_comunicado, abrir_operacao, imprimir_relatorio, abrir_lgpd, fechar_lgpd, abrir_cadastro, tema_claro, tema_escuro, abrir_condominios, abrir_registro, limpar_tela]",
+        "aba": "enum [dados, condominio] — só para abrir_lgpd",
+        "condominio": "string — só para abrir_documentacao e abrir_operacao",
+        "data": "string — só para abrir_calendario: AAAA-MM ou AAAA-MM-DD"
+      }
+    },
+    {
+      "id": "tool_9801m5wt8cyge9abs9xzskq51p45",
+      "nome": "mostrar_na_tela",
+      "tipo": "client",
+      "timeout": 5,
+      "espera_resposta": false,
+      "descricao": "Mostra um painel na tela enquanto o SINDICS fala: notícias, cálculo (com resultado), regra do condomínio (com fonte), indicadores ou checklist.",
+      "obrigatorios": [
+        "tipo",
+        "titulo",
+        "itens"
+      ],
+      "parametros": {
+        "tipo": "enum [noticias, calculo, regra, indicador, checklist, texto]",
+        "titulo": "string — até 6 palavras",
+        "itens": "array de string — máximo 6",
+        "resultado": "string — opcional",
+        "fonte": "string — opcional"
+      }
+    },
+    {
+      "id": "tool_9401m5xf0eb2f7vrzhfxx1098yah",
+      "nome": "radar_condominial",
+      "tipo": "client",
+      "timeout": 40,
+      "fala_antes": "force",
+      "descricao": "Radar Condominial: edição do dia com as notícias do setor, separadas por tema, em tela cheia como um jornal.",
+      "obrigatorios": [],
+      "parametros": {
+        "atualizar": "boolean — true só se o síndico pedir para atualizar agora"
+      }
+    },
+    {
+      "id": "tool_9701m5xf0smhe1btv3gpgtjfs784",
+      "nome": "noticias_buscar",
+      "tipo": "client",
+      "timeout": 20,
+      "descricao": "Busca rápida de notícias recentes (48h) sobre qualquer assunto: economia, Selic, cidade, energia, água etc.",
+      "obrigatorios": [
+        "consulta"
+      ],
+      "parametros": {
+        "consulta": "string — 1 a 4 palavras-chave"
+      }
+    },
+    {
+      "id": "tool_1101m5xf0p74e37t2g7jmg1ymzs2",
+      "nome": "comunicado_exibir",
+      "tipo": "client",
+      "timeout": 15,
+      "descricao": "Mostra comunicado, circular, aviso, advertência, notificação, multa, edital, convocação ou ata em tela inteira, com cabeçalho do condomínio e assinatura automáticos.",
+      "obrigatorios": [
+        "tipo",
+        "titulo",
+        "corpo"
+      ],
+      "parametros": {
+        "tipo": "enum [comunicado, circular, aviso, advertencia, notificacao, multa, edital, convocacao, ata, outro]",
+        "titulo": "string",
+        "corpo": "string — texto completo sem cabeçalho nem assinatura",
+        "condominio": "string",
+        "destinatario": "string — nunca nome de morador em comunicado coletivo",
+        "data": "string — AAAA-MM-DD"
+      }
+    },
+    {
+      "id": "tool_5901m5xh8k9gftjasjeecjct78rj",
+      "nome": "preferencias_voz",
+      "tipo": "client",
+      "timeout": 15,
+      "descricao": "Troca a voz do SINDICS entre masculina e feminina, salva a preferência e reinicia a conversa com a nova voz.",
+      "obrigatorios": [
+        "voz"
+      ],
+      "parametros": {
+        "voz": "enum [masculina, feminina]"
+      }
+    },
+    {
+      "id": "tool_0101m5ytnt3hemhafgtamccswrv7",
+      "nome": "operacao_registrar",
+      "tipo": "client",
+      "timeout": 40,
+      "descricao": "Registra no diário operacional o que foi feito ou aconteceu, com data, hora, autor e conferência de localização. Também marca uma pendência como resolvida (resolver_pendencia_id). O registro não pode ser editado depois.",
+      "obrigatorios": [
+        "tipo",
+        "descricao"
+      ],
+      "parametros": {
+        "tipo": "enum [vistoria, manutencao, ocorrencia, atendimento, prestador, limpeza, seguranca, administrativo, outro]",
+        "descricao": "string — nunca nome, CPF ou telefone de morador",
+        "condominio": "string",
+        "unidade": "string — só o número",
+        "situacao": "enum [resolvido, pendente]",
+        "resolver_pendencia_id": "string — id vindo de operacao_consultar"
+      }
+    },
+    {
+      "id": "tool_6101m5ytnwyhfkk9kz24230ag13b",
+      "nome": "operacao_consultar",
+      "tipo": "client",
+      "timeout": 20,
+      "descricao": "Consulta o diário operacional (hoje ou mês) e as pendências em aberto, com id. Abre a Operação do dia na tela.",
+      "obrigatorios": [],
+      "parametros": {
+        "condominio": "string",
+        "periodo": "enum [hoje, mes]"
+      }
+    },
+    {
+      "id": "tool_3101m5ytp01deg1tf9enxmvvfsp4",
+      "nome": "relatorio_operacional",
+      "tipo": "client",
+      "timeout": 45,
+      "descricao": "Gera e abre na tela o relatório operacional mensal de um condomínio, pronto para baixar em PDF, e devolve os números principais.",
+      "obrigatorios": [],
+      "parametros": {
+        "condominio": "string",
+        "mes": "string — AAAA-MM"
+      }
+    },
+    {
+      "id": "tool_8501m5wrym7aeg3sn3yzzy0fwwaq",
+      "nome": "indicadores_economicos",
+      "tipo": "webhook",
+      "timeout": 15,
+      "descricao": "Consulta indicadores oficiais do Banco Central (SGS). Códigos: 433 IPCA mensal; 13522 IPCA 12 meses; 189 IGP-M mensal; 192 INCC-M mensal; 432 Selic meta; 4389 CDI; 1 dólar comercial; 1619 salário mínimo. Sempre informe a data de referência.",
+      "api": {
+        "metodo": "GET",
+        "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{codigo}/dados/ultimos/{quantidade}?formato=json"
+      },
+      "parametros": {
+        "codigo": "string — código da série",
+        "quantidade": "integer — 1 a 24"
+      }
+    },
+    {
+      "id": "tool_4801m62amk4wef2sg1q976e5syrr",
+      "nome": "memoria",
+      "tipo": "client",
+      "timeout": 20,
+      "descricao": "Memória do SINDICS entre conversas: registrar decisões, pendências, preferências e contexto; concluir, apagar ou listar. Nunca dados pessoais de moradores.",
+      "obrigatorios": [
+        "acao"
+      ],
+      "parametros": {
+        "acao": "enum [registrar, concluir, apagar, listar]",
+        "tipo": "enum [decisao, pendencia, preferencia, contexto]",
+        "texto": "string — até 300 caracteres",
+        "condominio": "string",
+        "prazo": "string AAAA-MM-DD",
+        "id": "string — id curto entre colchetes",
+        "incluir_concluidas": "boolean"
+      }
+    },
+    {
+      "id": "tool_3801m62bnpj2eh0bqgj132kef2kh",
+      "nome": "gestao_orcamento",
+      "tipo": "client",
+      "timeout": 30,
+      "descricao": "Gestão e Orçamento: resumo da previsão orçamentária ligada aos índices (IPCA, IGP-M, INPC, INCC), reajuste necessário da taxa, calendário legal; abrir a tela; agendar o calendário legal.",
+      "obrigatorios": [
+        "acao"
+      ],
+      "parametros": {
+        "acao": "enum [resumo, abrir, agendar_calendario]",
+        "condominio": "string",
+        "mostrar": "boolean"
+      }
+    },
+    {
+      "id": "tool_4701m63waswbetbtdzew61g71y0j",
+      "nome": "previsao_tempo",
+      "tipo": "client",
+      "timeout": 20,
+      "descricao": "Previsão do tempo (agora e próximos dias) para um condomínio cadastrado ou uma cidade, com avisos práticos para o condomínio (chuva forte, vento, calor, frio, UV). Mostra o painel na tela.",
+      "obrigatorios": [],
+      "parametros": {
+        "local": "string — condomínio ou cidade (vazio = primeiro condomínio)",
+        "dias": "integer — 1 a 7 (padrão 3)"
+      }
+    },
+    {
+      "id": "tool_0601m63waxetfqcbp0h4kphjnd63",
+      "nome": "pesquisar_internet",
+      "tipo": "client",
+      "timeout": 25,
+      "descricao": "Pesquisa geral na internet: resumo da Wikipédia em português + notícias recentes sobre o tema, mostrados na tela.",
+      "obrigatorios": [
+        "consulta"
+      ],
+      "parametros": {
+        "consulta": "string — assunto em poucas palavras"
+      }
+    }
+  ]
 }
