@@ -85,7 +85,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px
 .vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 45%, transparent 40%, var(--vignette) 100%)}
 
 .app{
-  position:relative;height:100%;display:grid;grid-template-rows:auto 1fr auto;
+  position:relative;height:100%;display:grid;grid-template-rows:auto auto 1fr auto;
   padding-left:max(18px, env(safe-area-inset-left, 0px));
   padding-right:max(18px, env(safe-area-inset-right, 0px));
   padding-block:max(14px, env(safe-area-inset-top,0px)) max(14px, env(safe-area-inset-bottom,0px));
@@ -354,6 +354,49 @@ button.perigo:hover{background:var(--danger);color:var(--bg)}
 .rd-art:hover strong,.rd-art:focus-visible strong{text-decoration:underline;text-underline-offset:3px}
 .rd-nota{margin:0;font-size:11px;color:var(--muted)}
 
+/* ---------- Fiscalização ---------- */
+.fisc-bar{min-width:0;max-width:100%;overflow:hidden;display:flex;align-items:center;gap:12px;width:100%;margin:0 0 10px;padding:9px 14px;text-align:left;text-transform:none;letter-spacing:0;font-family:var(--body);border:1px solid currentColor;border-radius:10px;cursor:pointer;position:relative;z-index:7}
+.fisc-bar.atencao{color:#e6c84a;background:rgba(230,200,74,.1)}
+.fisc-bar.cobranca{color:var(--amber);background:rgba(255,181,71,.14)}
+.fisc-bar.critico{color:#fff;background:#b3192b;border-color:#ff5d6c;animation:fiscPulso 1.6s ease-in-out infinite}
+@keyframes fiscPulso{0%,100%{box-shadow:0 0 0 0 rgba(255,93,108,.55);background:#b3192b}50%{box-shadow:0 0 22px 4px rgba(255,93,108,.55);background:#d62238}}
+.fisc-ico{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-weight:800;border:2px solid currentColor;font-size:14px}
+.fisc-txt{flex:1;min-width:0;display:flex;flex-direction:column}
+.fisc-txt b{font-size:13.5px}
+.fisc-txt small{font-size:12px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fisc-ver{flex:none;font-family:var(--mono);font-size:11px;letter-spacing:.1em}
+.fisc-badge{display:inline-block;min-width:20px;padding:1px 6px;margin-left:6px;border-radius:999px;background:var(--danger);color:#fff;font-size:10px;letter-spacing:0;text-align:center}
+body[data-fisc="atencao"] .fisc-badge{background:#b39a2a} body[data-fisc="cobranca"] .fisc-badge{background:#c97a12}
+#fiscOverlay{z-index:35}
+.fisc-caixa{width:min(760px,100%);display:flex;flex-direction:column;gap:12px;padding:6px 0 24px}
+.fisc-cab{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;position:sticky;top:0;z-index:2;padding:8px 0;background:inherit}
+.fisc-cab h2{margin:2px 0 0;font-size:22px;color:#fff}
+.fisc-cab button{padding:9px 14px;font-size:11px;background:#0b1422;color:#d9e6f5;border-color:rgba(63,208,255,.5)}
+.fisc-marca{margin:0;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#ff8a95}
+.fisc-intro{margin:0;color:#c9d6e8;font-size:14px;line-height:1.5}
+.fisc-lista{display:flex;flex-direction:column;gap:10px}
+.fisc-item{border:1px solid rgba(255,255,255,.12);border-left:5px solid #e6c84a;border-radius:10px;padding:12px 14px;background:rgba(11,20,34,.92);display:flex;flex-direction:column;gap:6px;color:#e8eef8}
+.fisc-item.cobranca{border-left-color:#ffb547}
+.fisc-item.critico{border-left-color:#ff3b4e;background:rgba(60,10,18,.92)}
+.fisc-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.fisc-tag{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:2px 8px;border:1px solid currentColor;border-radius:4px}
+.fisc-tag.atencao{color:#e6c84a} .fisc-tag.cobranca{color:#ffb547} .fisc-tag.critico{color:#fff;background:#d62238;border-color:#d62238}
+.fisc-orig,.fisc-cond{font-family:var(--mono);font-size:10.5px;color:#9fb0c8;letter-spacing:.06em}
+.fisc-tit{margin:0;font-size:15px;font-weight:600;color:#fff}
+.fisc-det{margin:0;font-size:13px;color:#b8c7da;line-height:1.45}
+.fisc-info{font-family:var(--mono);font-size:10.5px;color:#9fb0c8}
+.fisc-just{font-size:12px;color:#ffd38a}
+.fisc-acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
+.fisc-acoes button{padding:8px 12px;font-size:11px;background:#0b1422;color:#d9e6f5;border-color:rgba(63,208,255,.5)}
+.fisc-acoes button.primary{background:#2f7bff;border-color:#2f7bff;color:#fff}
+.fisc-form{display:flex;flex-direction:column;gap:6px}
+.fisc-form label{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#9fb0c8}
+.fisc-form input,.fisc-form textarea{font:inherit;font-size:14px;background:#08101c;color:#e8eef8;border:1px solid rgba(255,255,255,.2);padding:8px 10px;border-radius:6px}
+.fisc-form button{align-self:flex-start;padding:8px 14px;font-size:11px;background:#2f7bff;border-color:#2f7bff;color:#fff}
+.fisc-msg{font-size:12px;color:var(--ok)} .fisc-msg.err{color:#ff8a95}
+.fisc-vazio{color:#c9d6e8;text-align:center;padding:30px 0}
+.fisc-todos{align-self:center;padding:9px 16px;font-size:11px;background:#0b1422;color:#d9e6f5;border-color:rgba(63,208,255,.5)}
+
 /* ---------- Comunicado em tela inteira (folha de papel) ---------- */
 .com-wrap{position:fixed;inset:0;z-index:16;display:flex;flex-direction:column;align-items:center;gap:10px;overflow-y:auto;
   padding:max(12px, env(safe-area-inset-top,0px)) max(12px, env(safe-area-inset-right,0px)) max(16px, env(safe-area-inset-bottom,0px)) max(12px, env(safe-area-inset-left,0px));
@@ -552,7 +595,8 @@ button.google:hover{background:#e8eef7;color:#1f1f1f}
 @media (max-width:860px){
   main{grid-template-columns:1fr;grid-template-rows:1fr auto;align-items:end}
   main > .center{grid-column:1}
-  #panels{position:fixed;left:max(14px, env(safe-area-inset-left, 0px));right:max(14px, env(safe-area-inset-right, 0px));top:calc(70px + env(safe-area-inset-top,0px));max-height:min(52vh, calc(100dvh - 300px));z-index:5}
+  #panels{position:fixed;left:max(14px, env(safe-area-inset-left, 0px));right:max(14px, env(safe-area-inset-right, 0px));top:calc(70px + env(safe-area-inset-top,0px));}
+  body[data-fisc]:not([data-fisc=""]) #panels{top:calc(142px + env(safe-area-inset-top,0px));max-height:min(52vh, calc(100dvh - 300px));z-index:5}
   #panels .holo:not(:first-child){display:none}
   .center{padding-bottom:2vh}
   .iconbtn .lbl{display:none}
@@ -589,6 +633,7 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
 <div class="scan"></div>
 
 <div class="app">
+  <button id="fiscBar" class="fisc-bar" type="button" hidden aria-live="polite"><span class="fisc-ico" aria-hidden="true">!</span><span class="fisc-txt"><b id="fiscBarTxt"></b><small id="fiscBarSub"></small></span><span class="fisc-ver">Ver ›</span></button>
   <header>
     <div class="brand"><h1>SINDICS</h1><p class="tagline">Inteligência Condominial</p></div>
     <button id="menuBtn" class="iconbtn" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="menuDrawer">
@@ -631,6 +676,7 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
     <div class="menu-btns">
       <button id="wakeBtn" class="primary" type="button">Chamar agora</button>
       <button id="sleepBtn" type="button" hidden>Descansar</button>
+      <button id="fiscBtn" type="button">Fiscalização <span id="fiscBadge" class="fisc-badge" hidden></span></button>
       <button id="opBtn" type="button">Operação do dia</button>
       <button id="memBtn" type="button">Memória</button>
       <button id="gestaoBtn" type="button">Gestão e Orçamento</button>
@@ -766,6 +812,15 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
     <div class="rd-corpo" id="rdCorpo"></div>
     <p class="rd-nota">Notícias públicas do setor condominial reunidas automaticamente (Google Notícias). Toque numa manchete para ler a matéria completa no veículo.</p>
   </section>
+</div>
+
+<div class="com-wrap fisc-wrap" id="fiscOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="fiscTitulo">
+  <div class="fisc-caixa">
+    <div class="fisc-cab"><div><p class="fisc-marca">SINDICS · Fiscalização</p><h2 id="fiscTitulo">Fiscalização</h2></div><button id="fiscFechar" type="button">Fechar</button></div>
+    <p id="fiscIntro" class="fisc-intro"></p>
+    <div id="fiscLista" class="fisc-lista"></div>
+    <button id="fiscTodos" class="fisc-todos" type="button" hidden>Ver todas as pendências</button>
+  </div>
 </div>
 
 <div class="com-wrap" id="gesOverlay" hidden role="dialog" aria-label="Gestão e Orçamento">
@@ -1083,8 +1138,9 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
   <span id="tapMsg">Toque em qualquer lugar para ligar som e microfone. Depois disso ele fica em prontidão sozinho.</span>
 </div>
 
-<script src="app.js?v=4.9.0"></script>
+<script src="app.js?v=5.0.0"></script>
 <script src="gestao.js?v=4.6.0"></script>
 <script src="internet.js?v=4.7.0"></script>
+<script src="fiscal.js?v=5.0.0"></script>
 </body>
 </html>

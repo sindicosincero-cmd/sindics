@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "4.9.0";
+  window.SINDICS_V = "5.0.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -485,7 +485,8 @@ async function acordar(){
   captionEl.textContent = "Conectando…";
   /* Voz escolhida pelo síndico. Se a feminina falhar ao conectar, tenta de novo com a padrão. */
   const usarVoz = acesso.voz === "feminina" && acesso.voice_id && !vozFalhou;
-  const dv = { ...acesso.dynamic_variables, voz: usarVoz ? "feminina" : "masculina", tempo_hoje: await (tempoHojeP || Promise.resolve("Previsão indisponível agora.")) };
+  const dv = { ...acesso.dynamic_variables, voz: usarVoz ? "feminina" : "masculina",
+    abertura: window.Fiscal ? Fiscal.abertura(acesso.dynamic_variables?.abertura) : acesso.dynamic_variables?.abertura, tempo_hoje: await (tempoHojeP || Promise.resolve("Previsão indisponível agora.")) };
   const override = { agent: { prompt: { knowledge_base: acesso.knowledge_base || [] } } };
   if (usarVoz) override.tts = { voice_id: acesso.voice_id };
   let conectou = false;
@@ -1352,7 +1353,7 @@ async function marcarAplicacao(condId, codigo, naoAplica){
   }
   atualizarResumoTela();
 }
-function fecharDocumentacao(){ $("docOverlay").hidden = true; }
+function fecharDocumentacao(){ $("docOverlay").hidden = true; if (window.Fiscal) Fiscal.carregar(false); }
 $("docBtn").addEventListener("click", () => abrirDocumentacao().catch(e => { hintEl.textContent = e.message; }));
 $("dlFechar").addEventListener("click", fecharDocumentacao);
 $("dlCond").addEventListener("change", e => { dlCondId = e.target.value; renderDocumentacao(); });
@@ -1850,6 +1851,7 @@ async function registrarOperacao({ cond, tipo, descricao, unidade = "", situacao
                   fotos: caminhos, referencia_id, origem, lat_temp: pos?.lat ?? null, lng_temp: pos?.lng ?? null, precisao_m: pos?.acc ?? null };
   const { data, error } = await sb.from("registros_operacionais").insert(linha).select("id, local_status, distancia_m, situacao, ocorrido_em").single();
   if (error) throw new Error(error.message);
+  if (window.Fiscal) Fiscal.carregar(false);
   return data;
 }
 
@@ -2710,6 +2712,7 @@ async function aposLogin(){
   $("loginOverlay").hidden = true; msg("");
   try{ history.replaceState(null, "", location.pathname); }catch(_){}
   atualizarResumoTela(); carregarLembretes();
+  if (window.Fiscal) Fiscal.carregar();
   if (!iniciado){ iniciado = true; start(); }
   if (LINK_RELATORIO && !linkRelatorioUsado && PERFIL.condominios.some(c => c.id === LINK_RELATORIO.c)){
     linkRelatorioUsado = true;
@@ -2895,7 +2898,8 @@ function initGL(){
     core.pulse *= .93; core.boot += (1 - core.boot) * .035;
     const L = core.level + core.pulse*.35;
 
-    target.set(MODE_HEX[mode]); uni.uColor.value.lerp(target, .05);
+    const corFisc = mode === "standby" && window.Fiscal ? Fiscal.corNucleo(t) : null;
+    target.set(corFisc || MODE_HEX[mode]); uni.uColor.value.lerp(target, corFisc ? .08 : .05);
     const col = uni.uColor.value;
     uni.uTime.value = t; uni.uLevel.value = L; uni.uBoot.value = core.boot;
     glow.material.color.copy(col); glow.material.opacity = claro3D ? .14 + L*.2 : .35 + L*.5; glow.scale.setScalar((5.5 + L*3) * core.boot);

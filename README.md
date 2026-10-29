@@ -16,6 +16,7 @@ Este repositório guarda o **projeto completo**: o site, o aplicativo, o código
 | `app/gestao.js` | Gestão e Orçamento: previsão orçamentária, índices do Banco Central, projeção da taxa condominial e calendário legal | GitHub Pages |
 | `app/internet.js` | Informações da internet: previsão do tempo (Open-Meteo, com avisos para o condomínio) e pesquisa geral (Wikipédia + notícias) | GitHub Pages |
 | `supabase/functions/relatorio-mensal` | Relatório operacional automático: dia 1º de cada mês (pg_cron), resumo por condomínio em `relatorios_mensais` e e-mail ao síndico | Supabase |
+| `app/fiscal.js` + `supabase/functions/fiscalizacao` | Fiscalização: pendências com responsável, prazo e nível (atenção, cobrança, crítico); faixa no topo, tela de cobrança a cada 5 dias (crítico bloqueia até responder), cor do núcleo, abertura da voz e e-mail diário (pg_cron 7h13) a cada 5 dias por item | GitHub Pages / Supabase |
 | `app/vendor/` | Bibliotecas de terceiros copiadas para o próprio site (com verificação de integridade) | — |
 | `privacidade.html` | Política de Privacidade e Termos de Uso | sindics.com.br/privacidade.html |
 | `assets/` | Tema claro/escuro e redirecionamentos | — |
