@@ -1,6 +1,6 @@
 # SINDICS · Inteligência Condominial
 
-Inteligência condominial por voz para síndicos. Ideia, produto e direção de **Elison Cardoso — Síndico Profissional** (Sindicância Ethics).
+Inteligência condominial por voz para síndicos. Ideia, produto e direção de **Elison Cardoso — Síndico Profissional** (EC Consulting – Governança Condominial Ltda).
 
 - **Site (vendas):** https://sindics.com.br/
 - **Aplicativo:** https://sindics.com.br/app/
