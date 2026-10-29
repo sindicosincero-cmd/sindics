@@ -69,6 +69,15 @@ Deno.serve(async (req: Request) => {
   if (!perfil) return json({ erro: "Perfil não encontrado." }, 403, origin);
   if (!perfil.ativo) return json({ erro: "Sua conta ainda não foi liberada pelo administrador." }, 403, origin);
 
+  // ---- Uma conversa por conta: dois aparelhos ouvindo "SINDICS" ao mesmo tempo não abrem duas vozes ----
+  let corpo: any = {}; try { corpo = await req.json(); } catch (_) { /* */ }
+  const aparelho = String(corpo?.aparelho || "").slice(0, 64);
+  if (aparelho) {
+    const { data: livre, error: eRes } = await admin.rpc("reservar_sessao_voz", { p_uid: uid, p_aparelho: aparelho });
+    if (eRes) console.error("reservar_sessao_voz", eRes.message);
+    else if (livre === false) return json({ erro: "O SINDICS já está atendendo em outro aparelho ou aba.", outro_aparelho: true }, 409, origin);
+  }
+
   // ---- Gestor auxiliar: trabalha só nos condomínios que o síndico autorizou ----
   const ehGestor = perfil.papel === "gestor";
   let condIds: string[] = [], perfilUsuario = "síndico titular da conta", empresaConta = perfil.empresa;

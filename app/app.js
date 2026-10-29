@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "4.4.1";
+  window.SINDICS_V = "4.5.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -27,7 +27,10 @@ function preencherCabecalho(p){
   document.getElementById("hdrCondLabel").textContent = cs.length > 1 ? "Condomínios" : "Condomínio";
   document.getElementById("hdrCond").textContent = cs.length > 1 ? cs.length + " cadastrados" : (cs[0] ? cs[0].nome : "nenhum");
 }
-const WAKE_RE = /\b(s[ií]ndi(cs|ks|x|ques|quis|cos?)|sin\s?dics|syndics?)\b/i;
+const WAKE_RE = /\b(s[ií]ndi(cs|ks|x|ques|quis)|sin\s?dics|syndics?)\b/i;
+/* "síndico(s)" é palavra comum em reunião: só vale como chamado se vier quase sozinha ("Síndicos!", "Ei, síndicos") */
+const WAKE_FRACO_RE = /^\s*(ei|oi|ol[aá]|e a[ií])?[,\s]*s[ií]ndicos?[\s.!?,]*$/i;
+const ehChamado = t => WAKE_RE.test(t) || WAKE_FRACO_RE.test(t);
 const SLEEP_RE = /(pode descansar|pode desligar|pode encerrar|encerr(ar|a|e)( (a )?conversa| por hoje| aqui)?\b|desligar sindics|desliga|at[eé] mais|at[eé] amanh[ãa]|at[eé] logo|tchau|boa noite,? sindics|obrigad[oa],? sindics|[eé] s[oó] isso|por hoje [eé] s[oó])/i;
 const IDLE_MS = 60000;
 /* Legenda das respostas do SINDICS na tela. false = só voz (as falas continuam no Registro). */
@@ -266,6 +269,22 @@ async function loadIndicators(){
 let micStream=null, inCtx=null, processor=null, micAnalyser=null;
 let outCtx=null, outAnalyser=null, outRate=16000, playHead=0, playing=[];
 let ws=null, muted=false, idleTimer=null, sleepAfterReply=false;
+/* Portão de ruído: som ambiente baixo (TV, conversa ao fundo, ventilador) vira silêncio antes de ir para a voz.
+   Enquanto o SINDICS fala, só passa voz forte e próxima — assim ele não ouve a própria fala nem o fundo e não trava. */
+const portao = { piso: 0.01, seguidos: 0, ateMs: 0, anterior: null, janela: [] };
+function portaoDeixaPassar(rms){
+  const agora = performance.now();
+  const falando = !!outCtx && playHead > outCtx.currentTime + 0.05;
+  const limiar = falando ? Math.max(portao.piso * 5, 0.06) : Math.max(portao.piso * 2.5, 0.008);
+  if (rms > limiar){ portao.seguidos++; if (portao.seguidos >= (falando ? 2 : 1)) portao.ateMs = agora + (falando ? 700 : 900); }
+  else portao.seguidos = 0;
+  /* piso de ruído = o som mais baixo dos últimos ~3 s: a fala tem pausas (o piso fica baixo), a TV ligada não (o piso sobe).
+     Teto em 0,03 para que voz normal perto do aparelho sempre passe. */
+  portao.janela.push(rms); if (portao.janela.length > 24) portao.janela.shift();
+  const minimo = Math.min(...portao.janela);
+  portao.piso = Math.min(0.03, Math.max(0.002, portao.piso * 0.8 + minimo * 0.2));
+  return agora <= portao.ateMs;
+}
 function b64FromInt16(a){ const b = new Uint8Array(a.buffer); let s = ""; for (let i=0;i<b.length;i+=0x8000) s += String.fromCharCode.apply(null, b.subarray(i,i+0x8000)); return btoa(s); }
 function int16FromB64(s){ const bin = atob(s); const b = new Uint8Array(bin.length); for (let i=0;i<bin.length;i++) b[i] = bin.charCodeAt(i); return new Int16Array(b.buffer, 0, b.length>>1); }
 async function initAudio(){
@@ -277,10 +296,15 @@ async function initAudio(){
     micAnalyser = inCtx.createAnalyser(); micAnalyser.fftSize = 512;
     processor = inCtx.createScriptProcessor(2048,1,1);
     processor.onaudioprocess = e => {
-      if (!ws || ws.readyState !== 1 || muted) return;
+      if (!ws || ws.readyState !== 1 || muted){ portao.anterior = null; return; }
       const f = e.inputBuffer.getChannelData(0), o = new Int16Array(f.length);
-      for (let i=0;i<f.length;i++){ const s = Math.max(-1, Math.min(1, f[i])); o[i] = s<0 ? s*0x8000 : s*0x7fff; }
-      ws.send(JSON.stringify({user_audio_chunk: b64FromInt16(o)}));
+      let soma = 0;
+      for (let i=0;i<f.length;i++){ const s = Math.max(-1, Math.min(1, f[i])); o[i] = s<0 ? s*0x8000 : s*0x7fff; soma += s*s; }
+      const aberto = portaoDeixaPassar(Math.sqrt(soma / f.length));
+      /* atraso de 1 bloco (~0,13 s): o começo da fala não é cortado quando o portão abre */
+      const enviar = portao.anterior && aberto ? portao.anterior : new Int16Array(o.length);
+      portao.anterior = o;
+      ws.send(JSON.stringify({user_audio_chunk: b64FromInt16(enviar)}));
     };
     const sink = inCtx.createGain(); sink.gain.value = 0;
     src.connect(micAnalyser); src.connect(processor); processor.connect(sink); sink.connect(inCtx.destination);
@@ -321,9 +345,9 @@ function stopPlayback(){ playing.forEach(s => { try{ s.stop(); }catch(_){} }); p
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 let rec=null, recOn=false, escutaBloqueada=false;
 function startWake(){
-  if (!SR || recOn || inSession()) return;
+  if (!SR || recOn || inSession() || document.hidden) return;
   rec = new SR(); rec.lang = "pt-BR"; rec.continuous = true; rec.interimResults = true;
-  rec.onresult = e => { for (let i=e.resultIndex;i<e.results.length;i++){ if (WAKE_RE.test(e.results[i][0].transcript)){ wake(); return; } } };
+  rec.onresult = e => { for (let i=e.resultIndex;i<e.results.length;i++){ if (ehChamado(e.results[i][0].transcript)){ wake(); return; } } };
   rec.onend = () => { recOn = false; if (mode === "standby") setTimeout(startWake, 300); };
   rec.onerror = e => {
     if (e.error === "not-allowed" || e.error === "service-not-allowed"){
@@ -334,6 +358,8 @@ function startWake(){
   try{ rec.start(); recOn = true; }catch(_){}
 }
 function stopWake(){ if (rec){ rec.onend = null; try{ rec.abort(); }catch(_){} } recOn = false; }
+/* Só a aba que está na tela ouve "SINDICS": abas esquecidas no fundo não respondem junto */
+document.addEventListener("visibilitychange", () => { if (document.hidden){ if (!inSession()) stopWake(); } else if (mode === "standby") startWake(); });
 
 /* ======================= SESSÃO ======================= */
 function standby(note){
@@ -345,8 +371,27 @@ function resetIdle(){
   clearTimeout(idleTimer);
   idleTimer = setTimeout(() => { if (outCtx && playHead > outCtx.currentTime){ resetIdle(); return; } endSession("Sem conversa por 1 minuto. Voltei à prontidão."); }, IDLE_MS);
 }
+let APARELHO = "";
+try{ APARELHO = sessionStorage.getItem("sindics-aparelho") || ""; if (!APARELHO){ APARELHO = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)); sessionStorage.setItem("sindics-aparelho", APARELHO); } }catch(_){ APARELHO = String(Math.random()).slice(2); }
+/* Aviso entre aparelhos da mesma conta: quem abre a conversa avisa; os outros encerram a deles. */
+let canalVoz = null, canalVozUid = "";
+function garantirCanalVoz(uid){
+  if (!sb || !uid || canalVozUid === uid) return;
+  try{ if (canalVoz) sb.removeChannel(canalVoz); }catch(_){}
+  canalVozUid = uid;
+  if (typeof sb.channel !== "function") return;
+  try{ canalVoz = sb.channel("sindics-voz-" + uid, { config: { broadcast: { self: false } } })
+    .on("broadcast", { event: "assumi" }, ({ payload }) => { if (payload?.aparelho !== APARELHO && inSession()) endSession("A conversa continuou em outro aparelho."); })
+    .subscribe(); }catch(_){ canalVoz = null; }
+}
+function avisarQueAssumi(){ try{ canalVoz && canalVoz.send({ type: "broadcast", event: "assumi", payload: { aparelho: APARELHO } }); }catch(_){} }
+let acordando = false;
 async function wake(){
-  if (inSession()) return;
+  if (inSession() || acordando) return;
+  acordando = true;
+  try{ await acordar(); } finally { acordando = false; }
+}
+async function acordar(){
   if (!micStream){
     try{ await initAudio(); }
     catch(_){ mostrarToque("MICROFONE BLOQUEADO", "Clique no cadeado ao lado do endereço, coloque Microfone em Permitir e recarregue a página."); return; }
@@ -366,8 +411,10 @@ async function wake(){
   try{
     const { data: { session } } = await sb.auth.getSession();
     if (!session){ endSession("Sessão expirada."); mostrarLogin("Sua sessão expirou. Entre novamente."); return; }
-    const r = await fetch(FN_SESSAO, { method:"POST", headers:{ "Authorization":"Bearer " + session.access_token, "apikey": SUPABASE_ANON, "Content-Type":"application/json" }, body:"{}" });
+    garantirCanalVoz(session.user?.id);
+    const r = await fetch(FN_SESSAO, { method:"POST", headers:{ "Authorization":"Bearer " + session.access_token, "apikey": SUPABASE_ANON, "Content-Type":"application/json" }, body: JSON.stringify({ aparelho: APARELHO }) });
     acesso = await r.json().catch(() => ({}));
+    if (r.status === 409 && acesso.outro_aparelho){ endSession("Outro aparelho atendeu o chamado."); hintEl.textContent = "Já estou atendendo em outro aparelho ou aba desta conta."; hintEl.classList.remove("err"); return; }
     if (r.status === 402){ endSession("Acesso suspenso por assinatura."); mostrarBloqueio(acesso.erro || "Acesso suspenso por falta de pagamento."); return; }
     if (!r.ok || !acesso.signed_url) throw new Error(acesso.erro || ("Servidor respondeu " + r.status));
   }catch(err){
@@ -393,7 +440,7 @@ async function wake(){
     switch(m.type){
       case "conversation_initiation_metadata": {
         const f = m.conversation_initiation_metadata_event?.agent_output_audio_format || "pcm_16000"; const r = /pcm_(\d+)/.exec(f); outRate = r ? +r[1] : 16000;
-        conectou = true; setMode("listening"); captionEl.textContent = ""; hintEl.classList.remove("err"); hintEl.textContent = "Conectado · pode falar e interromper quando quiser · diga “pode descansar” para encerrar"; resetIdle(); break;
+        conectou = true; avisarQueAssumi(); setMode("listening"); captionEl.textContent = ""; hintEl.classList.remove("err"); hintEl.textContent = "Conectado · pode falar e interromper quando quiser · diga “pode descansar” para encerrar"; resetIdle(); break;
       }
       case "audio": { const a = m.audio_event?.audio_base_64; if (a){ playChunk(a); resetIdle(); } break; }
       case "agent_response": { const t = m.agent_response_event?.agent_response; if (t){ if (SHOW_CAPTION) typeCaption(t); addLog("a", t); } if (reiniciarAposFala){ reiniciarAposFala = false; reiniciarComNovaVoz(); } else if (sleepAfterReply) sleepAfterSpeech(); break; }
