@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "4.7.0";
+  window.SINDICS_V = "4.8.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -288,16 +288,37 @@ function portaoDeixaPassar(rms){
 function b64FromInt16(a){ const b = new Uint8Array(a.buffer); let s = ""; for (let i=0;i<b.length;i+=0x8000) s += String.fromCharCode.apply(null, b.subarray(i,i+0x8000)); return btoa(s); }
 function int16FromB64(s){ const bin = atob(s); const b = new Uint8Array(bin.length); for (let i=0;i<bin.length;i++) b[i] = bin.charCodeAt(i); return new Int16Array(b.buffer, 0, b.length>>1); }
 async function initAudio(){
-  if (!outCtx){ outCtx = new AudioContext(); outAnalyser = outCtx.createAnalyser(); outAnalyser.fftSize = 512; outAnalyser.smoothingTimeConstant = .6; outAnalyser.connect(outCtx.destination); }
+  if (!outCtx){ outCtx = new AudioContext(isLite ? { latencyHint: "playback" } : {}); outAnalyser = outCtx.createAnalyser(); outAnalyser.fftSize = 512; outAnalyser.smoothingTimeConstant = .6; outAnalyser.connect(outCtx.destination); }
   if (!micStream){
     micStream = await abrirMicrofone();
     inCtx = new AudioContext({sampleRate:16000});
     const src = inCtx.createMediaStreamSource(micStream);
     micAnalyser = inCtx.createAnalyser(); micAnalyser.fftSize = 512;
-    processor = inCtx.createScriptProcessor(2048,1,1);
-    processor.onaudioprocess = e => {
+    const sink = inCtx.createGain(); sink.gain.value = 0;
+    src.connect(micAnalyser);
+    let viaWorklet = false;
+    if (inCtx.audioWorklet && window.AudioWorkletNode){
+      try{
+        await inCtx.audioWorklet.addModule("mic-worklet.js?v=1");
+        processor = new AudioWorkletNode(inCtx, "captura-sindics", { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1] });
+        processor.port.onmessage = ev => enviarBlocoMic(ev.data);
+        viaWorklet = true;
+      }catch(err){ console.warn("worklet indisponível, usando o modo antigo", err); }
+    }
+    if (!viaWorklet){
+      processor = inCtx.createScriptProcessor(2048,1,1);
+      processor.onaudioprocess = e => enviarBlocoMic(e.inputBuffer.getChannelData(0));
+    }
+    src.connect(processor); processor.connect(sink); sink.connect(inCtx.destination);
+  }
+  liberarSom();
+  await new Promise(r => setTimeout(r, 250));   // resume() fica pendente sem toque: não esperar por ele
+  return somLiberado();
+}
+/* Converte um bloco do microfone, passa pelo portão de ruído e manda para a voz */
+function enviarBlocoMic(f){
       if (!ws || ws.readyState !== 1 || muted){ portao.anterior = null; return; }
-      const f = e.inputBuffer.getChannelData(0), o = new Int16Array(f.length);
+      const o = new Int16Array(f.length);
       let soma = 0;
       for (let i=0;i<f.length;i++){ const s = Math.max(-1, Math.min(1, f[i])); o[i] = s<0 ? s*0x8000 : s*0x7fff; soma += s*s; }
       const aberto = portaoDeixaPassar(Math.sqrt(soma / f.length));
@@ -305,13 +326,6 @@ async function initAudio(){
       const enviar = portao.anterior && aberto ? portao.anterior : new Int16Array(o.length);
       portao.anterior = o;
       ws.send(JSON.stringify({user_audio_chunk: b64FromInt16(enviar)}));
-    };
-    const sink = inCtx.createGain(); sink.gain.value = 0;
-    src.connect(micAnalyser); src.connect(processor); processor.connect(sink); sink.connect(inCtx.destination);
-  }
-  liberarSom();
-  await new Promise(r => setTimeout(r, 250));   // resume() fica pendente sem toque: não esperar por ele
-  return somLiberado();
 }
 /* Abre o microfone. Se a escuta de "SINDICS" estiver segurando o microfone (comum no Android), solta e tenta de novo. */
 async function abrirMicrofone(){
@@ -370,10 +384,20 @@ function playChunk(b64){
   const buf = outCtx.createBuffer(1, pcm.length, outRate), ch = buf.getChannelData(0);
   for (let i=0;i<pcm.length;i++) ch[i] = pcm[i]/0x8000;
   const src = outCtx.createBufferSource(); src.buffer = buf; src.connect(outAnalyser);
-  playHead = Math.max(playHead, outCtx.currentTime + .04); src.start(playHead); playHead += buf.duration;
+  /* Início de fala (ou falta de áudio no meio dela): começa com uma folga para a rede do celular não picotar a voz.
+     Se faltar áudio no meio da fala, a folga cresce sozinha (até 0,45 s) e volta a diminuir quando a rede melhora. */
+  const agora = outCtx.currentTime;
+  if (playHead < agora){
+    if (falaEmCurso && agora - ultimoChunk < 1.2) folgaVoz = Math.min(.45, folgaVoz + .08);   // faltou áudio no meio da fala
+    playHead = agora + folgaVoz;
+  } else if (playHead - agora > folgaVoz + .6) folgaVoz = Math.max(FOLGA_MIN, folgaVoz - .01);
+  falaEmCurso = true; ultimoChunk = agora;
+  src.start(playHead); playHead += buf.duration;
   playing.push(src); src.onended = () => { playing = playing.filter(s => s !== src); };
 }
-function stopPlayback(){ playing.forEach(s => { try{ s.stop(); }catch(_){} }); playing = []; if (outCtx) playHead = outCtx.currentTime; }
+const FOLGA_MIN = isLite ? .2 : .1;
+let folgaVoz = FOLGA_MIN, falaEmCurso = false, ultimoChunk = 0;
+function stopPlayback(){ falaEmCurso = false; playing.forEach(s => { try{ s.stop(); }catch(_){} }); playing = []; if (outCtx) playHead = outCtx.currentTime; }
 
 /* ======================= PALAVRA DE ATIVAÇÃO ======================= */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -2695,7 +2719,7 @@ function initGL(){
   let renderer;
   try{ renderer = new THREE.WebGLRenderer({canvas, antialias:!isLite, alpha:false, powerPreference:"high-performance"}); }
   catch(_){ hintEl.textContent = "Este navegador não suporta o núcleo 3D."; return; }
-  renderer.setPixelRatio(Math.min(devicePixelRatio, isLite ? 1.25 : 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, isLite ? 1 : 2));
   renderer.setClearColor(0x04070d, 1);
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(42, 1, .1, 100); camera.position.set(0, 0, 9);
@@ -2719,7 +2743,7 @@ function initGL(){
   /* esfera de plasma */
   const uni = { uTime:{value:0}, uLevel:{value:0}, uColor:{value:new THREE.Color("#3fd0ff")}, uBoot:{value:0}, uLight:{value:0} };
   const plasma = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(1.35, isLite ? 32 : 64),
+    new THREE.IcosahedronGeometry(1.35, isLite ? 20 : 64),
     new THREE.ShaderMaterial({ uniforms:uni, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false,
       vertexShader: NOISE + `
         uniform float uTime; uniform float uLevel; uniform float uBoot; varying vec3 vN; varying vec3 vV; varying float vD;
@@ -2747,7 +2771,7 @@ function initGL(){
   heart.scale.set(1.6,1.6,1); scene.add(heart);
 
   /* partículas orbitais */
-  const N = isLite ? 700 : 1800;
+  const N = isLite ? 420 : 1800;
   const pos = new Float32Array(N*3), seed = new Float32Array(N*3);
   for (let i=0;i<N;i++){ const th = Math.acos(2*Math.random()-1), ph = Math.random()*Math.PI*2, r = 1.9 + Math.pow(Math.random(),2)*1.6; seed[i*3]=th; seed[i*3+1]=ph; seed[i*3+2]=r; }
   const pGeo = new THREE.BufferGeometry(); pGeo.setAttribute("position", new THREE.BufferAttribute(pos,3));
@@ -2798,7 +2822,12 @@ function initGL(){
   addEventListener("pointermove", e => { mx = (e.clientX/innerWidth - .5); my = (e.clientY/innerHeight - .5); });
   const target = new THREE.Color();
 
+  /* No celular, desenha no máximo 30 quadros por segundo (24 durante a conversa): sobra fôlego para o áudio */
+  let ultimoQuadro = 0;
   function frame(now){
+    requestAnimationFrame(frame);
+    if (isLite){ const minimo = inSession() ? 1000/24 : 1000/30; if (now - ultimoQuadro < minimo - 1) return; ultimoQuadro = now; }
+    if (document.hidden) return;
     const dt = Math.min(.05, (now - last)/1000); last = now; const t = now/1000;
     const outL = readLevel(outAnalyser), inL = readLevel(micAnalyser);
     const speakingNow = outCtx && playHead > outCtx.currentTime + .02;
@@ -2840,7 +2869,6 @@ function initGL(){
 
     group.rotation.y += ((mx*.35) - group.rotation.y) * .04; group.rotation.x += ((my*.25) - group.rotation.x) * .04;
     renderer.render(scene, camera);
-    requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
 }
