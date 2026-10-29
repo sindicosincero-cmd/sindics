@@ -174,7 +174,7 @@ G.status = function(cond, orc){
   const docs = [
     ["Regulamento Interno", cond.regulamento_status === "pronto"],
     ["Convenção", cond.convencao_status === "pronto"],
-    ["Ata da última assembleia", cond.ata_status === "pronto"],
+    ["Ata da eleição do síndico", cond.ata_status === "pronto"],
     ["Previsão orçamentária", !!(orc && (orc.itens || []).length)],
   ];
   return { docs, liberado: docs.slice(1).every(d => d[1]), faltam: docs.filter(d => !d[1]).map(d => d[0]) };
@@ -183,7 +183,7 @@ G.status = function(cond, orc){
 G.resumo = async function(cond){
   const { cond: c, orc } = await G.carregar(cond.id);
   const st = G.status(c, orc);
-  if (!orc || !(orc.itens || []).length) return { condominio: c.nome, modulo_liberado: false, faltam: st.faltam, mensagem: "Ainda não há previsão orçamentária cadastrada. Ela é cadastrada em Menu › Gestão e Orçamento (o SINDICS lê o PDF ou a planilha)." };
+  if (!orc || !(orc.itens || []).length) return { condominio: c.nome, modulo_liberado: false, faltam: st.faltam, mensagem: "Ainda não há previsão orçamentária cadastrada. Ela é enviada em Condomínios › Editar, no campo Previsão orçamentária, ou em Menu › Gestão e Orçamento (o SINDICS lê o PDF ou a planilha)." };
   const I = await G.indices(), p = G.projetar(orc, c, I);
   const cats = Object.entries(p.porCat).sort((a, b) => b[1].atual - a[1].atual).slice(0, 6)
     .map(([k, v]) => ({ grupo: CAT[k]?.nome || k, mensal_atual: brl(v.atual), mensal_projetado: brl(v.nova), peso: Math.round(v.atual / p.atual * 100) + "%", indices: [...v.indices].join(", ") }));
@@ -239,7 +239,7 @@ function desenhar(){
   // 1) documentos de gestão
   const docs = el("div", { class: "ges-docs" }, st.docs.map(([n, ok]) => el("span", { class: ok ? "ok" : "falta", text: (ok ? "✓ " : "○ ") + n })));
   f.append(el("h3", { text: "Documentos de gestão" }), docs,
-    el("p", { class: "ges-nota", text: st.liberado ? "Módulo completo: Convenção, ata e previsão orçamentária cadastradas." : "Para a análise completa faltam: " + st.faltam.join(", ") + ". Convenção e ata são enviadas em Condomínios › Editar; a previsão orçamentária, aqui embaixo." }));
+    el("p", { class: "ges-nota", text: st.liberado ? "Módulo completo: Convenção, ata da eleição e previsão orçamentária cadastradas." : "Para a análise completa faltam: " + st.faltam.join(", ") + ". Convenção, ata da eleição e previsão orçamentária são enviadas em Condomínios › Editar; a previsão também pode ser enviada aqui embaixo." }));
 
   // 2) previsão orçamentária (edição)
   const m = estado.meta, ed = true;
@@ -259,18 +259,8 @@ function desenhar(){
   const bLer = el("button", { type: "button", class: "primary", text: "Ler e preencher", onclick: async () => {
     bLer.disabled = true; msgImp.textContent = "Lendo…";
     try{
-      let texto = taCola.value, origem = "planilha";
-      const arq = fArq.files[0];
-      if (arq){
-        if (/\.pdf$/i.test(arq.name) || arq.type === "application/pdf"){ texto = (await extrairTextoPDF(arq, "Previsão orçamentária")).texto; origem = "pdf"; $("cProg").hidden = true; }
-        else texto = await arq.text();
-        estado.arquivo = arq.name;
-      }
-      const r = G.lerLinhas(texto, cAnual.checked);
-      if (!r.itens.length){ msgImp.textContent = "Não encontrei linhas com descrição e valor. Confira o arquivo ou cole as linhas da planilha."; bLer.disabled = false; return; }
-      estado.itens = r.itens; estado.origem = origem;
-      if (r.fundo != null) m.fundo_reserva_pct = r.fundo;
-      desenhar(); folha().querySelector(".ges-msg").textContent = `${r.itens.length} despesas lidas. Confira a descrição, o grupo e o valor de cada uma e toque em Salvar previsão.`;
+      const n = await lerParaRevisao(fArq.files[0], taCola.value, cAnual.checked);
+      if (!n){ msgImp.textContent = "Não encontrei linhas com descrição e valor. Confira o arquivo ou cole as linhas da planilha."; bLer.disabled = false; return; }
     }catch(err){ msgImp.textContent = err.message || String(err); }
     bLer.disabled = false;
   }});
@@ -312,6 +302,36 @@ function desenhar(){
   recalcular();
 }
 
+/* Lê o arquivo (ou o texto colado), preenche a tabela para conferência e devolve quantas despesas achou */
+async function lerParaRevisao(arq, colado, anual){
+  let texto = colado || "", origem = "planilha";
+  if (arq){
+    if (/\.pdf$/i.test(arq.name) || arq.type === "application/pdf"){ texto = (await extrairTextoPDF(arq, "Previsão orçamentária")).texto; origem = "pdf"; $("cProg").hidden = true; }
+    else texto = await arq.text();
+  }
+  const r = G.lerLinhas(texto, anual);
+  if (!r.itens.length) return 0;
+  if (arq) estado.arquivo = arq.name;
+  estado.itens = r.itens; estado.origem = origem;
+  if (r.fundo != null) estado.meta.fundo_reserva_pct = r.fundo;
+  desenhar(); folha().querySelector(".ges-msg").textContent = `${r.itens.length} despesas lidas. Confira a descrição, o grupo e o valor de cada uma e toque em Salvar previsão.`;
+  return r.itens.length;
+}
+/* Chamado pelo cadastro do condomínio: abre a Gestão e Orçamento já com o arquivo lido */
+G.importarArquivo = async function(condId, arq, anual){
+  const cs = PERFIL?.condominios || [];
+  const sel = $("gesCond"); sel.innerHTML = "";
+  (cs.some(c => c.id === condId) ? cs : [...cs, { id: condId, nome: "Condomínio" }]).forEach(c => sel.append(el("option", { value: c.id, text: c.nome })));
+  sel.value = condId;
+  DRAWERS.forEach(id => $(id).classList.remove("open"));
+  ov().hidden = false; ov().scrollTop = 0;
+  await G.render(condId);
+  const n = await lerParaRevisao(arq, "", anual);
+  if (!n) throw new Error("não encontrei linhas com descrição e valor no arquivo. Confira se é a previsão orçamentária ou cole as linhas da planilha na tela que abriu.");
+  const tab = folha().querySelector(".ges-tab"); if (tab){ const r = tab.getBoundingClientRect(), o = ov(); o.scrollTop += r.top - o.getBoundingClientRect().top - 140; }
+  return n;
+};
+
 function recalcular(){
   const { cond, I } = estado, m = estado.meta;
   const orc = { itens: estado.itens, fundo_reserva_pct: Number(m.fundo_reserva_pct) || 0, taxa_media: m.taxa_media === "" ? null : Number(m.taxa_media), premissas: m.premissas, vigencia_inicio: m.vigencia_inicio, vigencia_fim: m.vigencia_fim || null };
@@ -335,7 +355,7 @@ function recalcular(){
   }
   const cal = $("gesCal"); if (!cal) return; cal.innerHTML = "";
   const itens = G.calendario(cond, estado.itens.length ? orc : null);
-  if (!itens.length) cal.append(el("p", { class: "ges-nota", text: "Informe em Condomínios › Editar a data da última assembleia, o fim do mandato e o mês do dissídio para o SINDICS montar o calendário legal." }));
+  if (!itens.length) cal.append(el("p", { class: "ges-nota", text: "Informe em Condomínios › Editar a data da assembleia de eleição, o fim do mandato e o mês do dissídio para o SINDICS montar o calendário legal." }));
   else {
     cal.append(el("div", { class: "ges-cal" }, itens.map(x => el("div", { class: "rel-item" }, el("div", { class: "q", text: dataBR(x.data) }), el("div", {}, el("div", { class: "t", text: x.titulo }), el("div", { class: "m", text: x.base }))))));
     const msg = el("p", { class: "ges-msg", role: "status" });

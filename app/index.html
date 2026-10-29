@@ -280,6 +280,9 @@ button.perigo:hover{background:var(--danger);color:var(--bg)}
 .eq-conds input{width:16px!important;height:16px;accent-color:var(--cyan)}
 .eq-acoes{display:flex;gap:6px;flex-wrap:wrap}
 .c-gestao{border:1px solid var(--line);padding:10px 12px 12px;margin:10px 0 4px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.orc-st{margin:2px 0 4px;font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--muted)} .orc-st.ok{color:var(--ok)}
+.cform label.orc-anual{display:flex;gap:10px;align-items:center;font-family:var(--body);font-size:13px;letter-spacing:0;text-transform:none;color:var(--fg);margin:6px 0 8px}
+.cform label.orc-anual input{width:auto;margin:0;flex:none}
 .c-gestao legend{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--cyan);padding:0 6px}
 .mem-filtro{display:flex;gap:6px} .mem-filtro button{padding:6px 12px;font-size:10px}
 .mem-item .mem-tipo{align-self:flex-start;font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:2px 8px;border:1px solid currentColor}
@@ -685,19 +688,27 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
       <label for="cConv">Convenção de Condomínio (PDF) <small class="opc">opcional</small></label>
       <input id="cConv" type="file" accept="application/pdf,.pdf">
       <p class="dica" id="cDocDica">O SINDICS lê o Regulamento Interno e passa a conhecer as regras de convivência do condomínio. A Convenção é opcional: envie quando quiser. PDFs escaneados também funcionam, só demoram um pouco mais.</p>
-      <fieldset class="c-gestao">
-        <legend>Gestão e Orçamento</legend>
-        <p class="dica">Com a Convenção, a ata da última assembleia e a previsão orçamentária, o SINDICS libera o módulo Gestão e Orçamento: liga o orçamento aos índices de reajuste e monta o calendário legal do condomínio.</p>
-        <label for="cAta">Ata da última assembleia (PDF)</label>
+      <fieldset class="c-gestao" id="cAtaBox">
+        <legend>Ata da eleição do síndico</legend>
+        <p class="dica">A ata da assembleia que elegeu o síndico registra o mandato e as deliberações. Com ela, o SINDICS monta o calendário legal: próxima assembleia ordinária e fim do mandato.</p>
+        <label for="cAta">Ata da assembleia de eleição (PDF)</label>
         <input id="cAta" type="file" accept="application/pdf,.pdf">
         <p class="dica">O SINDICS guarda só as deliberações: CPF, RG, telefones, e-mails e nomes de moradores que aparecem com a unidade ou com “Sr./Sra.” são removidos antes de salvar. Se a ata tiver lista de presença, prefira enviar sem ela.</p>
         <div class="c2">
-          <div><label for="cAtaData">Data dessa assembleia</label><input id="cAtaData" type="date"></div>
+          <div><label for="cAtaData">Data da assembleia de eleição</label><input id="cAtaData" type="date"></div>
           <div><label for="cMandato">Fim do mandato do síndico</label><input id="cMandato" type="date"></div>
         </div>
+      </fieldset>
+      <fieldset class="c-gestao" id="cOrcBox">
+        <legend>Previsão orçamentária</legend>
+        <p class="dica">Envie a previsão orçamentária em vigor (PDF ou planilha salva em CSV). Ao salvar, o SINDICS abre a Gestão e Orçamento com as despesas lidas para você conferir os valores antes de gravar.</p>
+        <p class="orc-st" id="cOrcSt" hidden></p>
+        <label for="cOrc">Previsão orçamentária (PDF ou CSV)</label>
+        <input id="cOrc" type="file" accept=".pdf,.csv,.txt,application/pdf,text/csv,text/plain">
+        <label class="ges-check orc-anual"><input id="cOrcAnual" type="checkbox"> <span>Os valores do arquivo são anuais (dividir por 12)</span></label>
         <label for="cDissidio">Mês da data-base dos funcionários (dissídio)</label>
         <select id="cDissidio"><option value="">Não sei / sem funcionários próprios</option><option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option><option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option><option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option><option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option></select>
-        <p class="dica">A previsão orçamentária é cadastrada em Menu › Gestão e Orçamento, onde o SINDICS lê o PDF ou a planilha e você confere os valores.</p>
+        <p class="dica">O dissídio entra na projeção da folha de pagamento e no calendário legal.</p>
       </fieldset>
       <div class="prog" id="cProg" hidden><div class="prog-barra"><i id="cProgBar"></i></div><span id="cProgTxt"></span></div>
       <p class="cmsg" id="cMsg" role="status"></p>
@@ -1068,7 +1079,7 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
   <span id="tapMsg">Toque em qualquer lugar para ligar som e microfone. Depois disso ele fica em prontidão sozinho.</span>
 </div>
 
-<script src="app.js?v=4.5.1"></script>
-<script src="gestao.js?v=4.4.0"></script>
+<script src="app.js?v=4.6.0"></script>
+<script src="gestao.js?v=4.6.0"></script>
 </body>
 </html>

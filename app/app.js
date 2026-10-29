@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "4.5.1";
+  window.SINDICS_V = "4.6.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -2276,7 +2276,8 @@ let condEditId = null; // id do condomínio em edição
 const cMsg = (t, err) => { $("cMsg").textContent = t || ""; $("cMsg").style.color = err ? "var(--danger)" : "var(--ok)"; };
 
 function limparFormCond(){
-  ["cCnpj","cNome","cCep","cUnid","cEnd","cCidade","cUf","cConv","cReg","cAta","cAtaData","cMandato","cDissidio"].forEach(id => { $(id).value = ""; $(id).removeAttribute("aria-invalid"); });
+  ["cCnpj","cNome","cCep","cUnid","cEnd","cCidade","cUf","cConv","cReg","cAta","cAtaData","cMandato","cDissidio","cOrc"].forEach(id => { $(id).value = ""; $(id).removeAttribute("aria-invalid"); });
+  $("cOrcAnual").checked = false; $("cOrcSt").hidden = true;
   condEditId = null; $("cCancelar").hidden = true; $("cSalvar").textContent = "Salvar condomínio";
   $("condForm").hidden = souGestor(); // gestor só edita condomínios autorizados; não cadastra novos
   $("cRegObr").hidden = false;
@@ -2287,7 +2288,7 @@ function limparFormCond(){
 
 /* ---------- Leitura dos PDFs (texto + OCR quando escaneado) ---------- */
 const FN_DOC = SUPABASE_URL + "/functions/v1/processar-documento";
-const TIPO_NOME = { convencao: "Convenção", regulamento: "Regulamento Interno", ata: "Ata da assembleia" };
+const TIPO_NOME = { convencao: "Convenção", regulamento: "Regulamento Interno", ata: "Ata da eleição do síndico" };
 const STATUS_TXT = { pendente: "aguardando PDF", enviado: "enviado", processando: "lendo…", pronto: "lido ✓", erro: "não lido" };
 const scriptsCarregados = {};
 function carregarScript(src){
@@ -2376,6 +2377,8 @@ async function listarCondominios(){
   const qL = sb.from("condominios").select("id, sindico_id, nome, cnpj, endereco, cidade, uf, cep, unidades, convencao_status, regulamento_status, convencao_msg, regulamento_msg, ata_status, ata_msg, ata_data, mandato_fim, dissidio_mes, lat, lng, local_definido_em");
   const { data, error } = await (condAlvo ? qL.eq("sindico_id", dono) : filtroCond(qL, user.id)).order("nome");
   const box = $("condLista"); box.innerHTML = "";
+  const orcs = new Map();
+  if (!error && data.length){ const { data: os } = await sb.from("orcamentos").select("condominio_id, itens, vigencia_inicio").in("condominio_id", data.map(c => c.id)); (os || []).forEach(o => orcs.set(o.condominio_id, o)); }
   if (error){ box.textContent = "Erro ao carregar: " + error.message; return []; }
   if (!data.length){ const p = document.createElement("p"); p.className = "rs-t"; p.textContent = "Nenhum condomínio cadastrado ainda."; box.append(p); }
   data.forEach(c => {
@@ -2392,12 +2395,16 @@ async function listarCondominios(){
       $("condFormTitulo").textContent = "Editar " + c.nome; $("cSalvar").textContent = "Salvar alterações"; $("cCancelar").hidden = false; cMsg(""); $("cCnpj").focus();
       $("cRegObr").hidden = c.regulamento_status !== "pronto" ? false : true;
       $("cDocDica").textContent = "Anexe um PDF só se quiser enviar ou substituir aquele documento. Os que já foram lidos continuam valendo.";
+      const o = orcs.get(c.id), n = (o?.itens || []).length;
+      $("cOrcSt").hidden = false; $("cOrcSt").className = "orc-st" + (n ? " ok" : "");
+      $("cOrcSt").textContent = n ? `✓ Previsão cadastrada: ${n} despesas, vigência desde ${dataBR(o.vigencia_inicio)}. Envie outro arquivo só para substituir.` : "○ Ainda não enviada.";
     };
     const st = document.createElement("div"); st.className = "docst";
     [["regulamento", c.regulamento_status || "pendente"], ["convencao", c.convencao_status || "pendente"], ["ata", c.ata_status || "pendente"]].forEach(([t, s]) => {
       const opc = t !== "regulamento" && s === "pendente";
       const sp = document.createElement("span"); sp.className = opc ? "opcional" : s; sp.textContent = `${TIPO_NOME[t]}: ${opc ? (t === "ata" ? "não enviada" : "opcional, não enviada") : (s === "pronto" && t !== "regulamento" ? "lida ✓" : (STATUS_TXT[s] || s))}${t === "ata" && c.ata_data && s === "pronto" ? " (" + dataBR(c.ata_data) + ")" : ""}`; st.append(sp);
     });
+    { const n = (orcs.get(c.id)?.itens || []).length; const sp = document.createElement("span"); sp.className = n ? "pronto" : "opcional"; sp.textContent = "Previsão orçamentária: " + (n ? `cadastrada ✓ (${n} despesas)` : "não enviada"); st.append(sp); }
     const msgs = [["convencao", c.convencao_status, c.convencao_msg], ["regulamento", c.regulamento_status, c.regulamento_msg], ["ata", c.ata_status, c.ata_msg]]
       .filter(([, s, m]) => s === "erro" && m).map(([t, , m]) => { const sm = document.createElement("small"); sm.className = "docmsg"; sm.textContent = `${TIPO_NOME[t]}: ${m}`; return sm; });
     const loc = document.createElement("div"); loc.className = "cond-local";
@@ -2449,6 +2456,8 @@ $("condForm").addEventListener("submit", async e => {
   marca("cCnpj", cnpjValido(v.cnpj)); marca("cNome", v.nome.length >= 3); marca("cUnid", v.unidades >= 1);
   marca("cEnd", v.endereco.length >= 5); marca("cCidade", v.cidade.length >= 2); marca("cUf", /^[A-Z]{2}$/.test(v.uf));
   const fConv = $("cConv").files[0] || null, fReg = $("cReg").files[0] || null, fAta = $("cAta").files[0] || null;
+  const fOrc = $("cOrc").files[0] || null, orcAnual = $("cOrcAnual").checked;
+  if (fOrc && !/\.(pdf|csv|txt)$/i.test(fOrc.name)){ cMsg("Previsão orçamentária: envie em PDF ou CSV (na planilha, use Salvar como › CSV).", true); $("cOrc").focus(); return; }
   // só o Regulamento Interno é obrigatório; a Convenção é opcional
   if (!condEditId || !$("cRegObr").hidden) marca("cReg", !!fReg);
   if (erros.length){
@@ -2500,6 +2509,11 @@ $("condForm").addEventListener("submit", async e => {
   await listarCondominios();
   if (!condAlvo) await recarregarCondominiosPerfil();
   if (condAlvo && $("admDrawer").classList.contains("open")) carregarAdmin();
+  // previsão orçamentária: abre a Gestão e Orçamento com as despesas lidas, para conferir e salvar
+  if (fOrc && condId && window.Gestao){
+    try{ await Gestao.importarArquivo(condId, fOrc, orcAnual); }
+    catch(err){ cMsg("Dados salvos, mas não consegui ler a previsão orçamentária: " + (err.message || err) + " Tente em Menu › Gestão e Orçamento.", true); }
+  }
 });
 async function recarregarCondominiosPerfil(){
   const { data: { user } } = await sb.auth.getUser(); if (!user || !PERFIL) return;
