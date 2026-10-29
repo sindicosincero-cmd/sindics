@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "4.8.0";
+  window.SINDICS_V = "4.9.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -1885,18 +1885,17 @@ function itemOperacao(r, comResolver){
       ac.hidden = true;
       const f = document.createElement("div"); f.className = "op-resolver";
       const ta = document.createElement("textarea"); ta.rows = 2; ta.placeholder = "O que foi feito para resolver?"; ta.maxLength = 2000;
-      const fi = document.createElement("input"); fi.type = "file"; fi.accept = "image/*"; fi.multiple = true;
       const st = document.createElement("small");
       const ok = document.createElement("button"); ok.type = "button"; ok.className = "primary"; ok.textContent = "Marcar como resolvido";
       ok.onclick = async () => {
         ok.disabled = true;
         try{
           const cond = (PERFIL.condominios || []).find(c => c.id === r.condominio_id);
-          const res = await registrarOperacao({ cond, tipo: r.tipo, descricao: "Solução: " + ta.value.trim(), fotos: [...fi.files], referencia_id: r.id }, t => st.textContent = t);
+          const res = await registrarOperacao({ cond, tipo: r.tipo, descricao: "Solução: " + ta.value.trim(), referencia_id: r.id }, t => st.textContent = t);
           st.textContent = "Resolvido ✓ " + localInfo(res).t; setTimeout(listarOperacao, 800);
         }catch(err){ st.textContent = err.message; st.style.color = "var(--danger)"; ok.disabled = false; }
       };
-      f.append(ta, fi, ok, st); d.append(f); ta.focus();
+      f.append(ta, ok, st); d.append(f); ta.focus();
     };
     ac.append(b); d.append(ac);
   }
@@ -1917,11 +1916,57 @@ async function listarOperacao(){
   encher($("opPend"), pend, true, "Nenhuma pendência aberta.");
   encher($("opHoje"), hoje, false, "Nada registrado hoje ainda.");
 }
-$("opFotos").addEventListener("change", e => {
-  opFotosSel = [...e.target.files].slice(0, MAX_FOTOS);
-  if (e.target.files.length > MAX_FOTOS) opMsg(`Só as ${MAX_FOTOS} primeiras fotos serão usadas.`, true);
-  const prev = $("opFotosPrev"); prev.innerHTML = "";
-  opFotosSel.forEach(f => { const i = document.createElement("img"); i.alt = ""; i.src = URL.createObjectURL(f); i.onload = () => URL.revokeObjectURL(i.src); prev.append(i); });
+/* ---------- Registro por áudio: o profissional fala, o SINDICS escreve e classifica ---------- */
+const REGRAS_OP = [
+  ["seguranca", /\b(c[âa]mera|cftv|port[ãa]o eletr|interfone|alarme|cerca el[ée]tr|invas|furto|roubo|suspeit|vigil)/i],
+  ["ocorrencia", /\b(ocorr[êe]ncia|vazament|infiltra|barulho|briga|acidente|queda|quebr|alag|entup|curto|inc[êe]ndio|danific)/i],
+  ["limpeza", /\b(limp|lav(ei|amos|agem)|varri|lixo|coleta|faxin|higieniz|dedetiz|desratiz|caixa d.?[áa]gua)/i],
+  ["vistoria", /\b(ronda|vistori|inspe[çc]|verifiquei|conferi|checagem|passei (na|no|pel))/i],
+  ["manutencao", /\b(troc|consert|repar|manuten|pint|instal|regul|ajust|lubrific|substitu|l[âa]mpada|bomba|elevador|motor|fechadura|torneira)/i],
+  ["prestador", /\b(prestador|fornecedor|empresa|t[ée]cnico|or[çc]amento|encanador|eletricista|visita t[ée]cnica|terceiriz)/i],
+  ["atendimento", /\b(morador|cond[ôo]mino|reclama|solicit|atend|pedido d[ao])/i],
+  ["administrativo", /\b(document|boleto|pagamento|contrato|assembleia|ata|reuni[ãa]o|planilha|cobran[çc]a|recibo|banco)/i],
+];
+const PENDENTE_RE = /\b(aguard|pendente|falta|faltando|precisa|preciso|vou (voltar|chamar|ver|trocar|resolver)|amanh[ãa]|ainda n[ãa]o|n[ãa]o (funciona|resolveu|deu)|quebrad|vazando|parad[oa]|sem funcionar|em andamento|or[çc]amento)/i;
+const RESOLVIDO_RE = /\b(resolvid|resolvi|conclu|finaliz|pronto|troquei|consertei|arrumei|limpei|normalizad|funcionando)/i;
+function interpretarRelato(texto){
+  const t = String(texto || "").trim();
+  const tipo = (REGRAS_OP.find(([, re]) => re.test(t)) || ["outro"])[0];
+  const situacao = PENDENTE_RE.test(t) && !(RESOLVIDO_RE.test(t) && !/\b(aguard|falta|precisa|ainda n[ãa]o)/i.test(t)) ? "pendente" : "resolvido";
+  const u = t.match(/\b(?:apto\.?|apartamento|ap\.?|unidade|casa|sala)\s*(?:n[ºo°.]?\s*)?(\d{1,5})\s*(?:-|\s)?\s*(?:bloco\s*)?([a-z])?\b/i);
+  const unidade = u ? (u[1] + (u[2] ? "-" + u[2].toUpperCase() : "")) : "";
+  let desc = t.replace(/\s+/g, " ");
+  desc = desc.charAt(0).toUpperCase() + desc.slice(1);
+  if (desc && !/[.!?]$/.test(desc)) desc += ".";
+  return { tipo, situacao, unidade, descricao: desc };
+}
+let ditado = null, ditadoTexto = "";
+function pararDitado(){ if (ditado){ ditado.onend = null; try{ ditado.stop(); }catch(_){} } ditado = null; $("opFalar").setAttribute("aria-pressed", "false"); $("opFalarTxt").textContent = "Registrar por áudio"; }
+$("opFalar").addEventListener("click", () => {
+  if (ditado){ // segunda vez: termina e preenche
+    pararDitado();
+    const r = interpretarRelato(ditadoTexto || $("opDesc").value);
+    if (!r.descricao){ opMsg("Não ouvi nada. Toque de novo e fale perto do microfone.", true); if (mode === "standby") startWake(); return; }
+    $("opDesc").value = r.descricao; $("opTipo").value = r.tipo; $("opSit").value = r.situacao; if (r.unidade && !$("opUnid").value) $("opUnid").value = r.unidade;
+    opMsg(`Entendi: ${TIPOS_OP[r.tipo]}, ${r.situacao === "pendente" ? "pendente" : "resolvido"}. Confira e toque em Registrar.`);
+    if (mode === "standby") startWake();
+    return;
+  }
+  if (!SR){ opMsg("Este navegador não transcreve áudio. Use o Google Chrome (Android ou computador) ou o Safari no iPhone, ou peça ao SINDICS por voz: “registra que…”.", true); return; }
+  if (inSession()){ opMsg("Durante a conversa com o SINDICS, é só falar: “registra que…”.", true); return; }
+  stopWake();
+  ditadoTexto = ""; const base = "";
+  ditado = new SR(); ditado.lang = "pt-BR"; ditado.continuous = true; ditado.interimResults = true;
+  ditado.onresult = e => {
+    let final = "", parcial = "";
+    for (let i = 0; i < e.results.length; i++){ const tx = e.results[i][0].transcript; if (e.results[i].isFinal) final += tx + " "; else parcial += tx; }
+    ditadoTexto = (base + final).trim(); $("opDesc").value = (ditadoTexto + " " + parcial).trim();
+  };
+  ditado.onerror = e => { if (e.error === "not-allowed" || e.error === "service-not-allowed"){ opMsg(mensagemMicrofone({ name: "NotAllowedError" }), true); pararDitado(); } };
+  ditado.onend = () => { if (ditado){ try{ ditado.start(); }catch(_){ $("opFalar").click(); } } }; // o navegador para sozinho em silêncio: retoma até tocar de novo
+  try{ ditado.start(); }catch(_){ opMsg("Não consegui ligar o microfone agora. Tente de novo.", true); ditado = null; return; }
+  $("opFalar").setAttribute("aria-pressed", "true"); $("opFalarTxt").textContent = "Ouvindo… toque para terminar";
+  opMsg("Pode falar. Quando terminar, toque no botão de novo.");
 });
 $("opForm").addEventListener("submit", async e => {
   e.preventDefault();
@@ -1930,16 +1975,20 @@ $("opForm").addEventListener("submit", async e => {
   if ($("opDesc").value.trim().length < 3){ opMsg("Descreva o que foi feito ou o que aconteceu.", true); $("opDesc").focus(); return; }
   $("opEnviar").disabled = true;
   try{
-    const r = await registrarOperacao({ cond, tipo: $("opTipo").value, descricao: $("opDesc").value, unidade: $("opUnid").value, situacao: $("opSit").value, fotos: opFotosSel }, t => opMsg(t));
+    if (ditado) pararDitado();
+    const r = await registrarOperacao({ cond, tipo: $("opTipo").value, descricao: $("opDesc").value, unidade: $("opUnid").value, situacao: $("opSit").value }, t => opMsg(t));
     const li = localInfo(r);
     opMsg(`Registrado às ${horaBR(r.ocorrido_em)} · ${li.t}${r.local_status === "sem_localizacao" ? " (permita a localização no navegador para comprovar presença)" : ""}.`, li.c === "ruim");
-    $("opDesc").value = $("opUnid").value = ""; $("opSit").value = "resolvido"; $("opFotos").value = ""; opFotosSel = []; $("opFotosPrev").innerHTML = "";
+    $("opDesc").value = $("opUnid").value = ""; $("opSit").value = "resolvido";
+    opMsg($("opMsg").textContent.replace(/\.$/, "") + (r.situacao === "pendente" ? ". Entrou na agenda, com o compromisso de resolver no próximo dia útil às 9h." : ". Entrou na agenda como feito."));
+    if (!$("calOverlay").hidden) abrirCalendario();
+    carregarLembretes();
     await listarOperacao();
   }catch(err){ opMsg(err.message, true); }
   $("opEnviar").disabled = false;
 });
 $("opBtn").addEventListener("click", () => abrirOperacao());
-$("closeOp").addEventListener("click", () => $("opDrawer").classList.remove("open"));
+$("closeOp").addEventListener("click", () => { if (ditado){ pararDitado(); if (mode === "standby") startWake(); } $("opDrawer").classList.remove("open"); });
 
 /* Relatório mensal (abre como folha; "Salvar como PDF" na impressão) */
 const MESES_NOME = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
@@ -2602,6 +2651,9 @@ async function recarregarCondominiosPerfil(){
 }
 
 let iniciado = false;
+/* Link do e-mail do relatório mensal: ?relatorio=<condomínio>&mes=AAAA-MM abre o relatório depois do login */
+const LINK_RELATORIO = (() => { try{ const q = new URLSearchParams(location.search); const c = q.get("relatorio"), m = q.get("mes"); return c && /^\d{4}-\d{2}$/.test(m || "") ? { c, m } : null; }catch(_){ return null; } })();
+let linkRelatorioUsado = false;
 async function aposLogin(){
   const { data: { user } } = await sb.auth.getUser();
   if (!user){ mostrarLogin(); return; }
@@ -2659,6 +2711,11 @@ async function aposLogin(){
   try{ history.replaceState(null, "", location.pathname); }catch(_){}
   atualizarResumoTela(); carregarLembretes();
   if (!iniciado){ iniciado = true; start(); }
+  if (LINK_RELATORIO && !linkRelatorioUsado && PERFIL.condominios.some(c => c.id === LINK_RELATORIO.c)){
+    linkRelatorioUsado = true;
+    setTimeout(() => gerarRelatorio(LINK_RELATORIO.c, LINK_RELATORIO.m).catch(err => { hintEl.textContent = err.message; }), 1200);
+    return;
+  }
   if (!PERFIL.condominios.length && souGestor())
     abrirCondominios(null, "Ainda não há condomínios liberados para você. Peça ao síndico para autorizar em Minha equipe.");
   else if (!PERFIL.condominios.length)

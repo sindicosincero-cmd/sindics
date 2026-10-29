@@ -306,6 +306,10 @@ button.perigo:hover{background:var(--danger);color:var(--bg)}
 .op-fotos{display:flex;gap:6px;flex-wrap:wrap}
 .op-fotos img{width:64px;height:64px;object-fit:cover;border:1px solid var(--line)}
 .op-rel{margin-top:18px}
+.op-falar{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin:10px 0 4px;padding:14px;font-size:12px;border:1px solid var(--cyan);color:var(--cyan)}
+.op-falar .op-mic{width:12px;height:12px;border-radius:50%;background:currentColor;flex:none}
+.op-falar[aria-pressed="true"]{border-color:var(--danger);color:var(--danger)}
+.op-falar[aria-pressed="true"] .op-mic{animation:breathe 1.2s ease-in-out infinite}
 .op-vazio{font-size:13px;color:var(--muted);margin:0}
 .cond-local{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px}
 .cond-local small{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
@@ -852,6 +856,8 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
       <p class="rs-t">Novo registro</p>
       <label for="opCond">Condomínio *</label>
       <select id="opCond"></select>
+      <button id="opFalar" class="op-falar" type="button" aria-pressed="false"><span class="op-mic" aria-hidden="true"></span><span id="opFalarTxt">Registrar por áudio</span></button>
+      <p class="dica" id="opFalarDica">Toque e conte o que foi feito, como numa mensagem de voz: “troquei a lâmpada do hall do bloco B”, “vazamento no ralo da garagem, aguardando encanador”. O SINDICS escreve, identifica o tipo e a situação, e você confere antes de registrar. Todo registro entra na agenda.</p>
       <label for="opTipo">Tipo *</label>
       <select id="opTipo"></select>
       <label for="opDesc">O que foi feito ou aconteceu *</label>
@@ -860,10 +866,7 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
         <div><label for="opUnid">Unidade (opcional)</label><input id="opUnid" maxlength="40" placeholder="Ex.: 52-B"></div>
         <div><label for="opSit">Situação *</label><select id="opSit"><option value="resolvido">Resolvido</option><option value="pendente">Pendente</option></select></div>
       </div>
-      <label for="opFotos">Fotos (até 3)</label>
-      <input id="opFotos" type="file" accept="image/*" multiple>
-      <div class="op-fotos" id="opFotosPrev"></div>
-      <p class="dica">Use só o número da unidade, nunca o nome de morador, e evite fotografar pessoas (LGPD). Ao registrar, o SINDICS confere sua localização: guarda apenas a distância até o condomínio, não as coordenadas.</p>
+      <p class="dica">Use só o número da unidade, nunca o nome de morador (LGPD). Ao registrar, o SINDICS confere sua localização: guarda apenas a distância até o condomínio, não as coordenadas.</p>
       <p class="cmsg" id="opMsg" role="status"></p>
       <button id="opEnviar" class="primary" type="submit">Registrar</button>
     </form>
@@ -878,6 +881,7 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
         <div><label for="opRelMes">Mês</label><input id="opRelMes" type="month"></div>
       </div>
       <button id="opRelBtn" type="button" class="primary">Gerar relatório</button>
+      <p class="dica">Todo dia 1º o SINDICS fecha o mês anterior sozinho e envia o resumo de cada condomínio para o seu e-mail, com o link do relatório completo.</p>
     </div>
   </div>
 </aside>
@@ -1079,7 +1083,7 @@ body[data-modo="boot"] .boas-falar{opacity:.5;pointer-events:none}
   <span id="tapMsg">Toque em qualquer lugar para ligar som e microfone. Depois disso ele fica em prontidão sozinho.</span>
 </div>
 
-<script src="app.js?v=4.8.0"></script>
+<script src="app.js?v=4.9.0"></script>
 <script src="gestao.js?v=4.6.0"></script>
 <script src="internet.js?v=4.7.0"></script>
 </body>

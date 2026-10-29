@@ -15,6 +15,7 @@ Este repositório guarda o **projeto completo**: o site, o aplicativo, o código
 | `app/` | O SINDICS: tela, voz, agenda, documentação legal, regras, comunicados, Operação do dia, relatório mensal, equipe, LGPD | GitHub Pages — sindics.com.br/app |
 | `app/gestao.js` | Gestão e Orçamento: previsão orçamentária, índices do Banco Central, projeção da taxa condominial e calendário legal | GitHub Pages |
 | `app/internet.js` | Informações da internet: previsão do tempo (Open-Meteo, com avisos para o condomínio) e pesquisa geral (Wikipédia + notícias) | GitHub Pages |
+| `supabase/functions/relatorio-mensal` | Relatório operacional automático: dia 1º de cada mês (pg_cron), resumo por condomínio em `relatorios_mensais` e e-mail ao síndico | Supabase |
 | `app/vendor/` | Bibliotecas de terceiros copiadas para o próprio site (com verificação de integridade) | — |
 | `privacidade.html` | Política de Privacidade e Termos de Uso | sindics.com.br/privacidade.html |
 | `assets/` | Tema claro/escuro e redirecionamentos | — |
