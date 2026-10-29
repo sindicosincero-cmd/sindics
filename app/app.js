@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "4.5.0";
+  window.SINDICS_V = "4.5.1";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -1400,7 +1400,7 @@ function reiniciarComNovaVoz(){
 }
 
 /* ======================= CADASTRO DO SÍNDICO ======================= */
-const TERMOS_V = "2026-10-28";
+const TERMOS_V = "2026-10-29";
 let perfilModo = "criar";       // criar | completar | editar
 let perfilDepois = null;         // o que fazer depois de salvar
 const pfMsg = (t, err) => { $("pfMsg").textContent = t || ""; $("pfMsg").style.color = err ? "var(--danger)" : "var(--ok)"; };

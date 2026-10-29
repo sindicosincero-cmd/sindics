@@ -215,6 +215,7 @@ h2{font-family:var(--display);font-weight:600;font-size:clamp(28px,3.4vw,42px);l
 .ma-2 > div{display:flex;flex-direction:column;gap:8px;min-width:0}
 @media (max-width:480px){ .ma-2{grid-template-columns:1fr} }
 label.ma-aceite{display:flex;gap:10px;align-items:flex-start;font-family:var(--body);font-size:14px;letter-spacing:0;color:var(--texto);margin-top:10px}
+.ma-resumo{font-size:12.5px;line-height:1.55;color:#8aa0b6;margin:14px 0 4px;padding:10px 12px;border:1px solid var(--linha);border-radius:10px}
 .ma-aceite input{width:18px;height:18px;flex:none;margin-top:2px;accent-color:var(--ciano)}
 .ma-aceite a,.ma-nota a{color:var(--ciano)}
 .ma-msg{min-height:1.3em;margin:4px 0;font-size:14px;color:var(--vermelho)}
@@ -227,6 +228,7 @@ footer{border-top:1px solid var(--linha);padding:28px 0 40px;font-size:14px;colo
 footer .w{display:flex;gap:20px;flex-wrap:wrap;justify-content:space-between}
 footer nav{display:flex;gap:20px;flex-wrap:wrap}
 footer a:hover{color:var(--texto)}
+footer .empresa{display:block;margin-top:8px;font-size:12.5px;line-height:1.6;color:#5d7389}
 </style>
 </head>
 <body>
@@ -401,7 +403,7 @@ footer a:hover{color:var(--texto)}
           <li>Área de privacidade e roteiro de LGPD do condomínio</li>
           <li>Computador e celular, instalável como aplicativo</li>
         </ul>
-        <p class="pl-nota">Pix, boleto ou cartão de crédito. Cobrança mensal automática, sem multa para cancelar.</p>
+        <p class="pl-nota">Pix, boleto ou cartão de crédito. Cobrança mensal automática, sem taxa de adesão e sem multa para cancelar. Desistência em até 7 dias com reembolso integral.</p>
       </div>
     </div>
   </section>
@@ -420,7 +422,7 @@ footer a:hover{color:var(--texto)}
         <details><summary>A conversa é gravada?</summary><p>A voz não é gravada. O texto da conversa fica guardado por até 90 dias para suporte e depois é apagado automaticamente.</p></details>
         <details><summary>Como funciona o pagamento?</summary><p>Você assina aqui na página e paga na página segura do Asaas, por Pix, boleto ou cartão. Assim que o pagamento é confirmado, o acesso chega no seu e-mail. A cobrança se repete todo mês na mesma data.</p></details>
         <details><summary>E se eu atrasar uma mensalidade?</summary><p>O SINDICS avisa na tela e na abertura da conversa. Com 5 dias de atraso o acesso é suspenso, e volta na hora em que o pagamento é confirmado. Seus dados continuam guardados.</p></details>
-        <details><summary>Como cancelo?</summary><p>Escreva para a nossa equipe pelo e-mail contato@sindics.com.br. Não há multa.</p></details>
+        <details><summary>Como cancelo?</summary><p>Escreva para a nossa equipe pelo e-mail contato@sindics.com.br. Não há multa. Nos primeiros 7 dias após a assinatura, você pode desistir e recebe de volta o valor integral (direito de arrependimento).</p></details>
       </div>
     </div>
   </section>
@@ -456,6 +458,7 @@ footer a:hover{color:var(--texto)}
       <div><label for="maDoc">CPF ou CNPJ</label><input id="maDoc" inputmode="numeric" maxlength="18" required></div>
       <div><label for="maTel">WhatsApp</label><input id="maTel" inputmode="tel" maxlength="15" placeholder="(11) 90000-0000" required></div>
     </div>
+    <p class="ma-resumo"><b>Resumo:</b> mensalidade do plano escolhido, cobrada todo mês na mesma data · acesso liberado após a confirmação do pagamento · cancelamento sem multa · desistência em até 7 dias com reembolso integral · fornecedor: EC Consulting – Governança Condominial Ltda, CNPJ 65.720.032/0001-07.</p>
     <label class="ma-aceite"><input id="maAceite" type="checkbox"> <span>Li e aceito a <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade e os Termos de Uso</a>.</span></label>
     <p class="ma-msg" id="maMsg" role="status"></p>
     <button class="btn forte" type="submit" id="maEnviar">Ir para o pagamento</button>
@@ -465,7 +468,7 @@ footer a:hover{color:var(--texto)}
 
 <footer>
   <div class="w">
-    <span>SINDICS · Inteligência Condominial · uma solução Sindicância Ethics</span>
+    <span>SINDICS · Inteligência Condominial · uma solução Sindicância Ethics<br><small class="empresa">EC CONSULTING – GOVERNANÇA CONDOMINIAL LTDA · CNPJ 65.720.032/0001-07<br>Rua Francisco Lindner, 534, Centro, Joaçaba/SC, CEP 89600-000</small></span>
     <nav aria-label="Rodapé">
       <a href="privacidade.html">Privacidade</a>
       <a href="privacidade.html#termos">Termos de uso</a>
