@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "4.6.0";
+  window.SINDICS_V = "4.6.1";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -290,7 +290,7 @@ function int16FromB64(s){ const bin = atob(s); const b = new Uint8Array(bin.leng
 async function initAudio(){
   if (!outCtx){ outCtx = new AudioContext(); outAnalyser = outCtx.createAnalyser(); outAnalyser.fftSize = 512; outAnalyser.smoothingTimeConstant = .6; outAnalyser.connect(outCtx.destination); }
   if (!micStream){
-    micStream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true, noiseSuppression:true, autoGainControl:true, channelCount:1}});
+    micStream = await abrirMicrofone();
     inCtx = new AudioContext({sampleRate:16000});
     const src = inCtx.createMediaStreamSource(micStream);
     micAnalyser = inCtx.createAnalyser(); micAnalyser.fftSize = 512;
@@ -312,6 +312,40 @@ async function initAudio(){
   liberarSom();
   await new Promise(r => setTimeout(r, 250));   // resume() fica pendente sem toque: não esperar por ele
   return somLiberado();
+}
+/* Abre o microfone. Se a escuta de "SINDICS" estiver segurando o microfone (comum no Android), solta e tenta de novo. */
+async function abrirMicrofone(){
+  if (!navigator.mediaDevices?.getUserMedia){ const e = new Error("sem suporte"); e.name = window.isSecureContext ? "NotSupportedError" : "InsecureError"; throw e; }
+  const ideal = {audio:{echoCancellation:true, noiseSuppression:true, autoGainControl:true, channelCount:1}};
+  let ultimo;
+  for (let i = 0; i < 3; i++){
+    try{ return await navigator.mediaDevices.getUserMedia(i < 2 ? ideal : {audio:true}); }
+    catch(e){
+      ultimo = e;
+      if (e.name === "NotAllowedError" || e.name === "SecurityError") throw e;   // bloqueado: tentar de novo não adianta
+      stopWake(); await new Promise(r => setTimeout(r, 600));
+    }
+  }
+  throw ultimo;
+}
+const ehIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const ehAndroid = /Android/i.test(navigator.userAgent);
+const instalado = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+/* Explica, em português e para o aparelho certo, como liberar o microfone */
+function mensagemMicrofone(err){
+  const n = err?.name || "";
+  if (n === "NotReadableError" || n === "AbortError" || n === "TrackStartError")
+    return "O microfone está ocupado por outro aplicativo (ligação, WhatsApp, gravador ou outra aba do SINDICS). Feche o outro uso e toque aqui.";
+  if (n === "NotFoundError" || n === "DevicesNotFoundError") return "Não encontrei um microfone neste aparelho. Conecte um fone com microfone e toque aqui.";
+  if (n === "InsecureError") return "O microfone só funciona no endereço seguro. Abra https://sindics.com.br/app";
+  if (n === "NotSupportedError") return "Este navegador não libera o microfone. No celular, use o Google Chrome (Android) ou o Safari (iPhone).";
+  if (ehIOS) return instalado()
+    ? "Abra Ajustes do iPhone › SINDICS (ou Safari) › Microfone e permita. Depois feche e abra o SINDICS e toque aqui."
+    : "Toque em “aA” na barra de endereço › Ajustes do Site › Microfone › Permitir. Se não aparecer, vá em Ajustes do iPhone › Safari › Microfone › Permitir. Depois recarregue a página.";
+  if (ehAndroid) return instalado()
+    ? "Abra Configurações do Android › Apps › SINDICS (ou Chrome) › Permissões › Microfone › Permitir. Depois feche e abra o SINDICS e toque aqui."
+    : "Toque no ícone ao lado do endereço (cadeado ou ajustes) › Permissões › Microfone › Permitir e recarregue. Se já estiver permitido, confira em Configurações do Android › Apps › Chrome › Permissões se o Chrome pode usar o microfone.";
+  return "Clique no cadeado ao lado do endereço, coloque Microfone em Permitir e recarregue a página.";
 }
 /* O navegador escuta sem toque, mas só deixa a página FALAR depois de um toque (exceto como app instalado). */
 const somLiberado = () => !!outCtx && outCtx.state === "running" && (!inCtx || inCtx.state === "running");
@@ -393,8 +427,9 @@ async function wake(){
 }
 async function acordar(){
   if (!micStream){
+    stopWake();
     try{ await initAudio(); }
-    catch(_){ mostrarToque("MICROFONE BLOQUEADO", "Clique no cadeado ao lado do endereço, coloque Microfone em Permitir e recarregue a página."); return; }
+    catch(err){ console.warn("microfone", err?.name, err?.message); mostrarToque(err?.name === "NotReadableError" ? "MICROFONE OCUPADO" : "MICROFONE BLOQUEADO", mensagemMicrofone(err)); if (mode === "standby") startWake(); return; }
   }
   if (!somLiberado()){ liberarSom(); await new Promise(r => setTimeout(r, 250)); }
   if (!somLiberado()){
@@ -2598,10 +2633,14 @@ async function start(){
 async function ativarSemToque(){
   let perm = "prompt";
   try{ perm = (await navigator.permissions.query({ name:"microphone" })).state; }catch(_){}
-  if (perm === "denied"){ mostrarToque("MICROFONE BLOQUEADO", "Clique no cadeado ao lado do endereço, coloque Microfone em Permitir e recarregue a página."); return; }
+  if (perm === "denied"){ mostrarToque("MICROFONE BLOQUEADO", mensagemMicrofone({ name: "NotAllowedError" })); return; }
   stateEl.textContent = "Ligando microfone";
   try{ await initAudio(); }
-  catch(_){ mostrarToque("ATIVAR SINDICS", "Toque aqui e, quando o navegador perguntar, clique em Permitir para o microfone."); return; }
+  catch(err){
+    console.warn("microfone", err?.name, err?.message);
+    if (err?.name === "NotAllowedError" && perm === "granted") { mostrarToque("MICROFONE BLOQUEADO", mensagemMicrofone(err)); return; }
+    mostrarToque("ATIVAR SINDICS", "Toque aqui e, quando o navegador perguntar, toque em Permitir para o microfone."); return;
+  }
   standby("SINDICS em prontidão.");
   if (!SR) hintEl.textContent = "Este navegador não reconhece a palavra “SINDICS”. Use o Google Chrome ou chame pelo menu.";
 }
@@ -2617,9 +2656,10 @@ $("tapOverlay").addEventListener("click", async () => {
       $("tapOverlay").hidden = true;
       if (wakePendente){ wakePendente = false; wake(); }
     } else $("tapMsg").textContent = "O som ainda está bloqueado. Toque de novo.";
-  }catch(_){
-    $("tapTitulo").textContent = "MICROFONE BLOQUEADO";
-    $("tapMsg").textContent = "Não consegui acessar o microfone. Clique no cadeado ao lado do endereço, coloque Microfone em Permitir, recarregue a página e toque aqui.";
+  }catch(err){
+    console.warn("microfone", err?.name, err?.message);
+    $("tapTitulo").textContent = err?.name === "NotReadableError" ? "MICROFONE OCUPADO" : "MICROFONE BLOQUEADO";
+    $("tapMsg").textContent = mensagemMicrofone(err) + (err?.name ? ` (código: ${err.name})` : "");
   }
   activating = false;
 });
