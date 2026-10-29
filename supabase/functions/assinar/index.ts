@@ -184,13 +184,19 @@ Deno.serve(async (req: Request) => {
           if (ep) { console.error("senha temporaria", ep.message); senha = ""; }
         }
         // com o e-mail próprio ativo, quem tem senha temporária recebe a senha escrita no e-mail; senão, vai o link padrão
-        const proprio = senha ? await enviarAcesso(a.email, a.nome, senha) : false;
+        let proprio = senha ? await enviarAcesso(a.email, a.nome, senha) : false;
+        // quem já criou a própria senha recebe o link de redefinição pelo e-mail do SINDICS (sem o limite do e-mail padrão)
+        if (!senha && Deno.env.get("RESEND_API_KEY")) {
+          const { data: lk, error: el } = await admin.auth.admin.generateLink({ type: "recovery", email: a.email, options: { redirectTo: SITE_URL } });
+          if (el) console.error("generateLink", el.message);
+          else if (lk?.properties?.action_link) proprio = await enviarLinkSenha(a.email, a.nome, lk.properties.action_link);
+        }
         const { error } = proprio ? { error: null } : await admin.auth.resetPasswordForEmail(a.email, { redirectTo: SITE_URL });
-        await admin.from("assinaturas").update({ acesso_msg: (senha ? "Nova senha temporária gerada" : "Link de senha reenviado") + (error ? "; o e-mail não saiu" : " por e-mail") + ". " + quando }).eq("id", a.id);
-        if (error && !senha) return json({ erro: "Conta liberada, mas o e-mail não saiu: " + error.message }, 502, origin);
+        await admin.from("assinaturas").update({ acesso_msg: (senha ? "Nova senha temporária enviada" : "Link para nova senha enviado") + (error ? "; o e-mail não saiu" : " por e-mail") + ". " + quando }).eq("id", a.id);
+        if (error && !senha) return json({ erro: "O e-mail com o link de nova senha não saiu (" + error.message + "). Tente de novo em alguns minutos." }, 502, origin);
         return json({ ok: true, senha_temporaria: senha || undefined, validade_horas: VALIDADE_TEMP_H, mensagem: senha
           ? (error ? "O e-mail não saiu, mas a senha temporária abaixo já vale: repasse ao síndico." : "Enviei o acesso por e-mail. A senha temporária abaixo também vale, se precisar repassar.")
-          : "Conta liberada. Enviei um link para o síndico criar a senha." }, 200, origin);
+          : "O síndico já tinha criado a própria senha. Enviei por e-mail um link para ele criar uma nova." }, 200, origin);
       }
       const senha = senhaTemporaria();
       const meta = { nome: a.nome, telefone: a.telefone, email_contato: a.email, convite: "assinante", ...metaTemp(senha) };
@@ -246,6 +252,29 @@ async function enviarAcesso(email: string, nome: string, senha: string): Promise
   try {
     const r = await fetch("https://api.resend.com/emails", { method: "POST", headers: { "Authorization": "Bearer " + key, "Content-Type": "application/json" },
       body: JSON.stringify({ from: de, to: [email], reply_to: "contato@sindics.com.br", subject: "Seu acesso ao SINDICS (senha temporária)", html, text: texto }) });
+    if (!r.ok) { console.error("Resend", r.status, (await r.text()).slice(0, 300)); return false; }
+    return true;
+  } catch (e) { console.error("Resend", e); return false; }
+}
+
+async function enviarLinkSenha(email: string, nome: string, link: string): Promise<boolean> {
+  const key = (Deno.env.get("RESEND_API_KEY") || "").trim();
+  if (!key) return false;
+  const de = Deno.env.get("EMAIL_REMETENTE") || "SINDICS <acesso@sindics.com.br>";
+  const primeiro = esc(String(nome || "").trim().split(/\s+/)[0] || "");
+  const html = `<!doctype html><html lang="pt-BR"><body style="margin:0;background:#0b1220;font-family:Arial,Helvetica,sans-serif;color:#e8eef8">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">
+<table role="presentation" width="100%" style="max-width:520px;background:#111a2e;border-radius:14px;padding:28px" cellpadding="0" cellspacing="0"><tr><td>
+<p style="margin:0 0 4px;font-size:13px;letter-spacing:2px;color:#7fb3ff">SINDICS · INTELIGÊNCIA CONDOMINIAL</p>
+<h1 style="margin:0 0 18px;font-size:22px;color:#fff">Criar uma nova senha${primeiro ? ", " + primeiro : ""}</h1>
+<p style="margin:0 0 20px;line-height:1.55">Recebemos um pedido para você criar uma nova senha no SINDICS. Toque no botão abaixo; o link vale por 1 hora e só pode ser usado uma vez.</p>
+<p style="margin:0 0 22px" align="center"><a href="${esc(link)}" style="display:inline-block;background:#2f7bff;color:#fff;text-decoration:none;padding:13px 26px;border-radius:999px;font-weight:bold">Criar nova senha</a></p>
+<p style="margin:0;line-height:1.55;color:#9fb0c8;font-size:13px">Não pediu? Ignore este e-mail: a sua senha atual continua valendo. Dúvidas: contato@sindics.com.br.</p>
+</td></tr></table></td></tr></table></body></html>`;
+  const texto = `SINDICS — criar uma nova senha.\n\nAbra o link abaixo (vale por 1 hora, uso único):\n${link}\n\nNão pediu? Ignore este e-mail. Dúvidas: contato@sindics.com.br`;
+  try {
+    const r = await fetch("https://api.resend.com/emails", { method: "POST", headers: { "Authorization": "Bearer " + key, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: de, to: [email], reply_to: "contato@sindics.com.br", subject: "SINDICS: criar uma nova senha", html, text: texto }) });
     if (!r.ok) { console.error("Resend", r.status, (await r.text()).slice(0, 300)); return false; }
     return true;
   } catch (e) { console.error("Resend", e); return false; }
