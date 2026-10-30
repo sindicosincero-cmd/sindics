@@ -7,8 +7,8 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const ORIGENS = ["https://sindics.com.br", "https://www.sindics.com.br", "https://sindicosincero-cmd.github.io"];
 // Planos (mensalidade fixa pelo total de apartamentos da carteira). Acima de 1.000 apartamentos: sob consulta, fora do autoatendimento.
 const PLANOS: Record<string, { nome: string; valor: number; max: number }> = {
-  essencial: { nome: "Essencial", valor: Number(Deno.env.get("SINDICS_VALOR_ESSENCIAL") || "550"), max: 500 },
-  profissional: { nome: "Profissional", valor: Number(Deno.env.get("SINDICS_VALOR_PROFISSIONAL") || "899"), max: 1000 },
+  essencial: { nome: "Essencial", valor: 550, max: 500 },
+  profissional: { nome: "Profissional", valor: 899, max: 1000 },
 };
 const TZ = "America/Sao_Paulo";
 // Senha temporária do primeiro acesso (mesma regra do convite automático): 72 horas, troca obrigatória ao entrar.
