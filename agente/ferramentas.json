@@ -380,6 +380,21 @@
       "parametros": {
         "consulta": "string — assunto em poucas palavras"
       }
+    },
+    {
+      "id": "tool_6001m67ya36pe43avth64mc4bvme",
+      "nome": "raiox_financeiro",
+      "tipo": "client",
+      "timeout": 30,
+      "descricao": "Raio-X do Condomínio: diagnóstico financeiro de entrada com achados e plano de ação; abrir a tela.",
+      "obrigatorios": [
+        "acao"
+      ],
+      "parametros": {
+        "acao": "enum [resumo, abrir]",
+        "condominio": "string",
+        "mostrar": "boolean"
+      }
     }
   ]
 }

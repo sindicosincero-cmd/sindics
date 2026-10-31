@@ -3,7 +3,7 @@
   const show = msg => { const h = document.getElementById("hint"); if (h){ h.textContent = "Erro: " + msg; h.classList.add("err"); } };
   window.addEventListener("error", e => show((e.message || "desconhecido") + (e.lineno ? " (linha " + e.lineno + ")" : "")));
   window.addEventListener("unhandledrejection", e => show(String(e.reason && (e.reason.message || e.reason)).slice(0, 160)));
-  window.SINDICS_V = "5.0.0";
+  window.SINDICS_V = "5.1.0";
 })();
 /* ======================= SERVIDOR (Supabase) ======================= */
 const SUPABASE_URL = "https://hjjckvluydcejmrxolza.supabase.co";
@@ -904,6 +904,15 @@ async function executarComDados(nome, a, user){
       }
       const r = await Gestao.resumo(cond);
       if (a.mostrar) await Gestao.abrir(cond.nome);
+      return r;
+    }
+    case "raiox_financeiro": {
+      if (!window.RaioX) throw new Error("Módulo Raio-X não carregado. Recarregue a página.");
+      const cond = a.condominio ? acharCondominio(a.condominio) : ((PERFIL?.condominios || []).length === 1 ? PERFIL.condominios[0] : null);
+      if (!cond) throw new Error("Diga de qual condomínio. Disponíveis: " + (PERFIL?.condominios || []).map(c => c.nome).join(", ") + ".");
+      if ((a.acao || "resumo") === "abrir"){ await RaioX.abrir(cond.nome); return "Raio-X do " + cond.nome + " aberto na tela."; }
+      const r = await RaioX.resumo(cond);
+      if (a.mostrar) await RaioX.abrir(cond.nome);
       return r;
     }
     case "memoria": {

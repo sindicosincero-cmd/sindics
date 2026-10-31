@@ -147,6 +147,7 @@ async function irParaSolucao(i){
   if (i.origem === "operacao") return abrirOperacao(nome);
   if (i.origem === "combinado") return abrirMemoria();
   if (i.chave === "ges:orcamento" && window.Gestao) return Gestao.abrir(nome);
+  if ((i.origem === "contrato" || i.origem === "raiox") && window.RaioX) return RaioX.abrir(nome);
   return abrirCondominios();
 }
 

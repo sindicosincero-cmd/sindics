@@ -45,6 +45,7 @@ const addDias = (iso, n) => new Date(Date.parse(iso + "T12:00:00Z") + n * 864000
 
 /* ---------- Classificação e leitura de valores ---------- */
 function classificar(desc){ for (const [cat, re] of REGRAS) if (re.test(desc)) return cat; return "outros"; }
+G.classificar = classificar;
 function lerValor(s){
   const t = String(s).replace(/R\$\s*/g, "").trim();
   if (/^-?\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(t) || /^-?\d+,\d{1,2}$/.test(t)) return parseFloat(t.replace(/\./g, "").replace(",", "."));
