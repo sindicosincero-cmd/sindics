@@ -2261,6 +2261,7 @@ function confirmarNaTela(titulo, texto, rotulo = "Excluir", segundos = 45){
 
 /* ======================= ASSINATURA (Asaas) ======================= */
 const FN_ASSINAR = SUPABASE_URL + "/functions/v1/assinar";
+const FN_SENTINELA = SUPABASE_URL + "/functions/v1/sentinela";
 const DIAS_BLOQUEIO = 5;
 const STATUS_ASS = { pendente: "aguardando pagamento", ativa: "em dia", atrasada: "em atraso", cancelada: "cancelada" };
 function diasDeAtraso(a){ return a && a.status === "atrasada" && a.atraso_desde ? Math.max(0, diasAte(a.atraso_desde) * -1) : 0; }
@@ -2314,6 +2315,44 @@ $("bloqueioRever").addEventListener("click", async () => {
 $("bloqueioSair").addEventListener("click", async () => { $("bloqueioOverlay").hidden = true; await sair(); });
 
 /* ======================= ADMINISTRAÇÃO (aprovar síndicos) ======================= */
+const ROT_SENT = { banco: "Banco de dados", espaco: "Espaço", rotinas: "Rotinas agendadas", chamadas: "Chamadas agendadas", fiscalizacao: "Fiscalização diária", relatorio: "Relatório mensal", assinaturas: "Assinaturas pagas", asaas: "Asaas (pagamentos)", voz: "Voz (ElevenLabs)", email: "E-mail (Resend)", site: "Site e aplicativo" };
+const COR_SENT = { ok: "var(--ok)", corrigido: "var(--cyan)", alerta: "var(--amber)", falha: "var(--danger)" };
+const TXT_SENT = { ok: "ok", corrigido: "corrigido", alerta: "atenção", falha: "falha" };
+async function caixaSentinela(){
+  const box = document.createElement("div"); box.className = "adm-lgpd adm-sent";
+  const h = document.createElement("h4"); const corpo = document.createElement("div"); corpo.className = "adm-sent-lista";
+  const msg = document.createElement("small");
+  const bt = document.createElement("button"); bt.type = "button"; bt.textContent = "Verificar agora"; bt.style.cssText = "padding:6px 10px;font-size:10px;align-self:flex-start";
+  const desenhar = (evs, quando) => {
+    corpo.innerHTML = "";
+    const ult = {}; (evs || []).forEach(e => { if (!ult[e.verificacao]) ult[e.verificacao] = e; });
+    const lista = Object.values(ult);
+    const ruins = lista.filter(e => e.status === "alerta" || e.status === "falha").length;
+    h.textContent = !lista.length ? "Sentinela · aguardando a primeira verificação" : `Sentinela · ${ruins ? ruins + " ponto(s) de atenção" : "tudo em ordem"}${quando ? " · " + new Date(quando).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}`;
+    h.style.color = ruins ? "var(--amber)" : "";
+    Object.keys(ROT_SENT).forEach(k => { const e = ult[k]; if (!e) return;
+      const it = document.createElement("small"); it.className = "adm-sent-it";
+      const st = document.createElement("b"); st.textContent = TXT_SENT[e.status] || e.status; st.style.color = COR_SENT[e.status];
+      it.append(st, document.createTextNode(` ${ROT_SENT[k]} — ${e.detalhe}${e.acao && e.status !== "ok" ? " · " + e.acao : ""}`));
+      corpo.append(it); });
+  };
+  bt.onclick = async () => {
+    bt.disabled = true; msg.textContent = "Verificando…";
+    try{
+      const { data: { session } } = await sb.auth.getSession();
+      const r = await fetch(FN_SENTINELA, { method: "POST", headers: { "Authorization": "Bearer " + (session?.access_token || ""), "apikey": SUPABASE_ANON, "Content-Type": "application/json" }, body: "{}" });
+      const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.erro || "Servidor respondeu " + r.status);
+      desenhar(j.eventos, Date.now()); msg.textContent = `${j.ok} ok · ${j.corrigidos} corrigido(s) · ${j.alertas} alerta(s) · ${j.falhas} falha(s)`;
+    }catch(e){ msg.textContent = e.message; }
+    bt.disabled = false;
+  };
+  const { data: evs } = await sb.from("sentinela_eventos").select("verificacao, status, detalhe, acao, verificado_em").gte("verificado_em", new Date(Date.now() - 86400000).toISOString()).order("verificado_em", { ascending: false }).limit(200);
+  desenhar(evs || [], evs?.[0]?.verificado_em);
+  const corr = (evs || []).filter(e => e.status === "corrigido");
+  if (corr.length){ const c = document.createElement("small"); c.textContent = `Correções automáticas nas últimas 24 h: ${corr.length}`; c.style.color = "var(--cyan)"; corpo.append(c); }
+  box.append(h, corpo, bt, msg);
+  return box;
+}
 async function carregarAdmin(){
   const lista = $("admLista"); lista.innerHTML = "<p class='rs-t'>Carregando…</p>";
   const [{ data: ps, error }, { data: cs }, { data: sols }, { data: asss }] = await Promise.all([
@@ -2324,6 +2363,8 @@ async function carregarAdmin(){
   ]);
   if (error){ lista.textContent = "Erro: " + error.message; return; }
   lista.innerHTML = "";
+  /* Sentinela: saúde do sistema */
+  lista.append(await caixaSentinela());
   /* Assinaturas (Asaas) */
   const boxA = document.createElement("div"); boxA.className = "adm-lgpd adm-ass";
   const hA = document.createElement("h4");
